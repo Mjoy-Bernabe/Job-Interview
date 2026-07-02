@@ -179,18 +179,26 @@
         .date-stats {
             flex: 2;
             display: flex;
-            gap: 40px;
-            align-items: center;
+            flex-direction: column;
+            gap: 20px;
+            align-items: flex-start;
+            justify-content: center;
+        }
+        .date-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
         }
         .date-info h3 {
             font-size: 20px;
-            margin-bottom: 8px;
             color: white;
+            line-height: 1;
         }
         .date-info p {
             font-size: 24px;
             font-weight: 600;
             color: white;
+            line-height: 1;
         }
 
         .status-boxes {
@@ -341,7 +349,7 @@
                 <div class="date-stats">
                     <div class="date-info">
                         <h3>As of:</h3>
-                        <p>22/06/2026</p>
+                        <p id="dynamic-date">22/06/2026</p>
                     </div>
                     <div class="status-boxes">
                         <div class="status-box qualified">
@@ -391,5 +399,15 @@
             </div>
         </div>
     </main>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const dateElement = document.getElementById('dynamic-date');
+            const today = new Date();
+            const dd = String(today.getDate()).padStart(2, '0');
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const yyyy = today.getFullYear();
+            dateElement.textContent = `${dd}/${mm}/${yyyy}`;
+        });
+    </script>
 </body>
 </html>
