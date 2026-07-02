@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Outfit:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-red: #B92E20; /* deep red background */
@@ -190,39 +190,69 @@
             gap: 5px;
         }
         .date-info h3 {
-            font-size: 20px;
+            font-family: 'Courier Prime', monospace;
+            font-size: 24px;
             color: white;
-            line-height: 1;
+            line-height: 1.2;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
         }
         .date-info p {
-            font-size: 24px;
-            font-weight: 600;
+            font-family: 'Courier Prime', monospace;
+            font-size: 28px;
+            font-weight: 700;
             color: white;
-            line-height: 1;
+            line-height: 1.2;
+            letter-spacing: 1px;
         }
 
         .status-boxes {
             flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 0;
+            width: 250px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+            font-family: 'Courier Prime', monospace;
         }
         .status-box {
             display: flex;
             justify-content: space-between;
+            align-items: baseline;
             width: 100%;
-            padding: 16px 24px;
-            font-weight: 600;
-            font-size: 16px;
-            border-radius: 8px;
+            padding: 10px 15px;
+            border-radius: 0;
         }
         .status-box.qualified {
-            background-color: white;
+            background-color: #f4f4f4;
             color: var(--text-green);
+            border: 1px solid var(--text-green);
+        }
+        .status-box.qualified span:first-child {
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .status-box.qualified span:last-child {
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1;
         }
         .status-box.rejected {
-            background-color: var(--bg-gray);
-            color: #7F7F7F;
+            background-color: #e2dfdf;
+            color: #7f7f7f;
+            border: 1px solid #7f7f7f;
+            border-top: none;
+        }
+        .status-box.rejected span:first-child {
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .status-box.rejected span:last-child {
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1;
         }
 
         .distribution-card {
