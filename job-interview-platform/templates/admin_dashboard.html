@@ -3,201 +3,369 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard | AceView</title>
+    <title>Dashboard</title>
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-red: #B2271B;
-            --primary-dark: #4B0E0A;
-            --bg-color: #f3f4f6;
-            --card-bg: #ffffff;
-            --text-main: #1f2937;
-            --text-muted: #6b7280;
+            --primary-red: #B92E20; /* deep red background */
+            --sidebar-active: #FDE8E8;
+            --text-red: #B92E20;
+            --text-green: #00B050;
+            --bg-gray: #DCDCDC;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Poppins', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            display: flex;
-        }
-
-        /* Sidebar Navigation */
-        .sidebar {
-            width: 250px;
-            height: 100vh;
-            background: linear-gradient(180deg, var(--primary-dark) 0%, var(--primary-red) 100%);
-            color: white;
-            padding: 30px 20px;
-            position: fixed;
-        }
-
-        .sidebar h2 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 24px;
-            margin-bottom: 40px;
-            text-align: center;
-        }
-
-        .nav-links { list-style: none; }
-        .nav-links li { margin-bottom: 15px; }
-        .nav-links a {
-            color: white;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px;
-            border-radius: 8px;
-            transition: background 0.3s;
-        }
-        .nav-links a:hover, .nav-links a.active {
-            background: rgba(255, 255, 255, 0.15);
-        }
-
-        /* Main Content Area */
-        .main-content {
-            margin-left: 250px;
-            padding: 40px;
-            width: calc(100% - 250px);
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 40px;
-        }
-
-        .header h1 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 28px;
-        }
-
-        .logout-btn {
-            background-color: white;
-            color: var(--primary-red);
-            border: 1px solid var(--primary-red);
-            padding: 8px 16px;
-            border-radius: 6px;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s;
-        }
-        .logout-btn:hover {
+            font-family: 'Courier Prime', monospace;
             background-color: var(--primary-red);
             color: white;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        /* Dashboard Cards */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 24px;
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background-color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: var(--text-red);
+        }
+
+        .logo-area {
+            padding: 30px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: bold;
+            font-size: 12px;
+            line-height: 1.2;
+            margin-bottom: 20px;
+            color: black;
+        }
+        
+        .logo-icon {
+            background-color: var(--text-red);
+            color: white;
+            padding: 10px 15px;
+            font-size: 40px;
+            font-weight: bold;
+            letter-spacing: -3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .logo-icon::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            right: -15px;
+            width: 25px;
+            height: 25px;
+            background-color: white;
+        }
+
+        .nav-links { list-style: none; flex-grow: 1; margin-top: 20px; }
+        .nav-links li { margin-bottom: 15px; }
+        .nav-links a {
+            color: var(--text-red);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 30px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .nav-links a.active {
+            background-color: var(--sidebar-active);
+        }
+        .nav-links a i {
+            font-size: 24px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .top-tabs {
+            display: flex;
+            margin-top: 40px;
+            border-bottom: 2px solid white;
+        }
+        .top-tabs .tab {
+            padding: 10px 20px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .top-tabs .tab.active {
+            background-color: transparent;
+            color: white;
+        }
+        .top-tabs .tab.inactive {
+            background-color: white;
+            color: var(--text-red);
+        }
+
+        .dashboard-content {
+            padding: 30px;
+            max-width: 900px;
+        }
+
+        .top-stats-row {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+            align-items: flex-start;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 25px;
+            color: var(--text-red);
+        }
+
+        .applicants-card {
+            flex: 1;
+            max-width: 300px;
+            position: relative;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+        }
+        .applicants-card h3 {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .applicants-card .count {
+            font-size: 36px;
+            font-weight: bold;
+        }
+        .applicants-card .arrow-icon {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            background-color: var(--text-red);
+            color: white;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .date-stats {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+        }
+        .date-info h3 {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        .date-info p {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .status-boxes {
+            display: flex;
+            flex-direction: column;
+        }
+        .status-box {
+            display: flex;
+            justify-content: space-between;
+            width: 300px;
+            padding: 12px 20px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .status-box.qualified {
+            background-color: white;
+            color: var(--text-green);
+        }
+        .status-box.rejected {
+            background-color: var(--bg-gray);
+            color: #7F7F7F;
+        }
+
+        .distribution-card {
+            margin-bottom: 40px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+            padding-bottom: 0;
+        }
+        .distribution-card h3 {
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+        .distribution-card hr {
+            border: none;
+            border-top: 2px solid #E7E6E6;
             margin-bottom: 40px;
         }
-
-        .stat-card {
-            background-color: var(--card-bg);
-            padding: 24px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        .bar-chart {
             display: flex;
-            align-items: center;
-            gap: 20px;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 60px;
+            height: 250px;
+        }
+        .bar {
+            width: 90px;
+            background-color: #8C1C13;
+        }
+        .bar-1 { height: 40%; }
+        .bar-2 { height: 60%; }
+        .bar-3 { height: 90%; }
+
+        .more-insights-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            border-top: 1px solid rgba(255,255,255,0.5);
+            padding-top: 20px;
         }
 
-        .stat-icon {
-            background-color: #fee2e2;
-            color: var(--primary-red);
-            width: 60px;
-            height: 60px;
-            border-radius: 12px;
+        .insights-row {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+        }
+        .insight-card {
+            flex: 1;
+            min-width: 200px;
+            height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+        }
+        .insight-card h4 {
+            font-size: 14px;
+        }
+        .insight-card .arrow-icon {
+            align-self: flex-end;
+            background-color: var(--text-red);
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dots {
             display: flex;
             justify-content: center;
-            align-items: center;
-            font-size: 28px;
+            gap: 10px;
+            margin-top: 30px;
+            padding-bottom: 30px;
         }
-
-        .stat-info h3 {
-            font-size: 14px;
-            color: var(--text-muted);
-            margin-bottom: 4px;
+        .dot {
+            width: 8px;
+            height: 8px;
+            background-color: rgba(255,255,255,0.5);
+            border-radius: 50%;
         }
-
-        .stat-info p {
-            font-size: 24px;
-            font-weight: 600;
-            color: var(--text-main);
+        .dot.active {
+            background-color: white;
         }
-
-        /* Quick actions or info section */
-        .content-section {
-            background-color: var(--card-bg);
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        }
-
-        .content-section h2 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 20px;
-            margin-bottom: 16px;
-        }
-
     </style>
 </head>
 <body>
-
     <aside class="sidebar">
-        <h2>AceView Admin</h2>
+        <div class="logo-area">
+            <div class="logo-icon">H2</div>
+            <div>SOFTWARE<br>CONSULTING<br>SERVICES<br>INC.</div>
+        </div>
         <ul class="nav-links">
-            <li><a href="#" class="active"><i class='bx bxs-dashboard'></i> Dashboard</a></li>
-            <li><a href="#"><i class='bx bx-user-pin'></i> User Management</a></li>
-            <li><a href="#"><i class='bx bx-cog'></i> System Settings</a></li>
+            <li><a href="#" class="active"><i class='bx bxs-grid-alt'></i> Dashboard</a></li>
+            <li><a href="#"><i class='bx bx-user-pin'></i> Recruitment</a></li>
+            <li><a href="#"><i class='bx bx-line-chart'></i> Analytics</a></li>
+            <li><a href="#"><i class='bx bx-cog'></i> Settings</a></li>
+            <li><a href="#"><i class='bx bx-user-circle'></i> Profile</a></li>
         </ul>
     </aside>
 
     <main class="main-content">
-        <div class="header">
-            <h1>Welcome, {{ username }}</h1>
-            <a href="{{ url_for('auth.logout') }}" class="logout-btn"><i class='bx bx-log-out'></i> Logout</a>
+        <div class="top-tabs">
+            <div class="tab active">Applicant Monitoring</div>
+            <div class="tab inactive">View Applicants</div>
         </div>
 
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon"><i class='bx bx-group'></i></div>
-                <div class="stat-info">
-                    <h3>Total Users</h3>
-                    <p>{{ total_users }}</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon"><i class='bx bx-briefcase'></i></div>
-                <div class="stat-info">
-                    <h3>HR Staff</h3>
-                    <p>{{ total_hr }}</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon"><i class='bx bx-user-voice'></i></div>
-                <div class="stat-info">
+        <div class="dashboard-content">
+            <div class="top-stats-row">
+                <div class="card applicants-card">
                     <h3>Applicants</h3>
-                    <p>{{ total_applicants }}</p>
+                    <div class="arrow-icon"><i class='bx bx-up-arrow-alt'></i></div>
+                    <div class="count">{{ total_applicants | default('22,026') }}</div>
+                </div>
+
+                <div class="date-stats">
+                    <div class="date-info">
+                        <h3>As of:</h3>
+                        <p>22/06/2026</p>
+                    </div>
+                    <div class="status-boxes">
+                        <div class="status-box qualified">
+                            <span>20,011</span>
+                            <span>Qualified</span>
+                        </div>
+                        <div class="status-box rejected">
+                            <span>2,015</span>
+                            <span>Rejected</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="content-section">
-            <h2>System Overview</h2>
-            <p style="color: var(--text-muted); font-size: 14px; line-height: 1.6;">
-                This is the central administrative hub. From here, you can manage user roles, oversee system activity, and configure application settings. More modules can be added here as needed.
-            </p>
+            <div class="card distribution-card">
+                <h3>Applicant Distribution<br>per Job Position</h3>
+                <hr>
+                <div class="bar-chart">
+                    <div class="bar bar-1"></div>
+                    <div class="bar bar-2"></div>
+                    <div class="bar bar-3"></div>
+                </div>
+            </div>
+
+            <div class="more-insights-title">More Insights...</div>
+            
+            <div class="insights-row">
+                <div class="card insight-card">
+                    <h4>Avg Interview<br>Score</h4>
+                    <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
+                </div>
+                <div class="card insight-card">
+                    <h4>Recruitment<br>Process</h4>
+                    <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
+                </div>
+                <div class="card insight-card">
+                    <h4>Applicants</h4>
+                    <h2 style="margin-top: 10px; font-size: 28px;">22,0...</h2>
+                </div>
+            </div>
+
+            <div class="dots">
+                <div class="dot active"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
         </div>
     </main>
-
 </body>
 </html>
