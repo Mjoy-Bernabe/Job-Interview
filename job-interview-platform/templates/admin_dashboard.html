@@ -410,13 +410,15 @@
             font-size: 24px;
             font-weight: 700;
             color: white;
+            flex-grow: 1;
         }
         .va-list-title::after {
             content: '';
             display: block;
             height: 2px;
-            width: 120px;
+            flex-grow: 1;
             background-color: white;
+            margin-right: 30px;
         }
         .va-filters {
             display: flex;
@@ -427,15 +429,15 @@
         }
         .va-filter {
             padding: 8px 20px;
-            color: white;
+            color: #FFFFFF;
             cursor: pointer;
             font-weight: 700;
-            background-color: transparent;
+            background-color: #762621;
             font-family: 'Courier Prime', monospace;
         }
         .va-filter.active {
-            background-color: white;
-            color: var(--text-red);
+            background-color: #FFFFFF;
+            color: #FF4135;
         }
         .va-list {
             display: flex;
