@@ -146,17 +146,19 @@
             flex: 1;
             display: flex;
             background-color: white;
-            border-radius: 4px;
+            border-radius: 0;
             overflow: hidden;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         .stat-icon {
-            width: 80px;
+            width: 100px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 40px;
-            color: white;
+        }
+        .stat-icon img {
+            width: 45px;
+            height: auto;
         }
         .stat-info {
             padding: 20px;
@@ -266,21 +268,21 @@
             <!-- Stats -->
             <div class="stats-row">
                 <div class="stat-card">
-                    <div class="stat-icon" style="background-color: #8D7AF0;"><i class='bx bx-briefcase-alt-2'></i></div>
+                    <div class="stat-icon" style="background-color: #8D7AF0;"><img src="{{ url_for('static', filename='active-jobs_icon.png') }}" alt="Active Jobs"></div>
                     <div class="stat-info">
                         <h4>Active Jobs</h4>
                         <h2>6,000</h2>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon" style="background-color: #39C8CE;"><i class='bx bxs-group'></i></div>
+                    <div class="stat-icon" style="background-color: #39C8CE;"><img src="{{ url_for('static', filename='applicants_icon.png') }}" alt="Applicants"></div>
                     <div class="stat-info">
                         <h4>Applicants</h4>
                         <h2>10,000</h2>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon" style="background-color: #1DBF38;"><i class='bx bx-check-square'></i></div>
+                    <div class="stat-icon" style="background-color: #1DBF38;"><img src="{{ url_for('static', filename='hired_icon.png') }}" alt="Hired"></div>
                     <div class="stat-info">
                         <h4>Hired</h4>
                         <h2>2,000</h2>
