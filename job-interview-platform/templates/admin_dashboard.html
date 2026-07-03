@@ -487,16 +487,16 @@
 </head>
 <body>
     <aside class="sidebar">
-        <div class="logo-area">
-            <div class="logo-icon">H2</div>
-            <div>SOFTWARE<br>CONSULTING<br>SERVICES<br>INC.</div>
+                <div class="logo-area" style="padding: 0; text-align: center;">
+            <img src="{{ url_for('static', filename='logo.svg') }}" alt="H2 Logo" style="width: 100%; display: block; margin: 0 auto;">
+            <div style="font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; color: #B3241B; letter-spacing: 4px; text-transform: uppercase; margin-top: 5px; margin-bottom: 25px;">Administration</div>
         </div>
         <ul class="nav-links">
-            <li><a href="{{ url_for('admin.dashboard') }}" class="active"><i class='bx bxs-grid-alt'></i> Dashboard</a></li>
-            <li><a href="{{ url_for('admin.recruitment') }}"><i class='bx bx-user-pin'></i> Recruitment</a></li>
-            <li><a href="{{ url_for('admin.analytics') }}"><i class='bx bx-line-chart'></i> Analytics</a></li>
-            <li><a href="#"><i class='bx bx-cog'></i> Settings</a></li>
-            <li><a href="#"><i class='bx bx-user-circle'></i> Profile</a></li>
+            <li><a href="{{ url_for('admin.dashboard') }}" class="active"><img src="{{ url_for('static', filename='Dashboard Layout.svg') }}" alt="Dashboard" style="width: 2em; height: 2em;"> Dashboard</a></li>
+            <li><a href="{{ url_for('admin.recruitment') }}"><img src="{{ url_for('static', filename='Client Management.svg') }}" alt="Recruitment" style="width: 2em; height: 2em;"> Recruitment</a></li>
+            <li><a href="{{ url_for('admin.analytics') }}"><img src="{{ url_for('static', filename='Graph.svg') }}" alt="Analytics" style="width: 2em; height: 2em;"> Analytics</a></li>
+            <li><a href="#"><img src="{{ url_for('static', filename='Automation.svg') }}" alt="Settings" style="width: 2em; height: 2em;"> Settings</a></li>
+            <li><a href="#"><img src="{{ url_for('static', filename='Profile.svg') }}" alt="Profile" style="width: 2em; height: 2em;"> Profile</a></li>
         </ul>
     </aside>
 
