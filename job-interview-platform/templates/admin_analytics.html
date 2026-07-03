@@ -7,6 +7,7 @@
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Outfit:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
     <style>
         :root {
             --primary-red: #B3241B;
@@ -114,19 +115,18 @@
         .rm-card {
             background-color: #F38A84;
             padding: 25px 40px;
-            border-radius: 8px;
+            border-radius: 12px;
             color: white;
             box-shadow: 0 10px 4px rgba(0,0,0,0.15);
-            max-width: 600px;
         }
         .rm-card h2 {
-            font-size: 28px;
+            font-size: 32px;
             font-weight: 700;
             margin-bottom: 5px;
             letter-spacing: 1px;
         }
         .rm-card p {
-            font-size: 14px;
+            font-size: 16px;
             font-style: italic;
             font-family: 'Courier Prime', monospace;
         }
@@ -231,6 +231,11 @@
             height: 300px;
             width: 100%;
         }
+        
+        /* Hide CanvasJS watermark credits */
+        .canvasjs-chart-credit {
+            display: none !important;
+        }
 
     </style>
 </head>
@@ -307,7 +312,7 @@
                         </select>
                     </div>
                     <div class="canvas-container">
-                        <canvas id="pieChart"></canvas>
+                        <div id="pieChartContainer" style="height: 100%; width: 100%;"></div>
                     </div>
                 </div>
             </div>
@@ -348,8 +353,8 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 animation: {
-                    duration: 1500,
-                    easing: 'easeOutQuart'
+                    duration: 2500,
+                    easing: 'easeInOutCubic'
                 },
                 scales: {
                     x: {
@@ -398,35 +403,29 @@
                 options: commonOptions
             });
 
-            // Chart 2 (Pie)
-            new Chart(document.getElementById('pieChart'), {
-                type: 'polarArea',
-                data: {
-                    labels: ['SE', 'QA', 'DevOps', 'UI/UX', 'PM', 'Data'],
-                    datasets: [{
-                        data: generatePieData(),
-                        backgroundColor: [
-                            'rgba(163, 72, 107, 0.8)',
-                            'rgba(96, 220, 182, 0.8)',
-                            'rgba(141, 122, 240, 0.8)',
-                            'rgba(57, 200, 206, 0.8)',
-                            'rgba(29, 191, 56, 0.8)',
-                            'rgba(243, 138, 132, 0.8)'
-                        ],
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: {
-                        duration: 1500,
-                        easing: 'easeOutQuart'
-                    },
-                    plugins: {
-                        legend: { display: false }
-                    }
-                }
+            // Chart 2 (Pie) using CanvasJS
+            var pieChart = new CanvasJS.Chart("pieChartContainer", {
+                theme: "light2",
+                animationEnabled: true,
+                animationDuration: 2000,
+                data: [{
+                    type: "pie",
+                    startAngle: 25,
+                    toolTipContent: "<b>{label}</b>: {y}%",
+                    showInLegend: false,
+                    indexLabelFontSize: 12,
+                    indexLabel: "{label} - {y}%",
+                    dataPoints: [
+                        { y: 35, label: "SE", color: "rgba(163, 72, 107, 0.8)" },
+                        { y: 20, label: "QA", color: "rgba(96, 220, 182, 0.8)" },
+                        { y: 15, label: "DevOps", color: "rgba(141, 122, 240, 0.8)" },
+                        { y: 12, label: "UI/UX", color: "rgba(57, 200, 206, 0.8)" },
+                        { y: 10, label: "PM", color: "rgba(29, 191, 56, 0.8)" },
+                        { y: 8, label: "Data", color: "rgba(243, 138, 132, 0.8)" }
+                    ]
+                }]
             });
+            pieChart.render();
 
             // Chart 3
             new Chart(document.getElementById('lineChartHalf1'), {
