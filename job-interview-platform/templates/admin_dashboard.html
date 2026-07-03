@@ -114,6 +114,7 @@
             font-weight: 600;
             font-size: 16px;
             cursor: pointer;
+            transition: all 0.3s ease;
         }
         .top-tabs .tab.active {
             background-color: white;
@@ -435,6 +436,7 @@
             font-weight: 700;
             background-color: #762621;
             font-family: 'Courier Prime', monospace;
+            transition: all 0.3s ease;
         }
         .va-filter.active {
             background-color: #FFFFFF;
@@ -454,6 +456,11 @@
             color: var(--text-red);
             font-weight: 700;
             font-size: 18px;
+            transition: all 0.3s ease;
+        }
+        .va-list-item.rejected {
+            background-color: #D9D9D9;
+            color: var(--text-red);
         }
         .va-list-item:last-child {
             border-bottom: none;
@@ -574,9 +581,9 @@
             <div class="va-list-header">
                 <div class="va-list-title">Applicant List</div>
                 <div class="va-filters">
-                    <div class="va-filter active">Pending</div>
-                    <div class="va-filter">Accepted</div>
-                    <div class="va-filter">Rejected</div>
+                    <div class="va-filter active" id="va-filter-pending" onclick="switchFilter('pending')">Pending</div>
+                    <div class="va-filter" id="va-filter-accepted" onclick="switchFilter('accepted')">Accepted</div>
+                    <div class="va-filter" id="va-filter-rejected" onclick="switchFilter('rejected')">Rejected</div>
                 </div>
             </div>
             <div class="va-list">
@@ -608,6 +615,27 @@
                 monitoringContent.style.display = 'none';
                 applicantsContent.style.display = 'block';
             }
+        }
+
+        function switchFilter(status) {
+            const filters = ['pending', 'accepted', 'rejected'];
+            filters.forEach(f => {
+                const el = document.getElementById('va-filter-' + f);
+                if (f === status) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            });
+
+            const listItems = document.querySelectorAll('.va-list-item');
+            listItems.forEach(item => {
+                if (status === 'rejected') {
+                    item.classList.add('rejected');
+                } else {
+                    item.classList.remove('rejected');
+                }
+            });
         }
 
         document.addEventListener('DOMContentLoaded', () => {
