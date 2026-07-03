@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
+    <style>
+        :root {
+            --primary-red: #B3241B;
+            --sidebar-active: #FDE8E8;
+            --text-red: #B3241B;
+            --text-green: #00B050;
+            --bg-gray: #DCDCDC;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--primary-red);
+            color: white;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        h1, h2, h3, h4, .count, .rm-card h2, .chart-header h3 {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            background-color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: var(--text-red);
+            flex-shrink: 0;
+        }
+
+        .logo-area {
+            padding: 30px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: 700;
+            font-size: 13px;
+            line-height: 1.2;
+            margin-bottom: 20px;
+            color: black;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .logo-icon {
+            background-color: var(--text-red);
+            color: white;
+            padding: 10px 15px;
+            font-size: 40px;
+            font-weight: 700;
+            letter-spacing: -3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .logo-icon::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            right: -15px;
+            width: 25px;
+            height: 25px;
+            background-color: white;
+        }
+
+        .nav-links { list-style: none; flex-grow: 1; margin-top: 20px; }
+        .nav-links li { margin-bottom: 15px; }
+        .nav-links a {
+            color: var(--text-red);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 30px;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        .nav-links a.active {
+            background-color: var(--sidebar-active);
+        }
+        .nav-links a i {
+            font-size: 24px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            width: calc(100% - 320px);
+        }
+
+        /* Top Header Area */
+        .top-header-area {
+            padding: 40px 40px 20px 40px;
+            border-bottom: 2px solid white;
+        }
+        .rm-card {
+            background-color: #F38A84;
+            padding: 25px 40px;
+            border-radius: 12px;
+            color: white;
+            box-shadow: 0 10px 4px rgba(0,0,0,0.15);
+        }
+        .rm-card h2 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+        .rm-card p {
+            font-size: 16px;
+            font-style: italic;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .dashboard-content {
+            padding: 40px;
+            width: 100%;
+        }
+
+        /* Stats Row */
+        .stats-row {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        .stat-card {
+            flex: 1;
+            display: flex;
+            background-color: white;
+            border-radius: 0;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .stat-icon {
+            width: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .stat-icon img {
+            width: 45px;
+            height: auto;
+        }
+        .stat-info {
+            padding: 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .stat-info h4 {
+            color: var(--text-red);
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        .stat-info h2 {
+            color: var(--text-red);
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Charts Layout */
+        .charts-row-1 {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        .chart-box {
+            background-color: white;
+            border-radius: 4px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .chart-main {
+            flex: 2;
+        }
+        .chart-side {
+            flex: 1;
+        }
+        .charts-row-2 {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        .chart-half {
+            flex: 1;
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .chart-header h3 {
+            color: var(--text-red);
+            font-size: 16px;
+            font-weight: 700;
+        }
+        .chart-header select {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 5px 10px;
+            font-family: 'Poppins', sans-serif;
+            color: #333;
+            outline: none;
+        }
+        .canvas-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        
+        /* Hide CanvasJS watermark credits */
+        .canvasjs-chart-credit {
+            display: none !important;
+        }
+
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="logo-area">
+            <div class="logo-icon">H2</div>
+            <div>SOFTWARE<br>CONSULTING<br>SERVICES<br>INC.</div>
+        </div>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('admin.dashboard') }}"><i class='bx bxs-grid-alt'></i> Dashboard</a></li>
+            <li><a href="{{ url_for('admin.recruitment') }}"><i class='bx bx-user-pin'></i> Recruitment</a></li>
+            <li><a href="{{ url_for('admin.analytics') }}" class="active"><i class='bx bx-line-chart'></i> Analytics</a></li>
+            <li><a href="#"><i class='bx bx-cog'></i> Settings</a></li>
+            <li><a href="#"><i class='bx bx-user-circle'></i> Profile</a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <div class="top-header-area">
+            <div class="rm-card">
+                <h2>H2 - Analytics</h2>
+                <p>Track the performance of all applicants over time.</p>
+            </div>
+        </div>
+
+        <div class="dashboard-content">
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background-color: #8D7AF0;"><img src="{{ url_for('static', filename='active-jobs_icon.png') }}" alt="Active Jobs"></div>
+                    <div class="stat-info">
+                        <h4>Active Jobs</h4>
+                        <h2>6,000</h2>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background-color: #39C8CE;"><img src="{{ url_for('static', filename='applicants_icon.png') }}" alt="Applicants"></div>
+                    <div class="stat-info">
+                        <h4>Applicants</h4>
+                        <h2>10,000</h2>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background-color: #1DBF38;"><img src="{{ url_for('static', filename='hired_icon.png') }}" alt="Hired"></div>
+                    <div class="stat-info">
+                        <h4>Hired</h4>
+                        <h2>2,000</h2>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 1 -->
+            <div class="charts-row-1">
+                <div class="chart-box chart-main">
+                    <div class="chart-header">
+                        <h3>Total Number of Applicants: 5,000</h3>
+                        <select>
+                            <option>2026</option>
+                            <option>2025</option>
+                            <option>2024</option>
+                        </select>
+                    </div>
+                    <div class="canvas-container">
+                        <div id="lineChartMainContainer" style="height: 100%; width: 100%;"></div>
+                    </div>
+                </div>
+                <div class="chart-box chart-side">
+                    <div class="chart-header">
+                        <h3>Applicants</h3>
+                        <select>
+                            <option>2026</option>
+                            <option>2025</option>
+                        </select>
+                    </div>
+                    <div class="canvas-container">
+                        <div id="pieChartContainer" style="height: 100%; width: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2 -->
+            <div class="charts-row-2">
+                <div class="chart-box chart-half">
+                    <div class="chart-header">
+                        <h3>Total Number of Applicants: 5,000</h3>
+                        <select>
+                            <option>2026</option>
+                            <option>2025</option>
+                        </select>
+                    </div>
+                    <div class="canvas-container">
+                        <div id="lineChartHalf1Container" style="height: 100%; width: 100%;"></div>
+                    </div>
+                </div>
+                <div class="chart-box chart-half">
+                    <div class="chart-header">
+                        <h3>Total Number of Applicants: 5,000</h3>
+                        <select>
+                            <option>2026</option>
+                            <option>2025</option>
+                        </select>
+                    </div>
+                    <div class="canvas-container">
+                        <div id="lineChartHalf2Container" style="height: 100%; width: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const generateCanvasData = () => {
+                return [1,2,3,4,5,6,7,8,9,10,11,12].map(m => ({
+                    label: String(m),
+                    y: Math.floor(Math.random() * 1000)
+                }));
+            };
+
+            function createSplineChart(containerId) {
+                var chart = new CanvasJS.Chart(containerId, {
+                    animationEnabled: true,
+                    theme: "light2",
+                    axisX: { title: "Months" },
+                    axisY: { title: "Count" },
+                    toolTip: { shared: true },
+                    legend: {
+                        cursor: "pointer",
+                        itemclick: function(e) {
+                            if (typeof(e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+                                e.dataSeries.visible = false;
+                            } else {
+                                e.dataSeries.visible = true;
+                            }
+                            e.chart.render();
+                        }
+                    },
+                    data: [
+                        {
+                            name: "Applicants",
+                            type: "spline",
+                            showInLegend: true,
+                            color: "#a3486b",
+                            dataPoints: generateCanvasData()
+                        },
+                        {
+                            name: "Hired",
+                            type: "spline",
+                            showInLegend: true,
+                            color: "#60dcb6",
+                            dataPoints: generateCanvasData()
+                        }
+                    ]
+                });
+                chart.render();
+            }
+
+            // Render Spline Line Charts
+            createSplineChart("lineChartMainContainer");
+            createSplineChart("lineChartHalf1Container");
+            createSplineChart("lineChartHalf2Container");
+
+            // Chart 2 (Pie) using CanvasJS
+            const generatePieData = () => Array.from({length: 6}, () => Math.floor(Math.random() * 500) + 100);
+            var pieChart = new CanvasJS.Chart("pieChartContainer", {
+                theme: "light2",
+                animationEnabled: true,
+                animationDuration: 2000,
+                data: [{
+                    type: "pie",
+                    startAngle: 25,
+                    toolTipContent: "<b>{label}</b>: {y}%",
+                    showInLegend: false,
+                    indexLabelFontSize: 12,
+                    indexLabel: "{label} - {y}%",
+                    dataPoints: [
+                        { y: 35, label: "SE", color: "rgba(163, 72, 107, 0.8)" },
+                        { y: 20, label: "QA", color: "rgba(96, 220, 182, 0.8)" },
+                        { y: 15, label: "DevOps", color: "rgba(141, 122, 240, 0.8)" },
+                        { y: 12, label: "UI/UX", color: "rgba(57, 200, 206, 0.8)" },
+                        { y: 10, label: "PM", color: "rgba(29, 191, 56, 0.8)" },
+                        { y: 8, label: "Data", color: "rgba(243, 138, 132, 0.8)" }
+                    ]
+                }]
+            });
+            pieChart.render();
+        });
+    </script>
+</body>
+</html>
