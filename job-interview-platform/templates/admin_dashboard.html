@@ -8,9 +8,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Outfit:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-red: #B92E20; /* deep red background */
+            --primary-red: #B3241B; /* deep red background */
             --sidebar-active: #FDE8E8;
-            --text-red: #B92E20;
+            --text-red: #B3241B;
             --text-green: #00B050;
             --bg-gray: #DCDCDC;
         }
@@ -32,7 +32,7 @@
 
         /* Sidebar */
         .sidebar {
-            width: 280px;
+            width: 320px;
             background-color: white;
             height: 100vh;
             display: flex;
@@ -101,7 +101,7 @@
             display: flex;
             flex-direction: column;
             overflow-y: auto;
-            width: calc(100% - 280px);
+            width: calc(100% - 320px);
         }
 
         .top-tabs {
@@ -114,14 +114,15 @@
             font-weight: 600;
             font-size: 16px;
             cursor: pointer;
+            transition: all 0.3s ease;
         }
         .top-tabs .tab.active {
-            background-color: transparent;
-            color: white;
-        }
-        .top-tabs .tab.inactive {
             background-color: white;
             color: var(--text-red);
+        }
+        .top-tabs .tab.inactive {
+            background-color: transparent;
+            color: white;
         }
 
         .dashboard-content {
@@ -142,7 +143,7 @@
             border-radius: 12px;
             padding: 30px;
             color: var(--text-red);
-            box-shadow: 2px 4px 10px rgba(0,0,0,0.15);
+            box-shadow: 0 10px 4px rgba(0,0,0,0.15);
         }
 
         .applicants-card {
@@ -345,6 +346,143 @@
         .dot.active {
             background-color: white;
         }
+
+        /* View Applicants Layout */
+        #view-applicants-content {
+            display: none;
+            padding: 40px;
+            width: 100%;
+            font-family: 'Courier Prime', monospace;
+        }
+        .va-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        .va-search {
+            display: flex;
+            align-items: center;
+            background-color: white;
+            border-radius: 8px;
+            padding: 10px 15px;
+            width: 350px;
+        }
+        .va-search input {
+            border: none;
+            outline: none;
+            flex-grow: 1;
+            font-family: 'Courier Prime', monospace;
+            font-size: 14px;
+            color: #333;
+        }
+        .va-search i {
+            color: #7f7f7f;
+            font-size: 18px;
+        }
+        .va-sort {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .va-sort-btn {
+            background-color: #f0a8a8;
+            color: var(--text-red);
+            border: none;
+            padding: 6px 20px;
+            border-radius: 4px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: 'Courier Prime', monospace;
+        }
+        .va-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .va-list-title {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+            flex-grow: 1;
+        }
+        .va-list-title::after {
+            content: '';
+            display: block;
+            height: 2px;
+            flex-grow: 1;
+            background-color: white;
+            margin-right: 30px;
+        }
+        .va-filters {
+            display: flex;
+            border: none;
+            border-radius: 4px;
+            overflow: hidden;
+            font-size: 14px;
+            box-shadow: 0 8px 4px rgba(0,0,0,0.15);
+        }
+        .va-filter {
+            padding: 8px 20px;
+            color: #FFFFFF;
+            cursor: pointer;
+            font-weight: 700;
+            background-color: #762621;
+            font-family: 'Courier Prime', monospace;
+            transition: all 0.3s ease;
+        }
+        .va-filter.active {
+            background-color: #FFFFFF;
+            color: #FF4135;
+        }
+        .va-list {
+            display: flex;
+            flex-direction: column;
+            background-color: white;
+        }
+        .va-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 30px;
+            border-bottom: 1px solid #e7e6e6;
+            color: var(--text-red);
+            font-weight: 700;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+        .va-list-item.rejected {
+            background-color: #D9D9D9;
+            color: var(--text-red);
+        }
+        .va-list-item:last-child {
+            border-bottom: none;
+        }
+        .va-list-item-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .va-list-item-right i {
+            background-color: var(--text-red);
+            color: white;
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
@@ -364,11 +502,11 @@
 
     <main class="main-content">
         <div class="top-tabs">
-            <div class="tab active">Applicant Monitoring</div>
-            <div class="tab inactive">View Applicants</div>
+            <div class="tab active" id="tab-monitoring" onclick="switchTab('monitoring')">Applicant Monitoring</div>
+            <div class="tab inactive" id="tab-applicants" onclick="switchTab('applicants')">View Applicants</div>
         </div>
 
-        <div class="dashboard-content">
+        <div class="dashboard-content" id="monitoring-content">
             <div class="top-stats-row">
                 <div class="card applicants-card">
                     <h3>Applicants</h3>
@@ -428,8 +566,78 @@
                 <div class="dot"></div>
             </div>
         </div>
+
+        <div id="view-applicants-content">
+            <div class="va-header">
+                <div class="va-search">
+                    <input type="text" placeholder="Job applications and more">
+                    <i class='bx bx-search'></i>
+                </div>
+                <div class="va-sort">
+                    <i class='bx bx-slider-alt'></i>
+                    <button class="va-sort-btn">Sort By</button>
+                </div>
+            </div>
+            <div class="va-list-header">
+                <div class="va-list-title">Applicant List</div>
+                <div class="va-filters">
+                    <div class="va-filter active" id="va-filter-pending" onclick="switchFilter('pending')">Pending</div>
+                    <div class="va-filter" id="va-filter-accepted" onclick="switchFilter('accepted')">Accepted</div>
+                    <div class="va-filter" id="va-filter-rejected" onclick="switchFilter('rejected')">Rejected</div>
+                </div>
+            </div>
+            <div class="va-list">
+                <div class="va-list-item"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
+                <div class="va-list-item"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
+                <div class="va-list-item"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
+                <div class="va-list-item"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
+                <div class="va-list-item"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
+                <div class="va-list-item"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
+                <div class="va-list-item"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
+            </div>
+        </div>
     </main>
     <script>
+        function switchTab(tab) {
+            const monitoringTab = document.getElementById('tab-monitoring');
+            const applicantsTab = document.getElementById('tab-applicants');
+            const monitoringContent = document.getElementById('monitoring-content');
+            const applicantsContent = document.getElementById('view-applicants-content');
+            
+            if (tab === 'monitoring') {
+                monitoringTab.className = 'tab active';
+                applicantsTab.className = 'tab inactive';
+                monitoringContent.style.display = 'block';
+                applicantsContent.style.display = 'none';
+            } else {
+                monitoringTab.className = 'tab inactive';
+                applicantsTab.className = 'tab active';
+                monitoringContent.style.display = 'none';
+                applicantsContent.style.display = 'block';
+            }
+        }
+
+        function switchFilter(status) {
+            const filters = ['pending', 'accepted', 'rejected'];
+            filters.forEach(f => {
+                const el = document.getElementById('va-filter-' + f);
+                if (f === status) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            });
+
+            const listItems = document.querySelectorAll('.va-list-item');
+            listItems.forEach(item => {
+                if (status === 'rejected') {
+                    item.classList.add('rejected');
+                } else {
+                    item.classList.remove('rejected');
+                }
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             const dateElement = document.getElementById('dynamic-date');
             const today = new Date();
