@@ -300,7 +300,7 @@
                         </select>
                     </div>
                     <div class="canvas-container">
-                        <canvas id="lineChartMain"></canvas>
+                        <div id="lineChartMainContainer" style="height: 100%; width: 100%;"></div>
                     </div>
                 </div>
                 <div class="chart-box chart-side">
@@ -328,7 +328,7 @@
                         </select>
                     </div>
                     <div class="canvas-container">
-                        <canvas id="lineChartHalf1"></canvas>
+                        <div id="lineChartHalf1Container" style="height: 100%; width: 100%;"></div>
                     </div>
                 </div>
                 <div class="chart-box chart-half">
@@ -340,7 +340,7 @@
                         </select>
                     </div>
                     <div class="canvas-container">
-                        <canvas id="lineChartHalf2"></canvas>
+                        <div id="lineChartHalf2Container" style="height: 100%; width: 100%;"></div>
                     </div>
                 </div>
             </div>
@@ -349,61 +349,58 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const commonOptions = {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: {
-                    duration: 2500,
-                    easing: 'easeInOutCubic'
-                },
-                scales: {
-                    x: {
-                        title: { display: true, text: 'Months' },
-                        grid: { color: '#f0f0f0' }
-                    },
-                    y: {
-                        title: { display: true, text: 'Count' },
-                        grid: { color: '#f0f0f0' },
-                        beginAtZero: true
-                    }
-                },
-                plugins: {
-                    legend: { display: false }
-                }
+            const generateCanvasData = () => {
+                return [1,2,3,4,5,6,7,8,9,10,11,12].map(m => ({
+                    label: String(m),
+                    y: Math.floor(Math.random() * 1000)
+                }));
             };
 
-            const labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
-            
-            // Random data generators
-            const generateData = () => Array.from({length: 12}, () => Math.floor(Math.random() * 1000));
-            const generatePieData = () => Array.from({length: 6}, () => Math.floor(Math.random() * 500) + 100);
-
-            // Chart 1
-            new Chart(document.getElementById('lineChartMain'), {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
+            function createSplineChart(containerId) {
+                var chart = new CanvasJS.Chart(containerId, {
+                    animationEnabled: true,
+                    theme: "light2",
+                    axisX: { title: "Months" },
+                    axisY: { title: "Count" },
+                    toolTip: { shared: true },
+                    legend: {
+                        cursor: "pointer",
+                        itemclick: function(e) {
+                            if (typeof(e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+                                e.dataSeries.visible = false;
+                            } else {
+                                e.dataSeries.visible = true;
+                            }
+                            e.chart.render();
+                        }
+                    },
+                    data: [
                         {
-                            label: 'Applicants',
-                            data: generateData(),
-                            borderColor: '#a3486b',
-                            backgroundColor: 'transparent',
-                            tension: 0.4
+                            name: "Applicants",
+                            type: "spline",
+                            showInLegend: true,
+                            color: "#a3486b",
+                            dataPoints: generateCanvasData()
                         },
                         {
-                            label: 'Hired',
-                            data: generateData(),
-                            borderColor: '#60dcb6',
-                            backgroundColor: 'transparent',
-                            tension: 0.4
+                            name: "Hired",
+                            type: "spline",
+                            showInLegend: true,
+                            color: "#60dcb6",
+                            dataPoints: generateCanvasData()
                         }
                     ]
-                },
-                options: commonOptions
-            });
+                });
+                chart.render();
+            }
+
+            // Render Spline Line Charts
+            createSplineChart("lineChartMainContainer");
+            createSplineChart("lineChartHalf1Container");
+            createSplineChart("lineChartHalf2Container");
 
             // Chart 2 (Pie) using CanvasJS
+            const generatePieData = () => Array.from({length: 6}, () => Math.floor(Math.random() * 500) + 100);
             var pieChart = new CanvasJS.Chart("pieChartContainer", {
                 theme: "light2",
                 animationEnabled: true,
@@ -426,48 +423,6 @@
                 }]
             });
             pieChart.render();
-
-            // Chart 3
-            new Chart(document.getElementById('lineChartHalf1'), {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            data: generateData(),
-                            borderColor: '#a3486b',
-                            tension: 0.4
-                        },
-                        {
-                            data: generateData(),
-                            borderColor: '#60dcb6',
-                            tension: 0.4
-                        }
-                    ]
-                },
-                options: commonOptions
-            });
-
-            // Chart 4
-            new Chart(document.getElementById('lineChartHalf2'), {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            data: generateData(),
-                            borderColor: '#a3486b',
-                            tension: 0.4
-                        },
-                        {
-                            data: generateData(),
-                            borderColor: '#60dcb6',
-                            tension: 0.4
-                        }
-                    ]
-                },
-                options: commonOptions
-            });
         });
     </script>
 </body>
