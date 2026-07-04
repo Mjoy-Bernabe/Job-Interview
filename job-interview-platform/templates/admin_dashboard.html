@@ -842,8 +842,8 @@
             </div>
         </div>
 
-                <!-- Applicant Modal -->
-        <div id="applicantModal" class="modal-overlay" style="display: none;">
+                <!-- Applicant Modals -->
+<div id="applicantModalPending" class="modal-overlay" style="display: none;">
             <div class="modal-content">
                 <button class="close-btn" onclick="closeModal()">
                     <img src="{{ url_for('static', filename='Close Window.svg') }}" alt="Close">
@@ -897,15 +897,104 @@
                 </div>
             </div>
         </div>
+<div id="applicantModalAccepted" class="modal-overlay" style="display: none;">
+            <div class="modal-content">
+                <button class="close-btn" onclick="closeModal()">
+                    <img src="{{ url_for('static', filename='Close Window.svg') }}" alt="Close">
+                </button>
+                
+                <h1 class="modal-title">Maryjoy Bernabe</h1>
+                <h3 class="modal-subtitle">Applying as: Software Engineer</h3>
+
+                <div class="modal-cards-row">
+                    <div class="left-col-wrapper">
+                        <div class="modal-card">
+                            <div class="modal-card-title">Pre-screening Outcome</div>
+                            <div class="modal-card-status eligible">ELIGIBLE</div>
+                            <div class="modal-card-desc">
+                                <strong>Experience:</strong> 4 yrs<br>
+                                <strong>Skills:</strong> Javascript, Laravel, Python, SQL
+                            </div>
+                        </div>
+                        <button class="btn-resume">
+                            View Resume <img src="{{ url_for('static', filename='Resume.svg') }}" alt="Resume">
+                        </button>
+                    </div>
+                    
+                    <div class="modal-card">
+                        <div class="modal-card-title">ANN Interview Evaluation</div>
+                        <div class="modal-card-status qualified">QUALIFIED</div>
+                        <div class="modal-card-desc">
+                            <strong>Average Score:</strong> 78% confidence level
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bottom-row-wrapper">
+                    <div class="qa-section">
+                        <h2 class="qa-title">Detailed Interview Q&A</h2>
+                        <div class="qa-content">
+                            <strong>Q1: Tell me about yourself.</strong><br>
+                            <em>"Good day! My name is Mary Joy Bernabe. I am a computer science student who is passionate about technology, problem-solving, and software development. I have experience creating web and mobile applications using different programming languages and tools such as Python, Flask, PHP, MySQL, HTML, CSS, and JavaScript. I am hardworking, willing to learn, and can adapt quickly to new environments. I also enjoy working with a team and improving my skills through projects and research. One of the projects I worked on is a job interview platform simulation that uses artificial intelligence concepts for applicant evaluation. I am seeking an opportunity where I can apply my knowledge, gain professional experience, and continue growing in the field of technology."</em><br>
+                            <span class="recorded-text">Recorded</span>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button class="btn-action reject" style="cursor: default; pointer-events: none; width: 200px; background-color: #825F5C; display: flex; justify-content: center;">
+                            Accepted
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="applicantModalRejected" class="modal-overlay" style="display: none;">
+            <div class="modal-content" style="width: 700px; height: auto; max-height: 95vh; padding: 50px; align-items: center; text-align: center; overflow-y: auto;">
+                <button class="close-btn" onclick="closeModal()">
+                    <img src="{{ url_for('static', filename='Close Window.svg') }}" alt="Close">
+                </button>
+                
+                <h2 style="color: #B3241B; font-family: 'Poppins', sans-serif; font-size: 36px; font-weight: 600; margin-bottom: 25px;">Rejection of Applicant</h2>
+                
+                <p style="font-family: 'Poppins', sans-serif; font-size: 22px; font-weight: 400; margin-bottom: 10px;">Confirmation of rejecting<br>the applicant</p>
+                <p style="font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 300; font-style: italic; margin-bottom: 40px;">*This action is irreversible</p>
+
+                <div style="background: #FFFFFF; border: 5px solid #000000; border-radius: 12px; padding: 30px; width: 100%; max-width: 500px; margin-bottom: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <h1 style="font-family: 'Poppins', sans-serif; font-size: 32px; font-weight: 700; margin-bottom: 10px;">Maryjoy Bernabe</h1>
+                    <h3 style="font-family: 'Poppins', sans-serif; font-size: 18px; color: #B3241B; font-weight: 600;">Applying as: Software Engineer</h3>
+                </div>
+
+                <div style="display: flex; gap: 40px; justify-content: center;">
+                    <button class="btn-action accept" style="width: 200px; justify-content: center;">
+                        Reject <img src="{{ url_for('static', filename='Refuse.svg') }}" alt="Reject">
+                    </button>
+                    <button class="btn-action reject" style="width: 200px; justify-content: center;" onclick="closeModal()">
+                        Cancel <img src="{{ url_for('static', filename='Cancel.svg') }}" alt="Cancel">
+                    </button>
+                </div>
+            </div>
+        </div>
+
     </main>
 
     <script>
 
+        let currentFilterStatus = 'pending';
+
         function openModal() {
-            document.getElementById('applicantModal').style.display = 'flex';
+            if (currentFilterStatus === 'pending') {
+                document.getElementById('applicantModalPending').style.display = 'flex';
+            } else if (currentFilterStatus === 'accepted') {
+                document.getElementById('applicantModalAccepted').style.display = 'flex';
+            } else if (currentFilterStatus === 'rejected') {
+                document.getElementById('applicantModalRejected').style.display = 'flex';
+            }
         }
         function closeModal() {
-            document.getElementById('applicantModal').style.display = 'none';
+            document.getElementById('applicantModalPending').style.display = 'none';
+            document.getElementById('applicantModalAccepted').style.display = 'none';
+            document.getElementById('applicantModalRejected').style.display = 'none';
         }
 
         function switchTab(tab) {
@@ -929,6 +1018,7 @@
         }
 
         function switchFilter(status) {
+            currentFilterStatus = status;
             const filters = ['pending', 'accepted', 'rejected'];
             filters.forEach(f => {
                 const el = document.getElementById('va-filter-' + f);
