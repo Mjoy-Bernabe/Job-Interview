@@ -6,6 +6,7 @@
     <title>Dashboard</title>
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
     <style>
         :root {
             --primary-red: #B3241B; /* deep red background */
@@ -153,9 +154,15 @@
             flex-direction: column;
             justify-content: center;
         }
+        .applicants-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
         .applicants-card h3 {
             font-size: 24px;
-            margin-bottom: 15px;
+            margin-bottom: 0;
         }
         .applicants-card .count {
             font-size: 56px;
@@ -163,18 +170,13 @@
             line-height: 1;
         }
         .applicants-card .arrow-icon {
-            position: absolute;
-            top: 30px;
-            right: 30px;
-            background-color: var(--text-red);
-            color: white;
-            border-radius: 50%;
-            width: 32px;
-            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+        }
+        .applicants-card .arrow-icon img {
+            width: 50px;
+            height: 50px;
         }
 
         .date-stats {
@@ -296,10 +298,20 @@
             padding-top: 25px;
         }
 
+        .insights-slider-container {
+            width: 100%;
+            overflow: hidden;
+        }
+        .insights-slider-wrapper {
+            display: flex;
+            width: 400%; /* 4 slides */
+            transition: transform 0.5s ease-in-out;
+        }
         .insights-row {
             display: flex;
             gap: 30px;
-            width: 100%;
+            width: 25%; /* 100% / 4 */
+            flex-shrink: 0;
         }
         .insight-card {
             flex: 1;
@@ -483,20 +495,201 @@
             justify-content: center;
             font-size: 16px;
         }
+
+        /* Hide CanvasJS watermark credits */
+        .canvasjs-chart-credit {
+            display: none !important;
+        }
+
+                /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #f4f4f4;
+            width: 900px; /* Scaled down from 1266 */
+            max-width: 95vw;
+            height: 850px; /* Scaled down from 1171 */
+            max-height: 95vh;
+            border-radius: 12px;
+            position: relative;
+            padding: 40px;
+            overflow-y: hidden; /* No scrollbar */
+            color: black;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+        }
+        .close-btn {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        .close-btn img {
+            width: 32px;
+            height: 32px;
+        }
+        .modal-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        .modal-subtitle {
+            font-family: 'Poppins', sans-serif;
+            font-size: 20px;
+            color: #B3241B;
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+        .modal-cards-row {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start; /* Ensure cards align top */
+            margin-bottom: 30px;
+        }
+        .modal-card {
+            background: white;
+            border-radius: 12px;
+            /* Figma: 532x331 -> scaled down ~ 370x230 */
+            width: 370px;
+            height: 230px;
+            padding: 30px 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-card-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 25px;
+        }
+        .modal-card-status {
+            font-family: 'Poppins', sans-serif;
+            font-size: 30px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 25px;
+        }
+        .modal-card-status.eligible { color: #1256D4; }
+        .modal-card-status.qualified { color: #08C425; }
+        .modal-card-desc {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .left-col-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 370px;
+        }
+        .btn-resume {
+            background-color: #B3241B;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 15px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 8px 4px rgba(0,0,0,0.15);
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn-resume img { width: 24px; height: 24px; }
+        
+        .bottom-row-wrapper {
+            display: flex;
+            gap: 20px;
+            align-items: flex-end;
+            margin-top: auto;
+        }
+        
+        .qa-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            flex: 1;
+        }
+        .qa-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 20px;
+            color: #B3241B;
+            font-weight: 600;
+        }
+        .qa-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.5;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .recorded-text {
+            color: #B3241B;
+            font-size: 12px;
+            font-weight: 700;
+            display: block;
+            margin-top: 15px;
+        }
+        
+        .modal-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            /* Figma: 278x58 -> scaled down width ~200px */
+            width: 200px;
+        }
+        .btn-action {
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 20px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            box-shadow: 0 8px 4px rgba(0,0,0,0.15);
+            cursor: pointer;
+            width: 100%;
+            height: 48px; /* Scaled from 58 */
+        }
+        .btn-action.accept { background-color: #B3241B; }
+        .btn-action.reject { background-color: #825F5C; }
+        .btn-action img { width: 24px; height: 24px; }
     </style>
+</style>
+
 </head>
 <body>
     <aside class="sidebar">
-        <div class="logo-area">
-            <div class="logo-icon">H2</div>
-            <div>SOFTWARE<br>CONSULTING<br>SERVICES<br>INC.</div>
+                <div class="logo-area" style="padding: 0; text-align: center;">
+            <img src="{{ url_for('static', filename='logo.svg') }}" alt="H2 Logo" style="width: 100%; display: block; margin: 0 auto;">
+            <div style="font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; color: #B3241B; letter-spacing: 4px; text-transform: uppercase; margin-top: 5px; margin-bottom: 25px;">Administration</div>
         </div>
         <ul class="nav-links">
-            <li><a href="{{ url_for('admin.dashboard') }}" class="active"><i class='bx bxs-grid-alt'></i> Dashboard</a></li>
-            <li><a href="{{ url_for('admin.recruitment') }}"><i class='bx bx-user-pin'></i> Recruitment</a></li>
-            <li><a href="{{ url_for('admin.analytics') }}"><i class='bx bx-line-chart'></i> Analytics</a></li>
-            <li><a href="#"><i class='bx bx-cog'></i> Settings</a></li>
-            <li><a href="#"><i class='bx bx-user-circle'></i> Profile</a></li>
+            <li><a href="{{ url_for('admin.dashboard') }}" class="active"><img src="{{ url_for('static', filename='Dashboard Layout.svg') }}" alt="Dashboard" style="width: 2em; height: 2em;"> Dashboard</a></li>
+            <li><a href="{{ url_for('admin.recruitment') }}"><img src="{{ url_for('static', filename='Client Management.svg') }}" alt="Recruitment" style="width: 2em; height: 2em;"> Recruitment</a></li>
+            <li><a href="{{ url_for('admin.analytics') }}"><img src="{{ url_for('static', filename='Graph.svg') }}" alt="Analytics" style="width: 2em; height: 2em;"> Analytics</a></li>
+            <li><a href="#"><img src="{{ url_for('static', filename='Automation.svg') }}" alt="Settings" style="width: 2em; height: 2em;"> Settings</a></li>
+            <li><a href="#"><img src="{{ url_for('static', filename='Profile.svg') }}" alt="Profile" style="width: 2em; height: 2em;"> Profile</a></li>
         </ul>
     </aside>
 
@@ -509,8 +702,12 @@
         <div class="dashboard-content" id="monitoring-content">
             <div class="top-stats-row">
                 <div class="card applicants-card">
-                    <h3>Applicants</h3>
-                    <div class="arrow-icon"><i class='bx bx-up-arrow-alt'></i></div>
+                    <div class="applicants-header">
+                        <h3>Applicants</h3>
+                        <div class="arrow-icon">
+                            <img src="{{ url_for('static', filename='Circled Up Right.svg') }}" alt="Up Right Arrow">
+                        </div>
+                    </div>
                     <div class="count">{{ total_applicants | default('22,026') }}</div>
                 </div>
 
@@ -536,34 +733,82 @@
                 <h3>Applicant Distribution<br>per Job Position</h3>
                 <hr>
                 <div class="bar-chart">
-                    <div class="bar bar-1"></div>
-                    <div class="bar bar-2"></div>
-                    <div class="bar bar-3"></div>
+                    <div id="barChartContainer" style="height: 300px; width: 100%;"></div>
                 </div>
             </div>
 
             <div class="more-insights-title">More Insights...</div>
             
-            <div class="insights-row">
-                <div class="card insight-card">
-                    <h4>Avg Interview<br>Score</h4>
-                    <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
-                </div>
-                <div class="card insight-card">
-                    <h4>Recruitment<br>Process</h4>
-                    <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
-                </div>
-                <div class="card insight-card">
-                    <h4>Applicants</h4>
-                    <h2>22,0...</h2>
+            <div class="insights-slider-container">
+                <div class="insights-slider-wrapper" id="insights-slider">
+                    <!-- Slide 1 -->
+                    <div class="insights-row">
+                        <div class="card insight-card">
+                            <h4>Avg Interview<br>Score</h4>
+                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
+                        </div>
+                        <div class="card insight-card">
+                            <h4>Recruitment<br>Process</h4>
+                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
+                        </div>
+                        <div class="card insight-card">
+                            <h4>Applicants</h4>
+                            <h2>22,0...</h2>
+                        </div>
+                    </div>
+                    <!-- Slide 2 -->
+                    <div class="insights-row">
+                        <div class="card insight-card">
+                            <h4>Avg Interview<br>Score</h4>
+                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
+                        </div>
+                        <div class="card insight-card">
+                            <h4>Recruitment<br>Process</h4>
+                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
+                        </div>
+                        <div class="card insight-card">
+                            <h4>Applicants</h4>
+                            <h2>22,0...</h2>
+                        </div>
+                    </div>
+                    <!-- Slide 3 -->
+                    <div class="insights-row">
+                        <div class="card insight-card">
+                            <h4>Avg Interview<br>Score</h4>
+                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
+                        </div>
+                        <div class="card insight-card">
+                            <h4>Recruitment<br>Process</h4>
+                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
+                        </div>
+                        <div class="card insight-card">
+                            <h4>Applicants</h4>
+                            <h2>22,0...</h2>
+                        </div>
+                    </div>
+                    <!-- Slide 4 -->
+                    <div class="insights-row">
+                        <div class="card insight-card">
+                            <h4>Avg Interview<br>Score</h4>
+                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
+                        </div>
+                        <div class="card insight-card">
+                            <h4>Recruitment<br>Process</h4>
+                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
+                        </div>
+                        <div class="card insight-card">
+                            <h4>Applicants</h4>
+                            <h2>22,0...</h2>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div class="dots">
-                <div class="dot active"></div>
-                <div class="dot"></div>
-                <div class="dot"></div>
-                <div class="dot"></div>
+                <div class="dot active" onclick="goToSlide(0)"></div>
+                <div class="dot" onclick="goToSlide(1)"></div>
+                <div class="dot" onclick="goToSlide(2)"></div>
+                <div class="dot" onclick="goToSlide(3)"></div>
             </div>
         </div>
 
@@ -587,18 +832,84 @@
                 </div>
             </div>
             <div class="va-list">
-                <div class="va-list-item"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
-                <div class="va-list-item"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
-                <div class="va-list-item"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
-                <div class="va-list-item"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
-                <div class="va-list-item"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
-                <div class="va-list-item"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
-                <div class="va-list-item"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
+                <div class="va-list-item" onclick="openModal()"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
+                <div class="va-list-item" onclick="openModal()"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
+                <div class="va-list-item" onclick="openModal()"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
+                <div class="va-list-item" onclick="openModal()"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
+                <div class="va-list-item" onclick="openModal()"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
+                <div class="va-list-item" onclick="openModal()"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
+                <div class="va-list-item" onclick="openModal()"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
+            </div>
+        </div>
+
+                <!-- Applicant Modal -->
+        <div id="applicantModal" class="modal-overlay" style="display: none;">
+            <div class="modal-content">
+                <button class="close-btn" onclick="closeModal()">
+                    <img src="{{ url_for('static', filename='Close Window.svg') }}" alt="Close">
+                </button>
+                
+                <h1 class="modal-title">Maryjoy Bernabe</h1>
+                <h3 class="modal-subtitle">Applying as: Software Engineer</h3>
+
+                <div class="modal-cards-row">
+                    <div class="left-col-wrapper">
+                        <div class="modal-card">
+                            <div class="modal-card-title">Pre-screening Outcome</div>
+                            <div class="modal-card-status eligible">ELIGIBLE</div>
+                            <div class="modal-card-desc">
+                                <strong>Experience:</strong> 4 yrs<br>
+                                <strong>Skills:</strong> Javascript, Laravel, Python, SQL
+                            </div>
+                        </div>
+                        <button class="btn-resume">
+                            View Resume <img src="{{ url_for('static', filename='Resume.svg') }}" alt="Resume">
+                        </button>
+                    </div>
+                    
+                    <div class="modal-card">
+                        <div class="modal-card-title">ANN Interview Evaluation</div>
+                        <div class="modal-card-status qualified">QUALIFIED</div>
+                        <div class="modal-card-desc">
+                            <strong>Average Score:</strong> 78% confidence level
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bottom-row-wrapper">
+                    <div class="qa-section">
+                        <h2 class="qa-title">Detailed Interview Q&A</h2>
+                        <div class="qa-content">
+                            <strong>Q1: Tell me about yourself.</strong><br>
+                            <em>"Good day! My name is Mary Joy Bernabe. I am a computer science student who is passionate about technology, problem-solving, and software development. I have experience creating web and mobile applications using different programming languages and tools such as Python, Flask, PHP, MySQL, HTML, CSS, and JavaScript. I am hardworking, willing to learn, and can adapt quickly to new environments. I also enjoy working with a team and improving my skills through projects and research. One of the projects I worked on is a job interview platform simulation that uses artificial intelligence concepts for applicant evaluation. I am seeking an opportunity where I can apply my knowledge, gain professional experience, and continue growing in the field of technology."</em><br>
+                            <span class="recorded-text">Recorded</span>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button class="btn-action accept">
+                            Accept <img src="{{ url_for('static', filename='Checkmark.svg') }}" alt="Accept">
+                        </button>
+                        <button class="btn-action reject">
+                            Reject <img src="{{ url_for('static', filename='Cancel.svg') }}" alt="Reject">
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
+
     <script>
+
+        function openModal() {
+            document.getElementById('applicantModal').style.display = 'flex';
+        }
+        function closeModal() {
+            document.getElementById('applicantModal').style.display = 'none';
+        }
+
         function switchTab(tab) {
+
             const monitoringTab = document.getElementById('tab-monitoring');
             const applicantsTab = document.getElementById('tab-applicants');
             const monitoringContent = document.getElementById('monitoring-content');
@@ -638,7 +949,40 @@
             });
         }
 
+        function goToSlide(index) {
+            const slider = document.getElementById('insights-slider');
+            slider.style.transform = `translateX(-${index * 25}%)`;
+            
+            const dots = document.querySelectorAll('.dots .dot');
+            dots.forEach((dot, i) => {
+                if (i === index) dot.classList.add('active');
+                else dot.classList.remove('active');
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
+            var chart = new CanvasJS.Chart("barChartContainer", {
+                animationEnabled: true,
+                theme: "light2",
+                axisY: {
+                    title: "Applicants"
+                },
+                data: [{
+                    type: "column",
+                    showInLegend: false,
+                    color: "#8C1C13",
+                    dataPoints: [
+                        { y: 5500, label: "SE" },
+                        { y: 4200, label: "QA" },
+                        { y: 3800, label: "DevOps" },
+                        { y: 3100, label: "UI/UX" },
+                        { y: 2900, label: "PM" },
+                        { y: 2526, label: "Data" }
+                    ]
+                }]
+            });
+            chart.render();
+
             const dateElement = document.getElementById('dynamic-date');
             const today = new Date();
             const dd = String(today.getDate()).padStart(2, '0');

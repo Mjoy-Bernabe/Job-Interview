@@ -1,4 +1,5 @@
 # blueprints/admin.py
+# pyrefly: ignore [missing-import]
 from flask import Blueprint, render_template, session, redirect, url_for
 from extensions import mysql
 
