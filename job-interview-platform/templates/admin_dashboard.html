@@ -298,10 +298,20 @@
             padding-top: 25px;
         }
 
+        .insights-slider-container {
+            width: 100%;
+            overflow: hidden;
+        }
+        .insights-slider-wrapper {
+            display: flex;
+            width: 400%; /* 4 slides */
+            transition: transform 0.5s ease-in-out;
+        }
         .insights-row {
             display: flex;
             gap: 30px;
-            width: 100%;
+            width: 25%; /* 100% / 4 */
+            flex-shrink: 0;
         }
         .insight-card {
             flex: 1;
@@ -553,26 +563,76 @@
 
             <div class="more-insights-title">More Insights...</div>
             
-            <div class="insights-row">
-                <div class="card insight-card">
-                    <h4>Avg Interview<br>Score</h4>
-                    <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
-                </div>
-                <div class="card insight-card">
-                    <h4>Recruitment<br>Process</h4>
-                    <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
-                </div>
-                <div class="card insight-card">
-                    <h4>Applicants</h4>
-                    <h2>22,0...</h2>
+            <div class="insights-slider-container">
+                <div class="insights-slider-wrapper" id="insights-slider">
+                    <!-- Slide 1 -->
+                    <div class="insights-row">
+                        <div class="card insight-card">
+                            <h4>Avg Interview<br>Score</h4>
+                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
+                        </div>
+                        <div class="card insight-card">
+                            <h4>Recruitment<br>Process</h4>
+                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
+                        </div>
+                        <div class="card insight-card">
+                            <h4>Applicants</h4>
+                            <h2>22,0...</h2>
+                        </div>
+                    </div>
+                    <!-- Slide 2 -->
+                    <div class="insights-row">
+                        <div class="card insight-card">
+                            <h4>Avg Interview<br>Score</h4>
+                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
+                        </div>
+                        <div class="card insight-card">
+                            <h4>Recruitment<br>Process</h4>
+                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
+                        </div>
+                        <div class="card insight-card">
+                            <h4>Applicants</h4>
+                            <h2>22,0...</h2>
+                        </div>
+                    </div>
+                    <!-- Slide 3 -->
+                    <div class="insights-row">
+                        <div class="card insight-card">
+                            <h4>Avg Interview<br>Score</h4>
+                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
+                        </div>
+                        <div class="card insight-card">
+                            <h4>Recruitment<br>Process</h4>
+                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
+                        </div>
+                        <div class="card insight-card">
+                            <h4>Applicants</h4>
+                            <h2>22,0...</h2>
+                        </div>
+                    </div>
+                    <!-- Slide 4 -->
+                    <div class="insights-row">
+                        <div class="card insight-card">
+                            <h4>Avg Interview<br>Score</h4>
+                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
+                        </div>
+                        <div class="card insight-card">
+                            <h4>Recruitment<br>Process</h4>
+                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
+                        </div>
+                        <div class="card insight-card">
+                            <h4>Applicants</h4>
+                            <h2>22,0...</h2>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div class="dots">
-                <div class="dot active"></div>
-                <div class="dot"></div>
-                <div class="dot"></div>
-                <div class="dot"></div>
+                <div class="dot active" onclick="goToSlide(0)"></div>
+                <div class="dot" onclick="goToSlide(1)"></div>
+                <div class="dot" onclick="goToSlide(2)"></div>
+                <div class="dot" onclick="goToSlide(3)"></div>
             </div>
         </div>
 
@@ -644,6 +704,17 @@
                 } else {
                     item.classList.remove('rejected');
                 }
+            });
+        }
+
+        function goToSlide(index) {
+            const slider = document.getElementById('insights-slider');
+            slider.style.transform = `translateX(-${index * 25}%)`;
+            
+            const dots = document.querySelectorAll('.dots .dot');
+            dots.forEach((dot, i) => {
+                if (i === index) dot.classList.add('active');
+                else dot.classList.remove('active');
             });
         }
 
