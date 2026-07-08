@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin Dashboard{% endblock %}</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
+    <style>
+        :root {
+            --primary-red: #B3241B;
+            --bg-main: #E9E9E9;
+            --bg-sidebar: #FFFBFB;
+            --bg-navbar: #FAFAFA;
+            --text-dark: #000000;
+            --text-gray: #5B5959;
+            --text-light-gray: #5C5C5C;
+            --text-green: #0D9120;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-dark);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar { width: 229px; height: 100vh; background-color: var(--bg-sidebar); display: flex; flex-direction: column; position: fixed; left: 0; top: 0; z-index: 100; border-right: 1px solid rgba(0,0,0,0.05); }
+        .company-logo { width: 100%; height: 75px; background-color: var(--primary-red); display: flex; align-items: center; padding-left: 13px; }
+        .company-logo h2 { font-weight: 700; font-size: 18px; color: #FFFFFF; line-height: 27px; }
+        .sidebar-menu { display: flex; flex-direction: column; padding-top: 19px; flex-grow: 1; }
+        .menu-section { padding: 0 10px; margin-bottom: 20px; }
+        .menu-title { font-weight: 700; font-size: 12px; color: var(--text-gray); margin-bottom: 10px; padding-left: 10px; }
+        .menu-link { display: flex; align-items: center; padding: 6px 10px; margin-bottom: 5px; text-decoration: none; color: var(--text-dark); font-weight: 400; font-size: 14px; border-radius: 4px; transition: background-color 0.2s; }
+        .menu-link i { font-size: 20px; margin-right: 15px; width: 20px; text-align: center; }
+        .menu-link.active { background-color: var(--primary-red); color: #FFFFFF; font-weight: 700; }
+        .menu-link:hover:not(.active) { background-color: rgba(179, 36, 27, 0.1); }
+        .sidebar-divider { width: 196px; height: 0px; border-top: 2px solid #A69C9C; margin: 15px auto; }
+        .logout-link { margin-top: auto; margin-bottom: 30px; padding-left: 25px; display: flex; align-items: center; text-decoration: none; color: var(--primary-red); font-weight: 400; font-size: 14px; }
+        .logout-link i { margin-right: 10px; font-size: 18px; }
+
+        /* Top Navbar */
+        .navbar { position: fixed; top: 0; left: 229px; width: calc(100% - 229px); height: 75px; background-color: var(--bg-navbar); box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25); display: flex; align-items: center; justify-content: space-between; padding: 0 70px; z-index: 90; }
+        .page-title { font-weight: 500; font-size: 20px; color: var(--primary-red); }
+        
+        .search-bar { display: flex; flex-direction: row; align-items: center; padding: 0px 20px; gap: 4px; background-color: #E9E9E9; width: 497px; max-width: 720px; height: 39px; }
+        .search-bar i { font-size: 20px; color: #000; }
+        .search-bar input { border: none; background: transparent; outline: none; width: 100%; font-family: 'Roboto', sans-serif; font-size: 16px; }
+        
+        .nav-right { display: flex; align-items: center; gap: 20px; }
+        .notification-bell { position: relative; background: transparent; border: none; cursor: pointer; padding: 8px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background-color 0.2s; }
+        .notification-bell:hover { background-color: #E9E9E9; }
+        .notification-bell i { font-size: 24px; color: var(--text-gray); }
+        .notification-dot { position: absolute; top: 6px; right: 8px; width: 8px; height: 8px; background-color: var(--primary-red); border-radius: 50%; border: 1.5px solid #FAFAFA; }
+        
+        .user-profile { display: flex; align-items: center; background-color: #E9E9E9; padding: 5px 15px; border-radius: 8px; gap: 15px; }
+        .user-avatar { width: 32px; height: 32px; background-color: #ccc; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .user-info { display: flex; flex-direction: column; }
+        .user-info .name { font-weight: 700; font-size: 16px; color: var(--primary-red); line-height: 1.2; }
+        .user-info .role { font-weight: 400; font-size: 12px; color: var(--text-light-gray); }
+
+        /* Main Content Area */
+        .main-content {
+            margin-top: 75px;
+            margin-left: 229px;
+            width: calc(100% - 229px);
+            height: calc(100vh - 75px);
+            padding: 35px 70px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .navbar { padding: 0 40px; }
+            .main-content { padding: 30px 40px; }
+        }
+        @media (max-width: 768px) {
+            .navbar { padding: 0 20px; }
+            .main-content { padding: 20px; }
+        }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="company-logo">
+            <h2>H2 Software Services</h2>
+        </div>
+        
+        <div class="sidebar-menu">
+            <div class="menu-section">
+                <div class="menu-title">General</div>
+                <a href="{{ url_for('admin.dashboard') }}" class="menu-link {% if active_page == 'dashboard' %}active{% endif %}"><i class='bx bxs-dashboard'></i> Admin Dashboard</a>
+                <a href="{{ url_for('admin.user_management') }}" class="menu-link {% if active_page == 'user_management' %}active{% endif %}"><i class='bx bx-group'></i> User Management</a>
+                <a href="#" class="menu-link {% if active_page == 'troubleshooting' %}active{% endif %}"><i class='bx bx-wrench'></i> Troubleshooting</a>
+                <a href="{{ url_for('admin.analytics') }}" class="menu-link {% if active_page == 'analytics' %}active{% endif %}"><i class='bx bx-bar-chart-alt-2'></i> Analytics</a>
+                <a href="#" class="menu-link {% if active_page == 'notifications' %}active{% endif %}"><i class='bx bx-bell'></i> Notifications</a>
+            </div>
+
+            <div class="sidebar-divider"></div>
+
+            <div class="menu-section">
+                <div class="menu-title">System Logs</div>
+                <a href="#" class="menu-link {% if active_page == 'audit_logs' %}active{% endif %}"><i class='bx bx-list-ul'></i> Audit Logs</a>
+            </div>
+
+            <div class="sidebar-divider"></div>
+
+            <div class="menu-section">
+                <div class="menu-title">Others</div>
+                <a href="#" class="menu-link {% if active_page == 'settings' %}active{% endif %}"><i class='bx bx-cog'></i> Settings</a>
+            </div>
+        </div>
+
+        <a href="#" class="logout-link"><i class='bx bx-log-out'></i> Log out</a>
+    </aside>
+
+    <!-- Top Navbar -->
+    <nav class="navbar">
+        <div class="page-title">{% block page_title %}Dashboard{% endblock %}</div>
+        
+        <div class="nav-right">
+            <div class="search-bar">
+                <i class='bx bx-search'></i>
+                <input type="text" placeholder="Search">
+            </div>
+
+            <button class="notification-bell">
+                <i class='bx bxs-bell'></i>
+                <div class="notification-dot"></div>
+            </button>
+
+            <div class="user-profile">
+                <div class="user-avatar">
+                    <i class='bx bxs-user' style="font-size: 24px; color: #fff;"></i>
+                </div>
+                <div class="user-info">
+                    <span class="name">David T. Smith</span>
+                    <span class="role">System Administrator</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>
