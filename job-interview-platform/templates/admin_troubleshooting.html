@@ -178,9 +178,48 @@
         font-weight: 500;
     }
 
+    /* Active Row State */
+    .ts-table tr.row-active {
+        background-color: rgba(102, 179, 255, 0.15);
+    }
+    .ts-table tbody tr {
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    /* Status Dropdown */
+    .status-dropdown {
+        position: relative;
+        display: inline-block;
+    }
+    .status-dropdown-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        margin-top: 5px;
+        background-color: #2C2C2C;
+        border-radius: 4px;
+        padding: 8px;
+        z-index: 10;
+        flex-direction: column;
+        gap: 8px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+    }
+    .status-dropdown-menu.show {
+        display: flex;
+    }
+    .status-dropdown-menu .status-badge {
+        pointer-events: auto; /* Ensure clickable */
+    }
+
     /* Status Badges */
     .status-badge {
-        display: inline-block;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        gap: 5px;
         padding: 4px 5px;
         border-radius: 3px;
         font-size: 12px;
@@ -189,6 +228,11 @@
         width: 100px;
         box-sizing: border-box;
         white-space: nowrap;
+        cursor: pointer;
+        user-select: none;
+    }
+    .status-badge i {
+        font-size: 14px;
     }
     
     .status-active {
@@ -310,4 +354,76 @@
         </table>
     </div>
 
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const badges = document.querySelectorAll('.ts-table tbody .status-badge');
+    
+    badges.forEach(badge => {
+        // 1. Add chevron icon
+        badge.innerHTML += " <i class='bx bx-chevron-down'></i>";
+        
+        // 2. Wrap in dropdown container
+        const wrapper = document.createElement('div');
+        wrapper.className = 'status-dropdown';
+        badge.parentNode.insertBefore(wrapper, badge);
+        wrapper.appendChild(badge);
+        
+        // 3. Create dropdown menu
+        const menu = document.createElement('div');
+        menu.className = 'status-dropdown-menu';
+        
+        const options = [
+            { text: "Active", class: "status-active" },
+            { text: "Resolved", class: "status-resolved" },
+            { text: "In-Progress", class: "status-inprogress" }
+        ];
+        
+        options.forEach(opt => {
+            const optBadge = document.createElement('span');
+            optBadge.className = `status-badge ${opt.class}`;
+            optBadge.innerHTML = opt.text;
+            
+            optBadge.addEventListener('click', function(e) {
+                e.stopPropagation();
+                // Update parent badge
+                badge.className = `status-badge ${opt.class}`;
+                badge.innerHTML = opt.text + " <i class='bx bx-chevron-down'></i>";
+                menu.classList.remove('show');
+            });
+            
+            menu.appendChild(optBadge);
+        });
+        
+        wrapper.appendChild(menu);
+        
+        // 4. Toggle menu on click
+        badge.addEventListener('click', function(e) {
+            e.stopPropagation();
+            // Close other menus first
+            document.querySelectorAll('.status-dropdown-menu').forEach(m => {
+                if (m !== menu) m.classList.remove('show');
+            });
+            menu.classList.toggle('show');
+            
+            // Trigger row active
+            const row = wrapper.closest('tr');
+            document.querySelectorAll('.ts-table tbody tr').forEach(r => r.classList.remove('row-active'));
+            if(row) row.classList.add('row-active');
+        });
+    });
+    
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.status-dropdown-menu').forEach(m => m.classList.remove('show'));
+    });
+    
+    // Row click event for highlighting
+    document.querySelectorAll('.ts-table tbody tr').forEach(row => {
+        row.addEventListener('click', function() {
+            document.querySelectorAll('.ts-table tbody tr').forEach(r => r.classList.remove('row-active'));
+            this.classList.add('row-active');
+        });
+    });
+});
+</script>
 {% endblock %}
