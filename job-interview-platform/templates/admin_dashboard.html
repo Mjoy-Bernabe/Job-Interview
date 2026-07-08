@@ -1,734 +1,212 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
-    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
-    <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
-    <style>
-        :root {
-            --primary-red: #B3241B;
-            --bg-main: #E9E9E9;
-            --bg-sidebar: #FFFBFB;
-            --bg-navbar: #FAFAFA;
-            --text-dark: #000000;
-            --text-gray: #5B5959;
-            --text-light-gray: #5C5C5C;
-            --text-green: #0D9120;
-        }
+{% set active_page = 'dashboard' %}
+{% extends "admin_base.html" %}
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+{% block title %}Admin Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
 
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: var(--bg-main);
-            color: var(--text-dark);
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
+{% block head %}
+<style>
+    /* Specific CSS for Dashboard */
+    /* Header Card */
+    .header-card { background-color: #FFFFFF; border: 1px solid #CCCCCC; box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.25); border-radius: 8px; padding: 20px 30px; display: flex; align-items: center; gap: 30px; margin-bottom: 25px; }
+    .header-card i.bx-data { font-size: 96px; color: var(--primary-red); }
+    .header-divider { width: 1px; height: 80px; background-color: #A69C9C; }
+    .header-text { display: flex; flex-direction: column; gap: 15px; max-width: 650px; }
+    .header-title { font-weight: 600; font-size: 16px; color: var(--primary-red); }
+    .header-subtitle { font-weight: 400; font-size: 15px; line-height: 22px; color: var(--text-dark); }
+    /* Middle Cards Row */
+    .stats-row { display: flex; gap: 30px; margin-bottom: 25px; }
+    .stat-card { background: #FFFFFF; border: 1px solid #D9D9D9; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25); border-radius: 6px; padding: 15px; flex: 1; display: flex; flex-direction: column; }
+    .stat-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+    .stat-header i { font-size: 20px; color: var(--primary-red); }
+    .stat-title { font-weight: 600; font-size: 20px; color: var(--primary-red); }
+    .stat-value { font-weight: 700; font-size: 40px; color: var(--primary-red); margin-bottom: 5px; padding-left: 5px; }
+    .stat-feedback { display: flex; align-items: center; gap: 5px; font-weight: 400; font-size: 14px; padding-left: 5px; }
+    .feedback-positive { color: var(--text-green); }
+    .feedback-neutral { color: #837C75; }
+    /* Bottom Row */
+    .bottom-row { display: flex; gap: 30px; }
+    .chart-card { background: #FFFFFF; border: 1px solid #D9D9D9; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25); border-radius: 6px; padding: 20px; }
+    .system-reports { flex: 1; max-width: 272px; display: flex; flex-direction: column; align-items: center; }
+    .system-reports .chart-title { font-weight: 600; font-size: 20px; color: var(--primary-red); align-self: flex-start; margin-bottom: 40px; }
+    .pie-container { width: 176px; height: 176px; position: relative; margin-bottom: 20px; }
+    .legend-row { display: flex; gap: 15px; align-items: center; width: 100%; justify-content: center; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 10px; }
+    .legend-color { width: 18px; height: 17px; border-radius: 50%; }
+    .user-traffic { flex: 2; display: flex; flex-direction: column; }
+    .traffic-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+    .traffic-header .chart-title { font-weight: 600; font-size: 20px; color: var(--primary-red); }
+    .year-select { display: flex; align-items: center; gap: 10px; border: 1px solid var(--primary-red); border-radius: 10px; padding: 5px 10px; font-family: 'Inter', sans-serif; font-weight: 500; font-size: 16px; cursor: pointer; }
+    .year-select i { color: var(--primary-red); }
+    #trafficChartContainer { width: 100%; height: 213px; flex-grow: 1; }
+    /* Hide CanvasJS watermark credits */
+    .canvasjs-chart-credit { display: none !important; }
+</style>
+{% endblock %}
 
-        /* Sidebar */
-        .sidebar {
-            width: 229px;
-            height: 100vh;
-            background-color: var(--bg-sidebar);
-            display: flex;
-            flex-direction: column;
-            position: fixed;
-            left: 0;
-            top: 0;
-            z-index: 100;
-            border-right: 1px solid rgba(0,0,0,0.05);
-        }
-
-        .company-logo {
-            width: 100%;
-            height: 75px;
-            background-color: var(--primary-red);
-            display: flex;
-            align-items: center;
-            padding-left: 13px;
-        }
-
-        .company-logo h2 {
-            font-weight: 700;
-            font-size: 18px;
-            color: #FFFFFF;
-            line-height: 27px;
-        }
-
-        .sidebar-menu {
-            display: flex;
-            flex-direction: column;
-            padding-top: 19px;
-            flex-grow: 1;
-        }
-
-        .menu-section {
-            padding: 0 10px;
-            margin-bottom: 20px;
-        }
-
-        .menu-title {
-            font-weight: 700;
-            font-size: 12px;
-            color: var(--text-gray);
-            margin-bottom: 10px;
-            padding-left: 10px;
-        }
-
-        .menu-link {
-            display: flex;
-            align-items: center;
-            padding: 6px 10px;
-            margin-bottom: 5px;
-            text-decoration: none;
-            color: var(--text-dark);
-            font-weight: 400;
-            font-size: 14px;
-            border-radius: 4px;
-            transition: background-color 0.2s;
-        }
-
-        .menu-link i {
-            font-size: 20px;
-            margin-right: 15px;
-            width: 20px;
-            text-align: center;
-        }
-
-        .menu-link.active {
-            background-color: var(--primary-red);
-            color: #FFFFFF;
-            font-weight: 700;
-        }
-
-        .menu-link:hover:not(.active) {
-            background-color: rgba(179, 36, 27, 0.1);
-        }
-
-        .sidebar-divider {
-            width: 196px;
-            height: 0px;
-            border-top: 2px solid #A69C9C;
-            margin: 15px auto;
-        }
-
-        .logout-link {
-            margin-top: auto;
-            margin-bottom: 30px;
-            padding-left: 25px;
-            display: flex;
-            align-items: center;
-            text-decoration: none;
-            color: var(--primary-red);
-            font-weight: 400;
-            font-size: 14px;
-        }
-        
-        .logout-link i {
-            margin-right: 10px;
-            font-size: 18px;
-        }
-
-        /* Top Navbar */
-        .navbar {
-            position: fixed;
-            top: 0;
-            left: 229px;
-            width: calc(100% - 229px);
-            height: 75px;
-            background-color: var(--bg-navbar);
-            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 70px;
-            z-index: 90;
-        }
-
-        .page-title {
-            font-weight: 500;
-            font-size: 20px;
-            color: var(--primary-red);
-        }
-
-        .search-bar {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            padding: 0px 20px;
-            gap: 4px;
-            background-color: #E9E9E9;
-            width: 497px;
-            max-width: 720px;
-            height: 39px;
-        }
-
-        .search-bar i {
-            font-size: 20px;
-            color: #000;
-        }
-
-        .search-bar input {
-            border: none;
-            background: transparent;
-            outline: none;
-            width: 100%;
-            font-family: 'Roboto', sans-serif;
-            font-size: 16px;
-        }
-
-        .nav-right {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .notification-bell {
-            position: relative;
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background-color 0.2s;
-        }
-
-        .notification-bell:hover {
-            background-color: #E9E9E9;
-        }
-
-        .notification-bell i {
-            font-size: 24px;
-            color: var(--text-gray);
-        }
-
-        .notification-dot {
-            position: absolute;
-            top: 6px;
-            right: 8px;
-            width: 8px;
-            height: 8px;
-            background-color: var(--primary-red);
-            border-radius: 50%;
-            border: 1.5px solid #FAFAFA;
-        }
-
-        .user-profile {
-            display: flex;
-            align-items: center;
-            background-color: #E9E9E9;
-            padding: 5px 15px;
-            border-radius: 8px;
-            gap: 15px;
-        }
-
-        .user-avatar {
-            width: 32px;
-            height: 32px;
-            background-color: #ccc;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        .user-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .user-info .name {
-            font-weight: 700;
-            font-size: 16px;
-            color: var(--primary-red);
-            line-height: 1.2;
-        }
-
-        .user-info .role {
-            font-weight: 400;
-            font-size: 12px;
-            color: var(--text-light-gray);
-        }
-
-        /* Main Content Area */
-        .main-content {
-            margin-top: 75px;
-            margin-left: 229px;
-            width: calc(100% - 229px);
-            height: calc(100vh - 75px);
-            padding: 35px 70px;
-            overflow-y: auto;
-            position: relative;
-        }
-
-        /* Header Card */
-        .header-card {
-            background-color: #FFFFFF;
-            border: 1px solid #CCCCCC;
-            box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.25);
-            border-radius: 8px;
-            padding: 20px 30px;
-            display: flex;
-            align-items: center;
-            gap: 30px;
-            margin-bottom: 25px;
-        }
-
-        .header-card i.bx-data {
-            font-size: 96px;
-            color: var(--primary-red);
-        }
-
-        .header-divider {
-            width: 1px;
-            height: 80px;
-            background-color: #A69C9C;
-        }
-
-        .header-text {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            max-width: 650px;
-        }
-
-        .header-title {
-            font-weight: 600;
-            font-size: 16px;
-            color: var(--primary-red);
-        }
-
-        .header-subtitle {
-            font-weight: 400;
-            font-size: 15px;
-            line-height: 22px;
-            color: var(--text-dark);
-        }
-
-        /* Middle Cards Row */
-        .stats-row {
-            display: flex;
-            gap: 30px;
-            margin-bottom: 25px;
-        }
-
-        .stat-card {
-            background: #FFFFFF;
-            border: 1px solid #D9D9D9;
-            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25);
-            border-radius: 6px;
-            padding: 15px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .stat-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .stat-header i {
-            font-size: 20px;
-            color: var(--primary-red);
-        }
-
-        .stat-title {
-            font-weight: 600;
-            font-size: 20px;
-            color: var(--primary-red);
-        }
-
-        .stat-value {
-            font-weight: 700;
-            font-size: 40px;
-            color: var(--primary-red);
-            margin-bottom: 5px;
-            padding-left: 5px;
-        }
-
-        .stat-feedback {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-weight: 400;
-            font-size: 14px;
-            padding-left: 5px;
-        }
-
-        .feedback-positive { color: var(--text-green); }
-        .feedback-neutral { color: #837C75; }
-
-        /* Bottom Row */
-        .bottom-row {
-            display: flex;
-            gap: 30px;
-        }
-
-        .chart-card {
-            background: #FFFFFF;
-            border: 1px solid #D9D9D9;
-            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25);
-            border-radius: 6px;
-            padding: 20px;
-        }
-
-        .system-reports {
-            flex: 1;
-            max-width: 272px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .system-reports .chart-title {
-            font-weight: 600;
-            font-size: 20px;
-            color: var(--primary-red);
-            align-self: flex-start;
-            margin-bottom: 40px;
-        }
-        
-        .pie-container {
-            width: 176px;
-            height: 176px;
-            position: relative;
-            margin-bottom: 20px;
-        }
-        
-        .legend-row {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            width: 100%;
-            justify-content: center;
-        }
-        
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 10px;
-        }
-        
-        .legend-color {
-            width: 18px;
-            height: 17px;
-            border-radius: 50%;
-        }
-
-        .user-traffic {
-            flex: 2;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .traffic-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 40px;
-        }
-
-        .traffic-header .chart-title {
-            font-weight: 600;
-            font-size: 20px;
-            color: var(--primary-red);
-        }
-
-        .year-select {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            border: 1px solid var(--primary-red);
-            border-radius: 10px;
-            padding: 5px 10px;
-            font-family: 'Inter', sans-serif;
-            font-weight: 500;
-            font-size: 16px;
-            cursor: pointer;
-        }
-
-        .year-select i {
-            color: var(--primary-red);
-        }
-
-        #trafficChartContainer {
-            width: 100%;
-            height: 213px;
-            flex-grow: 1;
-        }
-        
-        /* Hide CanvasJS watermark credits */
-        .canvasjs-chart-credit {
-            display: none !important;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 1024px) {
-            .navbar {
-                padding: 0 40px;
-            }
-            .main-content {
-                padding: 30px 40px;
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .navbar {
-                padding: 0 20px;
-            }
-            .main-content {
-                padding: 20px;
-            }
-        }
-
-    </style>
-</head>
-<body>
-
-    <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="company-logo">
-            <h2>H2 Software Services</h2>
+{% block content %}
+    <!-- Header Card -->
+    <div class="header-card">
+        <i class='bx bx-data'></i>
+        <div class="header-divider"></div>
+        <div class="header-text">
+            <div class="header-title">Server is Up and Running!</div>
+            <div class="header-subtitle">Monitor system uptime, track applicant and HR activity pipelines, and manage background infrastructure performance.</div>
         </div>
-        
-        <div class="sidebar-menu">
-            <div class="menu-section">
-                <div class="menu-title">General</div>
-                <a href="#" class="menu-link active"><i class='bx bxs-dashboard'></i> Admin Dashboard</a>
-                <a href="#" class="menu-link"><i class='bx bx-group'></i> User Management</a>
-                <a href="#" class="menu-link"><i class='bx bx-wrench'></i> Troubleshooting</a>
-                <a href="#" class="menu-link"><i class='bx bx-bar-chart-alt-2'></i> Analytics</a>
-                <a href="#" class="menu-link"><i class='bx bx-bell'></i> Notifications</a>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-header">
+                <i class='bx bx-group'></i>
+                <span class="stat-title">Applicants</span>
             </div>
-
-            <div class="sidebar-divider"></div>
-
-            <div class="menu-section">
-                <div class="menu-title">System Logs</div>
-                <a href="#" class="menu-link"><i class='bx bx-list-ul'></i> Audit Logs</a>
-            </div>
-
-            <div class="sidebar-divider"></div>
-
-            <div class="menu-section">
-                <div class="menu-title">Others</div>
-                <a href="#" class="menu-link"><i class='bx bx-cog'></i> Settings</a>
+            <div class="stat-value">128</div>
+            <div class="stat-feedback feedback-positive">
+                <i class='bx bx-chevrons-up'></i> 20% last month
             </div>
         </div>
 
-        <a href="#" class="logout-link"><i class='bx bx-log-out'></i> Log out</a>
-    </aside>
-
-    <!-- Top Navbar -->
-    <nav class="navbar">
-        <div class="page-title">Dashboard</div>
-        
-        <div class="nav-right">
-            <div class="search-bar">
-                <i class='bx bx-search'></i>
-                <input type="text" placeholder="Search">
+        <div class="stat-card">
+            <div class="stat-header">
+                <i class='bx bx-time-five'></i>
+                <span class="stat-title">Daily Active Users</span>
             </div>
-
-            <button class="notification-bell">
-                <i class='bx bxs-bell'></i>
-                <div class="notification-dot"></div>
-            </button>
-
-            <div class="user-profile">
-                <div class="user-avatar">
-                    <i class='bx bxs-user' style="font-size: 24px; color: #fff;"></i>
-                </div>
-                <div class="user-info">
-                    <span class="name">David T. Smith</span>
-                    <span class="role">System Administrator</span>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Main Content -->
-    <main class="main-content">
-        
-        <!-- Header Card -->
-        <div class="header-card">
-            <i class='bx bx-data'></i>
-            <div class="header-divider"></div>
-            <div class="header-text">
-                <div class="header-title">Server is Up and Running!</div>
-                <div class="header-subtitle">Monitor system uptime, track applicant and HR activity pipelines, and manage background infrastructure performance.</div>
+            <div class="stat-value">25</div>
+            <div class="stat-feedback feedback-neutral">
+                <i class='bx bx-chevrons-down'></i> 20% last month
             </div>
         </div>
 
-        <!-- Stats Row -->
-        <div class="stats-row">
-            <div class="stat-card">
-                <div class="stat-header">
-                    <i class='bx bx-group'></i>
-                    <span class="stat-title">Applicants</span>
-                </div>
-                <div class="stat-value">128</div>
-                <div class="stat-feedback feedback-positive">
-                    <i class='bx bx-chevrons-up'></i> 20% last month
-                </div>
+        <div class="stat-card">
+            <div class="stat-header">
+                <i class='bx bx-desktop'></i>
+                <span class="stat-title">System Status</span>
             </div>
-
-            <div class="stat-card">
-                <div class="stat-header">
-                    <i class='bx bx-time-five'></i>
-                    <span class="stat-title">Daily Active Users</span>
-                </div>
-                <div class="stat-value">25</div>
-                <div class="stat-feedback feedback-neutral">
-                    <i class='bx bx-chevrons-down'></i> 20% last month
-                </div>
+            <div class="stat-value">OK</div>
+            <div class="stat-feedback feedback-positive">
+                <i class='bx bx-check-square'></i> Good maintenance!
             </div>
+        </div>
+    </div>
 
-            <div class="stat-card">
-                <div class="stat-header">
-                    <i class='bx bx-desktop'></i>
-                    <span class="stat-title">System Status</span>
+    <!-- Bottom Row -->
+    <div class="bottom-row">
+        <!-- Pie Chart Card -->
+        <div class="chart-card system-reports">
+            <div class="chart-title">System Reports</div>
+            <div class="pie-container" id="pieChartContainer"></div>
+            <div class="legend-row">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #66B3FF;"></div>
+                    <span>Unopened</span>
                 </div>
-                <div class="stat-value">OK</div>
-                <div class="stat-feedback feedback-positive">
-                    <i class='bx bx-check-square'></i> Good maintenance!
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #99CCFF;"></div>
+                    <span>Resolved</span>
                 </div>
             </div>
         </div>
 
-        <!-- Bottom Row -->
-        <div class="bottom-row">
-            <!-- Pie Chart Card -->
-            <div class="chart-card system-reports">
-                <div class="chart-title">System Reports</div>
-                <div class="pie-container" id="pieChartContainer"></div>
-                <div class="legend-row">
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #66B3FF;"></div>
-                        <span>Unopened</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #99CCFF;"></div>
-                        <span>Resolved</span>
-                    </div>
+        <!-- Line Chart Card -->
+        <div class="chart-card user-traffic">
+            <div class="traffic-header">
+                <div class="chart-title">User Traffic — Overview</div>
+                <div class="year-select">
+                    <span>2026</span>
+                    <i class='bx bx-chevron-down'></i>
                 </div>
             </div>
-
-            <!-- Line Chart Card -->
-            <div class="chart-card user-traffic">
-                <div class="traffic-header">
-                    <div class="chart-title">User Traffic — Overview</div>
-                    <div class="year-select">
-                        <span>2026</span>
-                        <i class='bx bx-chevron-down'></i>
-                    </div>
-                </div>
-                <div id="trafficChartContainer"></div>
-            </div>
+            <div id="trafficChartContainer"></div>
         </div>
+    </div>
+{% endblock %}
 
-    </main>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Render Doughnut Chart for System Reports
-            var pieChart = new CanvasJS.Chart("pieChartContainer", {
-                animationEnabled: true,
-                backgroundColor: "transparent",
-                data: [{
-                    type: "doughnut",
-                    innerRadius: "60%",
-                    startAngle: -90,
-                    dataPoints: [
-                        { y: 35, color: "#99CCFF" }, // Resolved
-                        { y: 65, color: "#66B3FF" }  // Unopened
-                    ]
-                }]
-            });
-            pieChart.render();
-
-            // Render Line Chart for User Traffic
-            var trafficChart = new CanvasJS.Chart("trafficChartContainer", {
-                animationEnabled: true,
-                theme: "light2",
-                axisX: {
-                    interval: 1,
-                    gridThickness: 1,
-                    gridColor: "#E0E0E0",
-                    lineColor: "#CCCCCC",
-                    labelFontFamily: "Inter"
-                },
-                axisY: {
-                    gridThickness: 1,
-                    gridColor: "#E0E0E0",
-                    lineColor: "#CCCCCC",
-                    labelFontFamily: "Inter"
-                },
-                data: [
-                {
-                    type: "line",
-                    color: "#1AE7AB",
-                    markerType: "circle",
-                    markerColor: "#FFFFFF",
-                    markerBorderColor: "#1AE7AB",
-                    markerBorderThickness: 2,
-                    dataPoints: [
-                        { x: 0, y: 20 },
-                        { x: 1, y: 20 },
-                        { x: 2, y: 75 },
-                        { x: 3, y: 5 },
-                        { x: 4, y: 10 },
-                        { x: 5, y: 60 },
-                        { x: 6, y: 95 },
-                        { x: 7, y: 100 },
-                        { x: 8, y: 95 },
-                        { x: 9, y: 5 },
-                        { x: 10, y: 60 },
-                        { x: 11, y: 100 }
-                    ]
-                },
-                {
-                    type: "line",
-                    color: "#6C0C41",
-                    markerType: "circle",
-                    markerColor: "#FFFFFF",
-                    markerBorderColor: "#6C0C41",
-                    markerBorderThickness: 2,
-                    dataPoints: [
-                        { x: 0, y: 5 },
-                        { x: 1, y: 25 },
-                        { x: 2, y: 95 },
-                        { x: 3, y: 75 },
-                        { x: 4, y: 5 },
-                        { x: 5, y: 20 },
-                        { x: 6, y: 35 },
-                        { x: 7, y: 50 },
-                        { x: 8, y: 15 },
-                        { x: 9, y: 50 },
-                        { x: 10, y: 80 },
-                        { x: 11, y: 85 }
-                    ]
-                }
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Render Doughnut Chart for System Reports
+        var pieChart = new CanvasJS.Chart("pieChartContainer", {
+            animationEnabled: true,
+            backgroundColor: "transparent",
+            data: [{
+                type: "doughnut",
+                innerRadius: "60%",
+                startAngle: -90,
+                dataPoints: [
+                    { y: 35, color: "#99CCFF" }, // Resolved
+                    { y: 65, color: "#66B3FF" }  // Unopened
                 ]
-            });
-            trafficChart.render();
+            }]
         });
-    </script>
-</body>
-</html>
+        pieChart.render();
+
+        // Render Line Chart for User Traffic
+        var trafficChart = new CanvasJS.Chart("trafficChartContainer", {
+            animationEnabled: true,
+            theme: "light2",
+            axisX: {
+                interval: 1,
+                gridThickness: 1,
+                gridColor: "#E0E0E0",
+                lineColor: "#CCCCCC",
+                labelFontFamily: "Inter"
+            },
+            axisY: {
+                gridThickness: 1,
+                gridColor: "#E0E0E0",
+                lineColor: "#CCCCCC",
+                labelFontFamily: "Inter"
+            },
+            data: [
+            {
+                type: "line",
+                color: "#1AE7AB",
+                markerType: "circle",
+                markerColor: "#FFFFFF",
+                markerBorderColor: "#1AE7AB",
+                markerBorderThickness: 2,
+                dataPoints: [
+                    { x: 0, y: 20 },
+                    { x: 1, y: 20 },
+                    { x: 2, y: 75 },
+                    { x: 3, y: 5 },
+                    { x: 4, y: 10 },
+                    { x: 5, y: 60 },
+                    { x: 6, y: 95 },
+                    { x: 7, y: 100 },
+                    { x: 8, y: 95 },
+                    { x: 9, y: 5 },
+                    { x: 10, y: 60 },
+                    { x: 11, y: 100 }
+                ]
+            },
+            {
+                type: "line",
+                color: "#6C0C41",
+                markerType: "circle",
+                markerColor: "#FFFFFF",
+                markerBorderColor: "#6C0C41",
+                markerBorderThickness: 2,
+                dataPoints: [
+                    { x: 0, y: 5 },
+                    { x: 1, y: 25 },
+                    { x: 2, y: 95 },
+                    { x: 3, y: 75 },
+                    { x: 4, y: 5 },
+                    { x: 5, y: 20 },
+                    { x: 6, y: 35 },
+                    { x: 7, y: 50 },
+                    { x: 8, y: 15 },
+                    { x: 9, y: 50 },
+                    { x: 10, y: 80 },
+                    { x: 11, y: 85 }
+                ]
+            }
+            ]
+        });
+        trafficChart.render();
+    });
+</script>
+{% endblock %}
