@@ -105,7 +105,7 @@
                 <div class="menu-title">General</div>
                 <a href="{{ url_for('admin.dashboard') }}" class="menu-link {% if active_page == 'dashboard' %}active{% endif %}"><i class='bx bxs-dashboard'></i> Admin Dashboard</a>
                 <a href="{{ url_for('admin.user_management') }}" class="menu-link {% if active_page == 'user_management' %}active{% endif %}"><i class='bx bx-group'></i> User Management</a>
-                <a href="#" class="menu-link {% if active_page == 'troubleshooting' %}active{% endif %}"><i class='bx bx-wrench'></i> Troubleshooting</a>
+                <a href="{{ url_for('admin.troubleshooting') }}" class="menu-link {% if active_page == 'troubleshooting' %}active{% endif %}"><i class='bx bx-wrench'></i> Troubleshooting</a>
                 <a href="{{ url_for('admin.analytics') }}" class="menu-link {% if active_page == 'analytics' %}active{% endif %}"><i class='bx bx-bar-chart-alt-2'></i> Analytics</a>
                 <a href="#" class="menu-link {% if active_page == 'notifications' %}active{% endif %}"><i class='bx bx-bell'></i> Notifications</a>
             </div>
