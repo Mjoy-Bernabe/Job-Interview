@@ -150,7 +150,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 25px;
+            padding: 0 70px;
             z-index: 90;
         }
 
@@ -162,18 +162,19 @@
 
         .search-bar {
             display: flex;
+            flex-direction: row;
             align-items: center;
+            padding: 0px 20px;
+            gap: 4px;
             background-color: #E9E9E9;
-            border-radius: 100px;
-            padding: 5px 15px;
             width: 497px;
+            max-width: 720px;
             height: 39px;
         }
 
         .search-bar i {
             font-size: 20px;
             color: #000;
-            margin-right: 10px;
         }
 
         .search-bar input {
@@ -183,6 +184,45 @@
             width: 100%;
             font-family: 'Roboto', sans-serif;
             font-size: 16px;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .notification-bell {
+            position: relative;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+
+        .notification-bell:hover {
+            background-color: #E9E9E9;
+        }
+
+        .notification-bell i {
+            font-size: 24px;
+            color: var(--text-gray);
+        }
+
+        .notification-dot {
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            background-color: var(--primary-red);
+            border-radius: 50%;
+            border: 1.5px solid #FAFAFA;
         }
 
         .user-profile {
@@ -259,11 +299,23 @@
         }
 
         .header-text {
-            font-weight: 500;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 650px;
+        }
+
+        .header-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: var(--primary-red);
+        }
+
+        .header-subtitle {
+            font-weight: 400;
             font-size: 15px;
             line-height: 22px;
-            color: var(--primary-red);
-            max-width: 600px;
+            color: var(--text-dark);
         }
 
         /* Middle Cards Row */
@@ -427,6 +479,25 @@
             display: none !important;
         }
 
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .navbar {
+                padding: 0 40px;
+            }
+            .main-content {
+                padding: 30px 40px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 0 20px;
+            }
+            .main-content {
+                padding: 20px;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -469,20 +540,25 @@
     <nav class="navbar">
         <div class="page-title">Dashboard</div>
         
-        <div class="search-bar">
-            <i class='bx bx-menu'></i>
-            <span style="margin: 0 10px; color:#ccc;">|</span>
-            <i class='bx bx-search'></i>
-            <input type="text" placeholder="Search">
-        </div>
-
-        <div class="user-profile">
-            <div class="user-avatar">
-                <i class='bx bxs-user' style="font-size: 24px; color: #fff;"></i>
+        <div class="nav-right">
+            <div class="search-bar">
+                <i class='bx bx-search'></i>
+                <input type="text" placeholder="Search">
             </div>
-            <div class="user-info">
-                <span class="name">David T. Smith</span>
-                <span class="role">System Administrator</span>
+
+            <button class="notification-bell">
+                <i class='bx bxs-bell'></i>
+                <div class="notification-dot"></div>
+            </button>
+
+            <div class="user-profile">
+                <div class="user-avatar">
+                    <i class='bx bxs-user' style="font-size: 24px; color: #fff;"></i>
+                </div>
+                <div class="user-info">
+                    <span class="name">David T. Smith</span>
+                    <span class="role">System Administrator</span>
+                </div>
             </div>
         </div>
     </nav>
@@ -495,7 +571,8 @@
             <i class='bx bx-data'></i>
             <div class="header-divider"></div>
             <div class="header-text">
-                Server is Up and Running! Monitor system uptime, track applicant and HR activity pipelines, and manage background infrastructure performance.
+                <div class="header-title">Server is Up and Running!</div>
+                <div class="header-subtitle">Monitor system uptime, track applicant and HR activity pipelines, and manage background infrastructure performance.</div>
             </div>
         </div>
 
