@@ -316,8 +316,8 @@
 <!-- Tabs Container -->
 <div class="tabs-wrapper">
     <div class="tabs-container">
-        <a href="javascript:void(0)" class="tab tab-active" onclick="switchTab('system-usage', this)">System Usage</a>
-        <a href="javascript:void(0)" class="tab tab-inactive" onclick="switchTab('applications', this)">Applications</a>
+        <a href="javascript:void(0)" id="btn-system-usage" class="tab tab-active" onclick="switchTab('system-usage', this)">System Usage</a>
+        <a href="javascript:void(0)" id="btn-applications" class="tab tab-inactive" onclick="switchTab('applications', this)">Applications</a>
         <a href="javascript:void(0)" class="tab tab-inactive">Demographics</a>
         <a href="javascript:void(0)" class="tab tab-inactive">HR Performance</a>
         <a href="javascript:void(0)" class="tab tab-inactive">Others</a>
@@ -400,6 +400,9 @@
     var loginChart, applicationsChart, statusChart;
 
     function switchTab(tabId, element) {
+        // Save selected tab to localStorage
+        localStorage.setItem('activeAnalyticsTab', tabId);
+
         // Hide all tab contents
         document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
         // Remove active class from all tabs
@@ -408,54 +411,37 @@
             el.classList.add('tab-inactive');
         });
         // Show selected tab content
-        document.getElementById('tab-' + tabId).style.display = 'block';
+        const tabContent = document.getElementById('tab-' + tabId);
+        if (tabContent) tabContent.style.display = 'block';
+        
         // Set active class to clicked tab
-        element.classList.remove('tab-inactive');
-        element.classList.add('tab-active');
+        if (element) {
+            element.classList.remove('tab-inactive');
+            element.classList.add('tab-active');
+        }
 
-        // Re-render charts to fix width issues
-        if (loginChart) loginChart.render();
-        if (applicationsChart) applicationsChart.render();
-        if (statusChart) statusChart.render();
+        // Re-render charts to trigger animation
+        if (tabId === 'system-usage') {
+            renderSystemUsageCharts();
+        } else if (tabId === 'applications') {
+            renderApplicationsCharts();
+        }
     }
 
-    document.addEventListener("DOMContentLoaded", function () {
-        // Set dynamic month
-        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-        document.getElementById("dynamicMonth").innerText = monthNames[new Date().getMonth()];
-
+    function renderSystemUsageCharts() {
         loginChart = new CanvasJS.Chart("loginChartContainer", {
             animationEnabled: true,
             theme: "light2",
-            axisX: {
-                interval: 1,
-                minimum: 0,
-                maximum: 11
-            },
-            axisY: {
-                minimum: 0,
-                maximum: 100,
-                interval: 25,
-                gridThickness: 1,
-                gridColor: "#CCCCCC"
-            },
+            axisX: { interval: 1, minimum: 0, maximum: 11 },
+            axisY: { minimum: 0, maximum: 100, interval: 25, gridThickness: 1, gridColor: "#CCCCCC" },
             data: [{
                 type: "line",
                 color: "#A23B5F",
                 markerSize: 5,
                 dataPoints: [
-                    { x: 0, y: 10 },
-                    { x: 1, y: 30 },
-                    { x: 2, y: 100 },
-                    { x: 3, y: 80 },
-                    { x: 4, y: 10 },
-                    { x: 5, y: 20 },
-                    { x: 6, y: 40 },
-                    { x: 7, y: 50 },
-                    { x: 8, y: 20 },
-                    { x: 9, y: 60 },
-                    { x: 10, y: 85 },
-                    { x: 11, y: 90 }
+                    { x: 0, y: 10 }, { x: 1, y: 30 }, { x: 2, y: 100 }, { x: 3, y: 80 },
+                    { x: 4, y: 10 }, { x: 5, y: 20 }, { x: 6, y: 40 }, { x: 7, y: 50 },
+                    { x: 8, y: 20 }, { x: 9, y: 60 }, { x: 10, y: 85 }, { x: 11, y: 90 }
                 ]
             },
             {
@@ -463,23 +449,16 @@
                 color: "#4EE2C0",
                 markerSize: 5,
                 dataPoints: [
-                    { x: 0, y: 40 },
-                    { x: 1, y: 38 },
-                    { x: 2, y: 80 },
-                    { x: 3, y: 10 },
-                    { x: 4, y: 12 },
-                    { x: 5, y: 60 },
-                    { x: 6, y: 95 },
-                    { x: 7, y: 100 },
-                    { x: 8, y: 98 },
-                    { x: 9, y: 10 },
-                    { x: 10, y: 65 },
-                    { x: 11, y: 100 }
+                    { x: 0, y: 40 }, { x: 1, y: 38 }, { x: 2, y: 80 }, { x: 3, y: 10 },
+                    { x: 4, y: 12 }, { x: 5, y: 60 }, { x: 6, y: 95 }, { x: 7, y: 100 },
+                    { x: 8, y: 98 }, { x: 9, y: 10 }, { x: 10, y: 65 }, { x: 11, y: 100 }
                 ]
             }]
         });
         loginChart.render();
+    }
 
+    function renderApplicationsCharts() {
         applicationsChart = new CanvasJS.Chart("applicationsChartContainer", {
             animationEnabled: true,
             theme: "light2",
@@ -501,10 +480,7 @@
         statusChart = new CanvasJS.Chart("statusChartContainer", {
             animationEnabled: true,
             theme: "light2",
-            legend: {
-                verticalAlign: "bottom",
-                horizontalAlign: "center"
-            },
+            legend: { verticalAlign: "bottom", horizontalAlign: "center" },
             data: [{
                 type: "pie",
                 startAngle: 240,
@@ -520,6 +496,22 @@
             }]
         });
         statusChart.render();
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // Set dynamic month
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        document.getElementById("dynamicMonth").innerText = monthNames[new Date().getMonth()];
+        
+        // Restore tab state or default to system-usage
+        const savedTab = localStorage.getItem('activeAnalyticsTab') || 'system-usage';
+        const activeTabElement = document.getElementById('btn-' + savedTab);
+        
+        if (activeTabElement) {
+            switchTab(savedTab, activeTabElement);
+        } else {
+            switchTab('system-usage', document.getElementById('btn-system-usage'));
+        }
     });
 </script>
 {% endblock %}
