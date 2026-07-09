@@ -50,7 +50,7 @@
     }
 
     .analytics-header-subtitle {
-        font-weight: 500;
+        font-weight: 400;
         font-size: 15px;
         line-height: 22px;
         color: var(--text-dark);
@@ -322,7 +322,8 @@
             onclick="switchTab('applications', this)">Applications</a>
         <a href="javascript:void(0)" id="btn-demographics" class="tab tab-inactive"
             onclick="switchTab('demographics', this)">Demographics</a>
-        <a href="javascript:void(0)" class="tab tab-inactive">HR Performance</a>
+        <a href="javascript:void(0)" id="btn-hr-performance" class="tab tab-inactive"
+            onclick="switchTab('hr-performance', this)">HR Performance</a>
         <a href="javascript:void(0)" class="tab tab-inactive">Others</a>
     </div>
     <!-- Export Button -->
@@ -407,11 +408,21 @@
             <div
                 style="flex: 1; padding: 10px; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; color: #5B5959;">
                 <ol style="margin: 0; padding-left: 20px; line-height: 2.2;">
-                    <li><span style="border-bottom: 1px solid #CCC; padding-bottom: 2px; display: inline-block; width: 90%;">Pasig City</span></li>
-                    <li><span style="border-bottom: 1px solid #CCC; padding-bottom: 2px; display: inline-block; width: 90%;">Makati City</span></li>
-                    <li><span style="border-bottom: 1px solid #CCC; padding-bottom: 2px; display: inline-block; width: 90%;">Manila City</span></li>
-                    <li><span style="border-bottom: 1px solid #CCC; padding-bottom: 2px; display: inline-block; width: 90%;">Pasay City</span></li>
-                    <li><span style="border-bottom: 1px solid #CCC; padding-bottom: 2px; display: inline-block; width: 90%;">Quezon City</span></li>
+                    <li><span
+                            style="border-bottom: 1px solid #CCC; padding-bottom: 2px; display: inline-block; width: 90%;">Pasig
+                            City</span></li>
+                    <li><span
+                            style="border-bottom: 1px solid #CCC; padding-bottom: 2px; display: inline-block; width: 90%;">Makati
+                            City</span></li>
+                    <li><span
+                            style="border-bottom: 1px solid #CCC; padding-bottom: 2px; display: inline-block; width: 90%;">Manila
+                            City</span></li>
+                    <li><span
+                            style="border-bottom: 1px solid #CCC; padding-bottom: 2px; display: inline-block; width: 90%;">Pasay
+                            City</span></li>
+                    <li><span
+                            style="border-bottom: 1px solid #CCC; padding-bottom: 2px; display: inline-block; width: 90%;">Quezon
+                            City</span></li>
                 </ol>
             </div>
             <div style="flex: 1;">
@@ -441,6 +452,96 @@
             <div class="chart-header">Experience Level</div>
             <div class="chart-body" style="min-height: 180px; padding: 5px;">
                 <div id="experienceChartContainer" style="height: 100%; width: 100%;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="tab-hr-performance" class="tab-content">
+    <div style="display: grid; grid-template-columns: 1.15fr 1fr; gap: 17px; margin-bottom: 35px;">
+        <!-- Interviews Conducted -->
+        <div class="chart-card" style="background: #B3241B; border: none; box-shadow: 0px 2px 4px rgba(0,0,0,0.25);">
+            <div
+                style="padding: 10px 10px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 20px; color: #FFFFFF; border-radius: 6px 6px 0 0;">
+                Interviews Conducted
+            </div>
+            <div
+                style="padding: 10px 20px 20px; display: flex; align-items: flex-end; justify-content: space-between; color: #FFFFFF; font-family: 'Poppins', sans-serif;">
+                <div>
+                    <div style="font-size: 64px; font-weight: 600; line-height: 1;"><span class="animate-number"
+                            data-target="100">0</span></div>
+                    <div style="font-size: 24px; font-weight: 500;">Interviews</div>
+                </div>
+                <div style="font-size: 14px; font-weight: 600; padding-bottom: 8px;">
+                    <i class='bx bx-chevrons-up' style="font-size: 16px; vertical-align: middle;"></i> 49.9 % this month
+                </div>
+            </div>
+        </div>
+
+        <!-- Offers Sent -->
+        <div class="chart-card"
+            style="background: #F5F5F5; border: 1px solid #D9D9D9; box-shadow: 0px 2px 4px rgba(0,0,0,0.25);">
+            <div
+                style="padding: 10px 10px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 20px; color: #B3241B; border-radius: 6px 6px 0 0;">
+                Offers Sent
+            </div>
+            <div
+                style="padding: 10px 20px 20px; display: flex; align-items: flex-end; justify-content: space-between; color: #B3241B; font-family: 'Poppins', sans-serif;">
+                <div>
+                    <div style="font-size: 64px; font-weight: 600; line-height: 1;"><span class="animate-number"
+                            data-target="67">0</span></div>
+                    <div style="font-size: 24px; font-weight: 500;">Job Offers</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Graphs -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 45px;">
+        <!-- Candidates Hired -->
+        <div class="chart-card" style="box-shadow: 0px 2px 4px rgba(0,0,0,0.25);">
+            <div
+                style="padding: 10px 10px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 16px; color: #B3241B; background: #FFFFFF; display: flex; justify-content: center; border-radius: 6px 6px 0 0;">
+                Candidates Hired
+            </div>
+            <div
+                style="padding: 20px; border-top: 2px solid #CCC; display: flex; align-items: flex-end; justify-content: space-between; color: #B3241B; font-family: 'Poppins', sans-serif; min-height: 120px;">
+                <div>
+                    <div style="font-size: 48px; font-weight: 600; line-height: 1;"><span class="animate-number"
+                            data-target="100">0</span></div>
+                    <div style="font-size: 20px; font-weight: 500;">Hired</div>
+                </div>
+                <div style="font-size: 14px; font-weight: 600; color: #48742C; padding-bottom: 6px;">
+                    <i class='bx bxs-up-arrow' style="font-size: 14px; vertical-align: middle;"></i> 49.9 % this month
+                </div>
+            </div>
+        </div>
+
+        <!-- Average Hiring Time -->
+        <div class="chart-card" style="box-shadow: 0px 2px 4px rgba(0,0,0,0.25);">
+            <div
+                style="padding: 10px 10px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 16px; color: #B3241B; background: #FFFFFF; display: flex; justify-content: center; border-radius: 6px 6px 0 0;">
+                Average Hiring Time
+            </div>
+            <div
+                style="padding: 20px; border-top: 2px solid #CCC; display: flex; align-items: center; justify-content: center; flex-direction: column; color: #B3241B; font-family: 'Poppins', sans-serif; min-height: 120px;">
+                <div style="font-size: 48px; font-weight: 600; line-height: 1;"><span class="animate-number"
+                        data-target="3">0</span>-<span class="animate-number" data-target="4">0</span></div>
+                <div style="font-size: 20px; font-weight: 500;">Days</div>
+            </div>
+        </div>
+
+        <!-- Average Interview Time -->
+        <div class="chart-card" style="box-shadow: 0px 2px 4px rgba(0,0,0,0.25);">
+            <div
+                style="padding: 10px 10px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 16px; color: #B3241B; background: #FFFFFF; display: flex; justify-content: center; border-radius: 6px 6px 0 0;">
+                Average Interview Time
+            </div>
+            <div
+                style="padding: 20px; border-top: 2px solid #CCC; display: flex; align-items: center; justify-content: center; flex-direction: column; color: #B3241B; font-family: 'Poppins', sans-serif; min-height: 120px;">
+                <div style="font-size: 48px; font-weight: 600; line-height: 1;"><span class="animate-float"
+                        data-target="1.56">0.00</span></div>
+                <div style="font-size: 20px; font-weight: 500;">Minutes</div>
             </div>
         </div>
     </div>
@@ -478,7 +579,49 @@
             renderApplicationsCharts();
         } else if (tabId === 'demographics') {
             renderDemographicsCharts();
+        } else if (tabId === 'hr-performance') {
+            animateNumbers();
         }
+    }
+
+    function animateNumbers() {
+        const counters = document.querySelectorAll('#tab-hr-performance .animate-number');
+        counters.forEach(counter => {
+            counter.innerText = '0';
+            const target = +counter.getAttribute('data-target');
+            const duration = 1000;
+            const increment = target / (duration / 16);
+
+            const updateCounter = () => {
+                const current = +counter.innerText;
+                if (current < target) {
+                    counter.innerText = Math.ceil(current + increment);
+                    setTimeout(updateCounter, 16);
+                } else {
+                    counter.innerText = target;
+                }
+            };
+            updateCounter();
+        });
+
+        const floatCounters = document.querySelectorAll('#tab-hr-performance .animate-float');
+        floatCounters.forEach(counter => {
+            counter.innerText = '0.00';
+            const target = +counter.getAttribute('data-target');
+            const duration = 1000;
+            const increment = target / (duration / 16);
+
+            const updateCounter = () => {
+                const current = parseFloat(counter.innerText);
+                if (current < target) {
+                    counter.innerText = (current + increment).toFixed(2);
+                    setTimeout(updateCounter, 16);
+                } else {
+                    counter.innerText = target.toFixed(2);
+                }
+            };
+            updateCounter();
+        });
     }
 
     function renderSystemUsageCharts() {
