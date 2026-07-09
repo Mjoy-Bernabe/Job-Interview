@@ -316,9 +316,12 @@
 <!-- Tabs Container -->
 <div class="tabs-wrapper">
     <div class="tabs-container">
-        <a href="javascript:void(0)" id="btn-system-usage" class="tab tab-active" onclick="switchTab('system-usage', this)">System Usage</a>
-        <a href="javascript:void(0)" id="btn-applications" class="tab tab-inactive" onclick="switchTab('applications', this)">Applications</a>
-        <a href="javascript:void(0)" class="tab tab-inactive">Demographics</a>
+        <a href="javascript:void(0)" id="btn-system-usage" class="tab tab-active"
+            onclick="switchTab('system-usage', this)">System Usage</a>
+        <a href="javascript:void(0)" id="btn-applications" class="tab tab-inactive"
+            onclick="switchTab('applications', this)">Applications</a>
+        <a href="javascript:void(0)" id="btn-demographics" class="tab tab-inactive"
+            onclick="switchTab('demographics', this)">Demographics</a>
         <a href="javascript:void(0)" class="tab tab-inactive">HR Performance</a>
         <a href="javascript:void(0)" class="tab tab-inactive">Others</a>
     </div>
@@ -396,8 +399,56 @@
     </div>
 </div>
 
+<div id="tab-demographics" class="tab-content">
+    <!-- Top Locations -->
+    <div class="chart-card" style="margin-bottom: 20px;">
+        <div class="chart-header">Top Locations</div>
+        <div class="chart-body" style="display: flex; min-height: 180px;">
+            <div
+                style="flex: 1; padding: 10px; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; color: #5B5959;">
+                <ol style="margin: 0; padding-left: 20px; line-height: 2.2;">
+                    <li><span style="border-bottom: 1px solid #CCC; padding-bottom: 2px; display: inline-block; width: 90%;">Pasig City</span></li>
+                    <li><span style="border-bottom: 1px solid #CCC; padding-bottom: 2px; display: inline-block; width: 90%;">Makati City</span></li>
+                    <li><span style="border-bottom: 1px solid #CCC; padding-bottom: 2px; display: inline-block; width: 90%;">Manila City</span></li>
+                    <li><span style="border-bottom: 1px solid #CCC; padding-bottom: 2px; display: inline-block; width: 90%;">Pasay City</span></li>
+                    <li><span style="border-bottom: 1px solid #CCC; padding-bottom: 2px; display: inline-block; width: 90%;">Quezon City</span></li>
+                </ol>
+            </div>
+            <div style="flex: 1;">
+                <div id="locationsChartContainer" style="height: 100%; width: 100%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Graphs -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+        <!-- Education Level -->
+        <div class="chart-card">
+            <div class="chart-header">Education Level</div>
+            <div class="chart-body" style="min-height: 180px; padding: 5px;">
+                <div id="educationChartContainer" style="height: 100%; width: 100%;"></div>
+            </div>
+        </div>
+        <!-- Age Groups -->
+        <div class="chart-card">
+            <div class="chart-header">Age Groups</div>
+            <div class="chart-body" style="min-height: 180px; padding: 5px;">
+                <div id="ageChartContainer" style="height: 100%; width: 100%;"></div>
+            </div>
+        </div>
+        <!-- Experience Level -->
+        <div class="chart-card">
+            <div class="chart-header">Experience Level</div>
+            <div class="chart-body" style="min-height: 180px; padding: 5px;">
+                <div id="experienceChartContainer" style="height: 100%; width: 100%;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     var loginChart, applicationsChart, statusChart;
+    var locationsChart, educationChart, ageChart, experienceChart;
 
     function switchTab(tabId, element) {
         // Save selected tab to localStorage
@@ -413,7 +464,7 @@
         // Show selected tab content
         const tabContent = document.getElementById('tab-' + tabId);
         if (tabContent) tabContent.style.display = 'block';
-        
+
         // Set active class to clicked tab
         if (element) {
             element.classList.remove('tab-inactive');
@@ -425,6 +476,8 @@
             renderSystemUsageCharts();
         } else if (tabId === 'applications') {
             renderApplicationsCharts();
+        } else if (tabId === 'demographics') {
+            renderDemographicsCharts();
         }
     }
 
@@ -498,15 +551,81 @@
         statusChart.render();
     }
 
+    function renderDemographicsCharts() {
+        locationsChart = new CanvasJS.Chart("locationsChartContainer", {
+            animationEnabled: true,
+            theme: "light2",
+            axisX: { interval: 1, labelFontColor: "#808080", labelFontSize: 11 },
+            axisY: { gridThickness: 0, tickLength: 0, lineThickness: 0, labelFormatter: function () { return ""; } },
+            data: [{
+                type: "bar",
+                indexLabel: "{y}",
+                indexLabelPlacement: "outside",
+                indexLabelFontColor: "#4D4D4D",
+                indexLabelFontSize: 11,
+                dataPoints: [
+                    { y: 10, label: "Quezon", color: "#94A3B8" },
+                    { y: 38, label: "Pasay", color: "#64748B" },
+                    { y: 27, label: "Manila", color: "#475569" },
+                    { y: 45, label: "Makati", color: "#334155" },
+                    { y: 16, label: "Pasig", color: "#1E293B" }
+                ]
+            }]
+        });
+        locationsChart.render();
+
+        const pieOptions = {
+            animationEnabled: true,
+            theme: "light2",
+            legend: { verticalAlign: "center", horizontalAlign: "right", fontSize: 10 },
+            data: [{
+                type: "pie",
+                showInLegend: true,
+                indexLabel: "",
+                dataPoints: [
+                    { y: 12.7, label: "Pending", legendText: "Pending 12.7%", color: "#F43F5E" },
+                    { y: 35.7, label: "Interview Scheduled", legendText: "Interview Scheduled 35.7%", color: "#F97316" },
+                    { y: 21.4, label: "Rejected", legendText: "Rejected 21.4%", color: "#EAB308" },
+                    { y: 30.2, label: "Hired", legendText: "Hired 30.2%", color: "#22C55E" }
+                ]
+            }]
+        };
+
+        educationChart = new CanvasJS.Chart("educationChartContainer", pieOptions);
+        educationChart.render();
+
+        experienceChart = new CanvasJS.Chart("experienceChartContainer", pieOptions);
+        experienceChart.render();
+
+        ageChart = new CanvasJS.Chart("ageChartContainer", {
+            animationEnabled: true,
+            theme: "light2",
+            axisX: { interval: 1, labelFontColor: "#808080", labelFontSize: 11 },
+            axisY: { gridThickness: 0, tickLength: 0, lineThickness: 0, labelFormatter: function () { return ""; } },
+            data: [{
+                type: "column",
+                indexLabel: "{y}",
+                indexLabelPlacement: "outside",
+                dataPoints: [
+                    { y: 16, label: "A", color: "#F43F5E", indexLabelFontColor: "#F43F5E" },
+                    { y: 45, label: "B", color: "#F97316", indexLabelFontColor: "#F97316" },
+                    { y: 27, label: "C", color: "#EAB308", indexLabelFontColor: "#EAB308" },
+                    { y: 38, label: "D", color: "#22C55E", indexLabelFontColor: "#22C55E" }
+                ]
+            }]
+        });
+        ageChart.render();
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
         // Set dynamic month
         const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
         document.getElementById("dynamicMonth").innerText = monthNames[new Date().getMonth()];
-        
+
         // Restore tab state or default to system-usage
         const savedTab = localStorage.getItem('activeAnalyticsTab') || 'system-usage';
         const activeTabElement = document.getElementById('btn-' + savedTab);
-        
+
         if (activeTabElement) {
             switchTab(savedTab, activeTabElement);
         } else {
