@@ -445,7 +445,7 @@
                 <a href="{{ url_for('admin.analytics') }}"
                     class="menu-link {% if active_page == 'analytics' %}active{% endif %}"><i
                         class='bx bx-bar-chart-alt-2'></i> Analytics</a>
-                <a href="#" class="menu-link {% if active_page == 'notifications' %}active{% endif %}"><i
+                <a href="{{ url_for('admin.notifications') }}" class="menu-link {% if active_page == 'notifications' %}active{% endif %}"><i
                         class='bx bx-bell'></i> Notifications</a>
             </div>
 
