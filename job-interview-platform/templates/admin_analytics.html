@@ -261,6 +261,42 @@
         font-size: 20px;
         color: #B3241B;
     }
+
+    /* Tab Content */
+    .tab-content {
+        display: none;
+    }
+
+    .active-tab-content {
+        display: block;
+    }
+
+    /* Applications Grid */
+    .applications-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .flex-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .time-dropdown {
+        border: 1px solid #B3241B;
+        border-radius: 10px;
+        padding: 4px 10px;
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        font-size: 12px;
+        color: #000000;
+        background: #FFFFFF;
+        outline: none;
+        cursor: pointer;
+    }
 </style>
 <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
 {% endblock %}
@@ -280,65 +316,115 @@
 <!-- Tabs Container -->
 <div class="tabs-wrapper">
     <div class="tabs-container">
-        <a href="#" class="tab tab-active">System Usage</a>
-        <a href="#" class="tab tab-inactive">Applications</a>
-        <a href="#" class="tab tab-inactive">Demographics</a>
-        <a href="#" class="tab tab-inactive">HR Performance</a>
-        <a href="#" class="tab tab-inactive">Others</a>
+        <a href="javascript:void(0)" class="tab tab-active" onclick="switchTab('system-usage', this)">System Usage</a>
+        <a href="javascript:void(0)" class="tab tab-inactive" onclick="switchTab('applications', this)">Applications</a>
+        <a href="javascript:void(0)" class="tab tab-inactive">Demographics</a>
+        <a href="javascript:void(0)" class="tab tab-inactive">HR Performance</a>
+        <a href="javascript:void(0)" class="tab tab-inactive">Others</a>
     </div>
     <!-- Export Button -->
     <a href="#" class="export-btn">Export PDF Report</a>
 </div>
 
 <!-- Content Grid -->
-<div class="content-grid">
-    <!-- Stats -->
-    <div class="stat-panel-wrapper">
-        <div class="stat-panel-title">For the month of: <span id="dynamicMonth"></span></div>
-        <div class="stat-panel">
-            <div class="stat-box">
-                <div class="stat-label">Users</div>
-                <div class="stat-value">70,290</div>
-                <div class="stat-trend"><i class='bx bxs-up-arrow'></i> 49.9 %</div>
-                <div class="stat-subtext">Monthly comparison</div>
+<div id="tab-system-usage" class="tab-content active-tab-content">
+    <div class="content-grid">
+        <!-- Stats -->
+        <div class="stat-panel-wrapper">
+            <div class="stat-panel-title">For the month of: <span id="dynamicMonth"></span></div>
+            <div class="stat-panel">
+                <div class="stat-box">
+                    <div class="stat-label">Users</div>
+                    <div class="stat-value">70,290</div>
+                    <div class="stat-trend"><i class='bx bxs-up-arrow'></i> 49.9 %</div>
+                    <div class="stat-subtext">Monthly comparison</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Active HR Users</div>
+                    <div class="stat-value">60,000</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Active Applicants</div>
+                    <div class="stat-value">10,290</div>
+                </div>
             </div>
-            <div class="stat-box">
-                <div class="stat-label">Active HR Users</div>
-                <div class="stat-value">60,000</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-label">Active Applicants</div>
-                <div class="stat-value">10,290</div>
+        </div>
+
+        <!-- Line Chart -->
+        <div class="chart-card">
+            <div class="chart-header">Login Activity</div>
+            <div class="chart-body">
+                <div id="loginChartContainer" style="height: 100%; width: 100%;"></div>
             </div>
         </div>
     </div>
 
-    <!-- Line Chart -->
-    <div class="chart-card">
-        <div class="chart-header">Login Activity</div>
-        <div class="chart-body">
-            <div id="loginChartContainer" style="height: 100%; width: 100%;"></div>
+    <!-- Bottom Panels -->
+    <div class="bottom-panels">
+        <div class="bottom-panel">
+            <div class="panel-title">Documents Uploaded</div>
+        </div>
+        <div class="bottom-panel">
+            <div class="panel-title">Resume Downloads</div>
         </div>
     </div>
 </div>
 
-<!-- Bottom Panels -->
-<div class="bottom-panels">
-    <div class="bottom-panel">
-        <div class="panel-title">Documents Uploaded</div>
-    </div>
-    <div class="bottom-panel">
-        <div class="panel-title">Resume Downloads</div>
+<div id="tab-applications" class="tab-content">
+    <div class="applications-grid">
+        <!-- Line Chart -->
+        <div class="chart-card">
+            <div class="chart-header flex-header">
+                <span>Applications Over Time</span>
+                <select class="time-dropdown">
+                    <option>Daily</option>
+                    <option>Monthly</option>
+                </select>
+            </div>
+            <div class="chart-body" style="min-height: 316px;">
+                <div id="applicationsChartContainer" style="height: 100%; width: 100%;"></div>
+            </div>
+        </div>
+
+        <!-- Pie Chart -->
+        <div class="chart-card">
+            <div class="chart-header">Applicant Status Distribution</div>
+            <div class="chart-body" style="min-height: 316px;">
+                <div id="statusChartContainer" style="height: 100%; width: 100%;"></div>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
+    var loginChart, applicationsChart, statusChart;
+
+    function switchTab(tabId, element) {
+        // Hide all tab contents
+        document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+        // Remove active class from all tabs
+        document.querySelectorAll('.tab').forEach(el => {
+            el.classList.remove('tab-active');
+            el.classList.add('tab-inactive');
+        });
+        // Show selected tab content
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        // Set active class to clicked tab
+        element.classList.remove('tab-inactive');
+        element.classList.add('tab-active');
+
+        // Re-render charts to fix width issues
+        if (loginChart) loginChart.render();
+        if (applicationsChart) applicationsChart.render();
+        if (statusChart) statusChart.render();
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
         // Set dynamic month
         const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
         document.getElementById("dynamicMonth").innerText = monthNames[new Date().getMonth()];
 
-        var loginChart = new CanvasJS.Chart("loginChartContainer", {
+        loginChart = new CanvasJS.Chart("loginChartContainer", {
             animationEnabled: true,
             theme: "light2",
             axisX: {
@@ -393,6 +479,47 @@
             }]
         });
         loginChart.render();
+
+        applicationsChart = new CanvasJS.Chart("applicationsChartContainer", {
+            animationEnabled: true,
+            theme: "light2",
+            axisX: { interval: 1, minimum: 0, maximum: 11 },
+            axisY: { minimum: 0, maximum: 1000, interval: 250, gridThickness: 1, gridColor: "#CCCCCC" },
+            data: [{
+                type: "line",
+                color: "#B3241B",
+                markerSize: 5,
+                dataPoints: [
+                    { x: 0, y: 150 }, { x: 1, y: 300 }, { x: 2, y: 800 }, { x: 3, y: 450 },
+                    { x: 4, y: 600 }, { x: 5, y: 250 }, { x: 6, y: 400 }, { x: 7, y: 900 },
+                    { x: 8, y: 500 }, { x: 9, y: 700 }, { x: 10, y: 850 }, { x: 11, y: 950 }
+                ]
+            }]
+        });
+        applicationsChart.render();
+
+        statusChart = new CanvasJS.Chart("statusChartContainer", {
+            animationEnabled: true,
+            theme: "light2",
+            legend: {
+                verticalAlign: "bottom",
+                horizontalAlign: "center"
+            },
+            data: [{
+                type: "pie",
+                startAngle: 240,
+                showInLegend: true,
+                yValueFormatString: "##0.00'%'",
+                indexLabel: "{label} {y}",
+                dataPoints: [
+                    { y: 15, label: "Pending", legendText: "Pending", color: "#F43F5E" },
+                    { y: 35, label: "Interview Scheduled", legendText: "Interview Scheduled", color: "#F97316" },
+                    { y: 20, label: "Rejected", legendText: "Rejected", color: "#EAB308" },
+                    { y: 30, label: "Hired", legendText: "Hired", color: "#22C55E" }
+                ]
+            }]
+        });
+        statusChart.render();
     });
 </script>
 {% endblock %}
