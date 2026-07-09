@@ -300,4 +300,4 @@ AceView Recruitment Team"""
 @hr_bp.route("/logout")
 def logout():
     session.clear()
-    return redirect(url_for("auth.staff_login"))
+    return redirect(url_for("auth.login"))
