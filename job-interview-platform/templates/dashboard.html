@@ -5,7 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Applicant Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Poppins:wght@400;500;600&display=swap"
+        rel="stylesheet">
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     <style>
         :root {
@@ -197,7 +199,7 @@
             clip: rect(0, 0, 0, 0);
         }
 
-       .hero-image-wrap {
+        .hero-image-wrap {
             position: relative;
             margin-bottom: 26px;
             overflow: hidden;
@@ -702,7 +704,7 @@
 <body>
     <div class="app-shell">
         <aside class="sidebar">
-             <div class="brand-box" aria-label="H2 Software Consulting Services Inc.">
+            <div class="brand-box" aria-label="H2 Software Consulting Services Inc.">
                 <div class="brand-mark">H2</div>
                 <div class="brand-name">Software<br>Consulting<br>Services<br>Inc.</div>
             </div>
@@ -743,10 +745,12 @@
             <section class="view active" id="view-home">
                 <div class="home-layout">
                     <h1 class="hero-title">Hero Text</h1>
-                    <p class="hero-copy">AI-powered hiring support for applicants and HR teams. Track your resume, chatbot interview, and summary results in one place.</p>
+                    <p class="hero-copy">AI-powered hiring support for applicants and HR teams. Track your resume,
+                        chatbot interview, and summary results in one place.</p>
 
                     <div class="hero-image-wrap">
-                        <img class="hero-image" src="{{ url_for('static', filename=hero_image|default('H2.png')) }}" alt="Interview consultation">
+                        <img class="hero-image" src="{{ url_for('static', filename=hero_image|default('H2.png')) }}"
+                            alt="Interview consultation">
                     </div>
 
                     <div class="cta-row">
@@ -802,162 +806,172 @@
                         {% for job in available_jobs %}
                         {% set category_label = job.category or 'General' %}
                         {% if loop.first or job.category != available_jobs[loop.index0 - 1].category %}
-                        {% if not loop.first %}</div></div>{% endif %}
-                        <div class="job-category" data-category="{{ category_label }}">
-                            <div class="category-heading">
-                                <h2>{{ category_label }}</h2>
-                                <hr>
-                            </div>
-                            <div class="job-list">
+                        {% if not loop.first %}</div>
+                </div>{% endif %}
+                <div class="job-category" data-category="{{ category_label }}">
+                    <div class="category-heading">
+                        <h2>{{ category_label }}</h2>
+                        <hr>
+                    </div>
+                    <div class="job-list">
                         {% endif %}
 
-                                <button type="button"
-                                        class="job-row {% if job.has_applied %}applied{% endif %}"
-                                        data-job-id="{{ job.id }}"
-                                        data-position="{{ job.position }}"
-                                        data-applied="{{ 'true' if job.has_applied else 'false' }}">
-                                    <div class="job-info">
-                                        <strong>{{ job.position }}</strong>
-                                        <div class="job-meta">
-                                            {{ job.form_access }}
-                                            {% if job.deadline_date %} | Deadline {{ job.deadline_date }}{% endif %}
-                                            {% if job.max_allowed %} | Slots {{ job.max_allowed }}{% endif %}
-                                        </div>
-                                    </div>
-                                    <span class="job-cta">
-                                        {% if job.has_applied %}View Application{% else %}Apply Now!!{% endif %}
-                                        <i class='bx bxs-right-arrow'></i>
-                                    </span>
-                                </button>
+                        <button type="button" class="job-row {% if job.has_applied %}applied{% endif %}"
+                            data-job-id="{{ job.id }}" data-position="{{ job.position }}"
+                            data-applied="{{ 'true' if job.has_applied else 'false' }}">
+                            <div class="job-info">
+                                <strong>{{ job.position }}</strong>
+                                <div class="job-meta">
+                                    {{ job.form_access }}
+                                    {% if job.deadline_date %} | Deadline {{ job.deadline_date }}{% endif %}
+                                    {% if job.max_allowed %} | Slots {{ job.max_allowed }}{% endif %}
+                                </div>
+                            </div>
+                            <span class="job-cta">
+                                {% if job.has_applied %}View Application{% else %}Apply Now!!{% endif %}
+                                <i class='bx bxs-right-arrow'></i>
+                            </span>
+                        </button>
 
-                        {% if loop.last %}</div></div>{% endif %}
-                        {% endfor %}
+                        {% if loop.last %}
                     </div>
-                    {% else %}
-                    <p class="empty-note">No job posts are available yet.</p>
+                </div>{% endif %}
+                {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty-note">No job posts are available yet.</p>
+    {% endif %}
+    </div>
+
+    <!-- ===== Per-job application detail screen ===== -->
+    <div id="dash-detail" style="display:none;">
+        <div class="back-row">
+            <button type="button" class="back-link" id="backToJobs">
+                <i class='bx bx-arrow-back'></i>
+                Back to Applications
+            </button>
+        </div>
+
+        <h1 class="detail-job-title" id="detailJobTitle">Application</h1>
+
+        <div class="dashboard-grid">
+            <article class="panel">
+                <h2>Section 1: Resume</h2>
+                {% if has_applied %}
+                <span
+                    class="status-pill {% if application_data.eligibility == 'Eligible' %}eligible{% elif application_data.eligibility == 'Not Eligible' %}not-eligible{% else %}pending{% endif %}">
+                    {{ application_data.eligibility or 'Pending' }}
+                </span>
+                <div class="detail-list">
+                    <div class="detail-row"><span>Name</span><span>{{ application_data.name }}</span></div>
+                    <div class="detail-row"><span>Email</span><span>{{ application_data.email }}</span></div>
+                    <div class="detail-row"><span>Position</span><span>{{ application_data.position|replace('_', '
+                            ')|title }}</span></div>
+                    <div class="detail-row"><span>Experience</span><span>{{ application_data.yearexperience or 0 }}
+                            years</span></div>
+                    {% if application_data.education_level %}
+                    <div class="detail-row"><span>Education</span><span>{{ application_data.education_level|replace('_',
+                            ' ')|title }}</span></div>
+                    {% endif %}
+                    {% if application_data.skills %}
+                    <div class="detail-row"><span>Skills</span><span>{{ application_data.skills }}</span></div>
                     {% endif %}
                 </div>
+                {% else %}
+                <p class="empty-note">Submit your resume/application to start the screening process.</p>
+                <a class="small-action" href="{{ url_for('applicants.prescreen') }}" style="margin-top:14px;">Start
+                    Application</a>
+                {% endif %}
+            </article>
 
-                <!-- ===== Per-job application detail screen ===== -->
-                <div id="dash-detail" style="display:none;">
-                    <div class="back-row">
-                        <button type="button" class="back-link" id="backToJobs">
-                            <i class='bx bx-arrow-back'></i>
-                            Back to Applications
-                        </button>
-                    </div>
+            <article class="panel">
+                <h2>Section 2: Chatbot Interview</h2>
+                {% if chatbot_data %}
+                <span
+                    class="status-pill {% if chatbot_data.qualification_status == 'Qualified' %}qualified{% elif chatbot_data.qualification_status == 'Not Qualified' %}not-qualified{% else %}pending{% endif %}">
+                    {{ chatbot_data.qualification_status }}
+                </span>
+                <div class="detail-list">
+                    <div class="detail-row"><span>Job Position</span><span>{{ chatbot_data.position|replace('_', '
+                            ')|title }}</span></div>
+                    <div class="detail-row"><span>Total Score</span><span>{{ chatbot_data.average_score }}%</span></div>
+                    <div class="detail-row"><span>Summary</span><span><a
+                                href="{{ url_for('summary.summary_report') }}">Open Report</a></span></div>
+                </div>
+                {% elif has_applied and application_data.eligibility == 'Eligible' %}
+                <p class="empty-note">You are eligible to proceed to the chatbot interview.</p>
+                <a class="small-action" href="{{ url_for('interview.chatbot_page') }}" style="margin-top:14px;">Start
+                    Interview</a>
+                {% elif has_applied %}
+                <p class="empty-note">Chatbot interview is not available until your resume screening is eligible.</p>
+                {% else %}
+                <p class="empty-note">Complete Section 1 before taking the chatbot interview.</p>
+                {% endif %}
+            </article>
+        </div>
+    </div>
+    </section>
 
-                    <h1 class="detail-job-title" id="detailJobTitle">Application</h1>
+    <section class="view" id="view-settings">
+        <h1 class="page-title">Settings</h1>
+        <p class="page-subtitle">Account shortcuts and application actions.</p>
+        <div class="panel">
+            <h2>Quick Actions</h2>
+            <div class="settings-actions">
+                <button type="button" class="small-action secondary" data-view="dashboard">Applications</button>
+                {% if chatbot_data %}
+                <a class="small-action secondary" href="{{ url_for('summary.summary_report') }}">Summary</a>
+                {% endif %}
+                <a class="small-action secondary" href="{{ url_for('auth.logout') }}">Logout</a>
+            </div>
+        </div>
+    </section>
 
-                    <div class="dashboard-grid">
-                        <article class="panel">
-                            <h2>Section 1: Resume</h2>
-                            {% if has_applied %}
-                            <span class="status-pill {% if application_data.eligibility == 'Eligible' %}eligible{% elif application_data.eligibility == 'Not Eligible' %}not-eligible{% else %}pending{% endif %}">
-                                {{ application_data.eligibility or 'Pending' }}
-                            </span>
-                            <div class="detail-list">
-                                <div class="detail-row"><span>Name</span><span>{{ application_data.name }}</span></div>
-                                <div class="detail-row"><span>Email</span><span>{{ application_data.email }}</span></div>
-                                <div class="detail-row"><span>Position</span><span>{{ application_data.position|replace('_', ' ')|title }}</span></div>
-                                <div class="detail-row"><span>Experience</span><span>{{ application_data.yearexperience or 0 }} years</span></div>
-                                {% if application_data.education_level %}
-                                <div class="detail-row"><span>Education</span><span>{{ application_data.education_level|replace('_', ' ')|title }}</span></div>
-                                {% endif %}
-                                {% if application_data.skills %}
-                                <div class="detail-row"><span>Skills</span><span>{{ application_data.skills }}</span></div>
-                                {% endif %}
-                            </div>
+    <section class="view" id="view-profile">
+        <h1 class="page-title">Profile</h1>
+        <p class="page-subtitle">Applicant information connected to this account.</p>
+        <div class="dashboard-grid">
+            <article class="panel">
+                <h2>Applicant Info</h2>
+                <div class="detail-list">
+                    <div class="detail-row"><span>Full Name</span><span>{{ username or name or 'Not set' }}</span></div>
+                    <div class="detail-row"><span>Email</span><span>{{ email or 'Not set' }}</span></div>
+                    <div class="detail-row"><span>Contact</span><span>{{ contact or 'Not set' }}</span></div>
+                </div>
+            </article>
+
+            <article class="panel">
+                <h2>Application Info</h2>
+                <div class="detail-list">
+                    <div class="detail-row">
+                        <span>Position</span>
+                        <span>
+                            {% if application_data and application_data.position %}
+                            {{ application_data.position|replace('_', ' ')|title }}
+                            {% elif chatbot_data and chatbot_data.position %}
+                            {{ chatbot_data.position|replace('_', ' ')|title }}
                             {% else %}
-                            <p class="empty-note">Submit your resume/application to start the screening process.</p>
-                            <a class="small-action" href="{{ url_for('applicants.prescreen') }}" style="margin-top:14px;">Start Application</a>
+                            Not set
                             {% endif %}
-                        </article>
-
-                        <article class="panel">
-                            <h2>Section 2: Chatbot Interview</h2>
-                            {% if chatbot_data %}
-                            <span class="status-pill {% if chatbot_data.qualification_status == 'Qualified' %}qualified{% elif chatbot_data.qualification_status == 'Not Qualified' %}not-qualified{% else %}pending{% endif %}">
-                                {{ chatbot_data.qualification_status }}
-                            </span>
-                            <div class="detail-list">
-                                <div class="detail-row"><span>Job Position</span><span>{{ chatbot_data.position|replace('_', ' ')|title }}</span></div>
-                                <div class="detail-row"><span>Total Score</span><span>{{ chatbot_data.average_score }}%</span></div>
-                                <div class="detail-row"><span>Summary</span><span><a href="{{ url_for('summary.summary_report') }}">Open Report</a></span></div>
-                            </div>
-                            {% elif has_applied and application_data.eligibility == 'Eligible' %}
-                            <p class="empty-note">You are eligible to proceed to the chatbot interview.</p>
-                            <a class="small-action" href="{{ url_for('interview.chatbot_page') }}" style="margin-top:14px;">Start Interview</a>
-                            {% elif has_applied %}
-                            <p class="empty-note">Chatbot interview is not available until your resume screening is eligible.</p>
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Qualification Status</span>
+                        <span>
+                            {% if chatbot_data and chatbot_data.qualification_status %}
+                            {{ chatbot_data.qualification_status }}
+                            {% elif application_data and application_data.eligibility %}
+                            {{ application_data.eligibility }}
                             {% else %}
-                            <p class="empty-note">Complete Section 1 before taking the chatbot interview.</p>
+                            Pending
                             {% endif %}
-                        </article>
+                        </span>
                     </div>
                 </div>
-            </section>
-
-            <section class="view" id="view-settings">
-                <h1 class="page-title">Settings</h1>
-                <p class="page-subtitle">Account shortcuts and application actions.</p>
-                <div class="panel">
-                    <h2>Quick Actions</h2>
-                    <div class="settings-actions">
-                        <button type="button" class="small-action secondary" data-view="dashboard">Applications</button>
-                        {% if chatbot_data %}
-                        <a class="small-action secondary" href="{{ url_for('summary.summary_report') }}">Summary</a>
-                        {% endif %}
-                        <a class="small-action secondary" href="{{ url_for('auth.logout') }}">Logout</a>
-                    </div>
-                </div>
-            </section>
-
-            <section class="view" id="view-profile">
-                <h1 class="page-title">Profile</h1>
-                <p class="page-subtitle">Applicant information connected to this account.</p>
-                <div class="dashboard-grid">
-                    <article class="panel">
-                        <h2>Applicant Info</h2>
-                        <div class="detail-list">
-                            <div class="detail-row"><span>Full Name</span><span>{{ username or name or 'Not set' }}</span></div>
-                            <div class="detail-row"><span>Email</span><span>{{ email or 'Not set' }}</span></div>
-                            <div class="detail-row"><span>Contact</span><span>{{ contact or 'Not set' }}</span></div>
-                        </div>
-                    </article>
-
-                    <article class="panel">
-                        <h2>Application Info</h2>
-                        <div class="detail-list">
-                            <div class="detail-row">
-                                <span>Position</span>
-                                <span>
-                                    {% if application_data and application_data.position %}
-                                    {{ application_data.position|replace('_', ' ')|title }}
-                                    {% elif chatbot_data and chatbot_data.position %}
-                                    {{ chatbot_data.position|replace('_', ' ')|title }}
-                                    {% else %}
-                                    Not set
-                                    {% endif %}
-                                </span>
-                            </div>
-                            <div class="detail-row">
-                                <span>Qualification Status</span>
-                                <span>
-                                    {% if chatbot_data and chatbot_data.qualification_status %}
-                                    {{ chatbot_data.qualification_status }}
-                                    {% elif application_data and application_data.eligibility %}
-                                    {{ application_data.eligibility }}
-                                    {% else %}
-                                    Pending
-                                    {% endif %}
-                                </span>
-                            </div>
-                        </div>
-                    </article>
-                </div>
-            </section>
-        </main>
+            </article>
+        </div>
+    </section>
+    </main>
     </div>
 
     <script>

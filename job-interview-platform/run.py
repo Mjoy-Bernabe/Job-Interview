@@ -23,6 +23,15 @@ def create_app():
             lines.append(f"{rule.endpoint} -> {rule}")
         return "<br>".join(lines)
 
+    @app.after_request
+    def add_security_headers(response):
+        # Only prevent caching for dynamic HTML pages, allow static files to cache
+        if 'text/html' in response.content_type:
+            response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+        return response
+
     logger.info("✅ Application created and blueprints registered.")
     return app
 
