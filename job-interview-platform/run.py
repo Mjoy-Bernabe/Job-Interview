@@ -23,6 +23,15 @@ def create_app():
             lines.append(f"{rule.endpoint} -> {rule}")
         return "<br>".join(lines)
 
+    @app.after_request
+    def add_header(response):
+        # Prevent caching for HTML pages so the back button doesn't expose protected content after logout
+        if 'text/html' in response.headers.get('Content-Type', ''):
+            response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '-1'
+        return response
+
     logger.info("✅ Application created and blueprints registered.")
     return app
 

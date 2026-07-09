@@ -242,8 +242,18 @@ def check_session():
 
 @auth_bp.route("/logout")
 def logout():
+    redirect_target = "auth.login"
+    if "user_id" in session:
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT user_type FROM users WHERE user_id = %s", (session["user_id"],))
+        result = cur.fetchone()
+        cur.close()
+        
+        if result and result[0] in ("Admin", "HR"):
+            redirect_target = "auth.staff_login"
+
     session.clear()
-    response = redirect(url_for("auth.login"))
+    response = redirect(url_for(redirect_target))
     # Prevent caching
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, post-check=0, pre-check=0'
     response.headers['Pragma'] = 'no-cache'
