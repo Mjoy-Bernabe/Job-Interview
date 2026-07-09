@@ -324,7 +324,8 @@
             onclick="switchTab('demographics', this)">Demographics</a>
         <a href="javascript:void(0)" id="btn-hr-performance" class="tab tab-inactive"
             onclick="switchTab('hr-performance', this)">HR Performance</a>
-        <a href="javascript:void(0)" class="tab tab-inactive">Others</a>
+        <a href="javascript:void(0)" id="btn-others" class="tab tab-inactive"
+            onclick="switchTab('others', this)">Others</a>
     </div>
     <!-- Export Button -->
     <a href="#" class="export-btn">Export PDF Report</a>
@@ -547,6 +548,70 @@
     </div>
 </div>
 
+<div id="tab-others" class="tab-content">
+    <div style="display: grid; grid-template-columns: 1.15fr 1fr; gap: 17px; margin-bottom: 35px;">
+        <!-- Average Time to Review Application -->
+        <div class="chart-card" style="background: #B3241B; border: none; box-shadow: 0px 2px 4px rgba(0,0,0,0.25);">
+            <div style="padding: 10px 10px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 20px; color: #FFFFFF; border-radius: 6px 6px 0 0;">
+                Average Time to Review Application
+            </div>
+            <div style="padding: 10px 20px 20px; display: flex; align-items: flex-end; justify-content: space-between; color: #FFFFFF; font-family: 'Poppins', sans-serif;">
+                <div>
+                    <div style="font-size: 64px; font-weight: 600; line-height: 1;"><span class="animate-number" data-target="1">0</span></div>
+                    <div style="font-size: 24px; font-weight: 500;">Minute</div>
+                </div>
+                <div style="font-size: 14px; font-weight: 600; padding-bottom: 8px;">
+                    <i class='bx bx-chevrons-up' style="font-size: 16px; vertical-align: middle;"></i> 49.9 % this month
+                </div>
+            </div>
+        </div>
+
+        <!-- Average Time to Hire -->
+        <div class="chart-card" style="background: #F5F5F5; border: 1px solid #D9D9D9; box-shadow: 0px 2px 4px rgba(0,0,0,0.25);">
+            <div style="padding: 10px 10px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 20px; color: #B3241B; border-radius: 6px 6px 0 0;">
+                Average Time to Hire
+            </div>
+            <div style="padding: 10px 20px 20px; display: flex; align-items: flex-end; justify-content: space-between; color: #B3241B; font-family: 'Poppins', sans-serif;">
+                <div>
+                    <div style="font-size: 64px; font-weight: 600; line-height: 1;"><span class="animate-number" data-target="5">0</span></div>
+                    <div style="font-size: 24px; font-weight: 500;">Business Days</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1.15fr 1fr; gap: 17px; margin-bottom: 35px;">
+        <!-- Average Interview Delay -->
+        <div class="chart-card" style="background: #B3241B; border: none; box-shadow: 0px 2px 4px rgba(0,0,0,0.25);">
+            <div style="padding: 10px 10px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 20px; color: #FFFFFF; border-radius: 6px 6px 0 0;">
+                Average Interview Delay
+            </div>
+            <div style="padding: 10px 20px 20px; display: flex; align-items: flex-end; justify-content: space-between; color: #FFFFFF; font-family: 'Poppins', sans-serif;">
+                <div>
+                    <div style="font-size: 64px; font-weight: 600; line-height: 1;"><span class="animate-number" data-target="10">0</span></div>
+                    <div style="font-size: 24px; font-weight: 500;">Seconds</div>
+                </div>
+                <div style="font-size: 14px; font-weight: 600; padding-bottom: 8px;">
+                    <i class='bx bx-chevrons-up' style="font-size: 16px; vertical-align: middle;"></i> 49.9 % this month
+                </div>
+            </div>
+        </div>
+
+        <!-- Average Response Time to Applicants -->
+        <div class="chart-card" style="background: #F5F5F5; border: 1px solid #D9D9D9; box-shadow: 0px 2px 4px rgba(0,0,0,0.25);">
+            <div style="padding: 10px 10px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 20px; color: #B3241B; border-radius: 6px 6px 0 0;">
+                Average Response Time to Applicants
+            </div>
+            <div style="padding: 10px 20px 20px; display: flex; align-items: flex-end; justify-content: space-between; color: #B3241B; font-family: 'Poppins', sans-serif;">
+                <div>
+                    <div style="font-size: 64px; font-weight: 600; line-height: 1;"><span class="animate-float" data-target="1.01">0.00</span></div>
+                    <div style="font-size: 24px; font-weight: 500;">Milliseconds</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     var loginChart, applicationsChart, statusChart;
     var locationsChart, educationChart, ageChart, experienceChart;
@@ -580,12 +645,14 @@
         } else if (tabId === 'demographics') {
             renderDemographicsCharts();
         } else if (tabId === 'hr-performance') {
-            animateNumbers();
+            animateNumbers('hr-performance');
+        } else if (tabId === 'others') {
+            animateNumbers('others');
         }
     }
 
-    function animateNumbers() {
-        const counters = document.querySelectorAll('#tab-hr-performance .animate-number');
+    function animateNumbers(tabId = 'hr-performance') {
+        const counters = document.querySelectorAll(`#tab-${tabId} .animate-number`);
         counters.forEach(counter => {
             counter.innerText = '0';
             const target = +counter.getAttribute('data-target');
@@ -604,7 +671,7 @@
             updateCounter();
         });
 
-        const floatCounters = document.querySelectorAll('#tab-hr-performance .animate-float');
+        const floatCounters = document.querySelectorAll(`#tab-${tabId} .animate-float`);
         floatCounters.forEach(counter => {
             counter.innerText = '0.00';
             const target = +counter.getAttribute('data-target');
