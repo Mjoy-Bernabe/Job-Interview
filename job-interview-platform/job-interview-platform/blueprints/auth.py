@@ -30,6 +30,55 @@ def _role_target(user_type):
     return None
 
 
+def _current_session_role():
+    """Return the lowercase user_type for the currently logged-in session,
+    or None if there is no session / the user no longer exists."""
+    if "user_id" not in session:
+        return None
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT user_type FROM users WHERE user_id = %s", (session["user_id"],))
+    result = cur.fetchone()
+    cur.close()
+    if not result:
+        return None
+    return (result[0] or "").strip().lower()
+
+
+def _bounce_if_logged_in(allowed_roles):
+    """
+    If the person already has an active session, decide what to do with it
+    for THIS particular login/registration page:
+
+    - If their session role belongs on this page (e.g. an Applicant hitting
+      /login, or HR/Admin hitting /staff-login), send them straight to their
+      dashboard, as before.
+    - If their session role does NOT belong here (e.g. an Applicant session
+      hitting /staff-login, or an HR/Admin session hitting /login), the old
+      code silently redirected them to their OTHER portal's dashboard, which
+      looked like "the wrong portal's page is showing". Instead we clear the
+      stale session so this login page renders normally and the person can
+      log in as the role this page is actually for.
+
+    Returns a redirect response if the person should be bounced away, or
+    None if the caller should continue rendering its own login page.
+    """
+    role = _current_session_role()
+    if role is None:
+        return None
+
+    if role in allowed_roles:
+        target = _role_target(role)
+        if target:
+            return redirect(url_for(target))
+        return None
+
+    # Logged in, but under a role that doesn't belong on this page —
+    # log that stale session out so the correct login form shows instead
+    # of the other role's dashboard.
+    session.clear()
+    return None
+
+
 @auth_bp.route("/")
 def index():
     return render_template("index.html")
@@ -38,17 +87,9 @@ def index():
 # ---------- 1. APPLICANT LOGIN ----------
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
-    if "user_id" in session:
-        # Redirect logged-in users based on their usertype
-        cur = mysql.connection.cursor()
-        cur.execute("SELECT user_type FROM users WHERE user_id = %s", (session["user_id"],))
-        result = cur.fetchone()
-        cur.close()
-
-        if result:
-            target = _role_target(result[0])
-            if target:
-                return redirect(url_for(target))
+    bounce = _bounce_if_logged_in(allowed_roles={"applicant"})
+    if bounce:
+        return bounce
 
     error = None
     if request.method == "POST":
@@ -107,15 +148,9 @@ def login():
 # ---------- 2. STAFF LOGIN (HR / ADMIN) ----------
 @auth_bp.route("/staff-login", methods=["GET", "POST"])
 def staff_login():
-    if "user_id" in session:
-        cur = mysql.connection.cursor()
-        cur.execute("SELECT user_type FROM users WHERE user_id = %s", (session["user_id"],))
-        result = cur.fetchone()
-        cur.close()
-        if result:
-            target = _role_target(result[0])
-            if target:
-                return redirect(url_for(target))
+    bounce = _bounce_if_logged_in(allowed_roles={"hr", "hrpage", "admin"})
+    if bounce:
+        return bounce
 
     error = None
     if request.method == "POST":
@@ -158,15 +193,9 @@ def staff_login():
 # ---------- 3. STAFF REGISTRATION ----------
 @auth_bp.route("/register-staff", methods=["GET", "POST"])
 def register_staff():
-    if "user_id" in session:
-        cur = mysql.connection.cursor()
-        cur.execute("SELECT user_type FROM users WHERE user_id = %s", (session["user_id"],))
-        result = cur.fetchone()
-        cur.close()
-        if result:
-            target = _role_target(result[0])
-            if target:
-                return redirect(url_for(target))
+    bounce = _bounce_if_logged_in(allowed_roles={"hr", "hrpage", "admin"})
+    if bounce:
+        return bounce
 
     if request.method == "POST":
         # --- Verify reCAPTCHA ---
@@ -253,16 +282,9 @@ def logout():
 
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
-    if "user_id" in session:
-        cur = mysql.connection.cursor()
-        cur.execute("SELECT user_type FROM users WHERE user_id = %s", (session["user_id"],))
-        result = cur.fetchone()
-        cur.close()
-
-        if result:
-            target = _role_target(result[0])
-            if target:
-                return redirect(url_for(target))
+    bounce = _bounce_if_logged_in(allowed_roles={"applicant"})
+    if bounce:
+        return bounce
 
     if request.method == "POST":
         # --- Verify reCAPTCHA ---

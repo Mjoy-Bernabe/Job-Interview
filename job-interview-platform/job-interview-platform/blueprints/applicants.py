@@ -1,3 +1,6 @@
+import os
+import json
+import uuid
 from datetime import datetime
 from urllib.parse import unquote
 
@@ -21,6 +24,10 @@ from services.email_service import send_step1_completed_email  # ⬅️ NEW IMPO
 
 # CART (Decision Tree)
 from sklearn.tree import DecisionTreeClassifier
+
+# Resume-scanning engine (ported from scanner_updated) — text extraction,
+# ATS feature scoring, and the "Strong/Moderate/Weak Fit" CART classifier.
+from services import resume_scanner
 
 applicants_bp = Blueprint("applicants", __name__)
 
@@ -126,6 +133,62 @@ def cart_predict_from_form(age, education_level, experience, skills_raw: str):
     }
 
 
+def allowed_resume_file(filename: str) -> bool:
+    allowed = current_app.config.get("ALLOWED_RESUME_EXTENSIONS", {"pdf", "doc", "docx"})
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in allowed
+
+
+# ---------- Pending resume-scan holding area ----------
+#
+# The scanner reads/parses the resume immediately on upload, but nothing is
+# written to the database yet. Instead the parsed result is parked on disk
+# as a small JSON file ("pending scan") keyed by a random token. The token
+# is handed to the applicant's browser (hidden form field) and mirrored in
+# their session, so the review page (resume_review.html) can show the
+# scanned data, let the applicant correct anything the scanner misread,
+# and only once they press "Confirm & Submit" does /confirm-resume-application
+# write the (possibly-edited) data into the database.
+
+def _pending_scan_dir() -> str:
+    upload_dir = current_app.config.get("UPLOAD_FOLDER", "uploads")
+    if not os.path.isabs(upload_dir):
+        upload_dir = os.path.join(current_app.root_path, upload_dir)
+    pending_dir = os.path.join(upload_dir, "pending_scans")
+    os.makedirs(pending_dir, exist_ok=True)
+    return pending_dir
+
+
+def _save_pending_scan(data: dict) -> str:
+    token = uuid.uuid4().hex
+    path = os.path.join(_pending_scan_dir(), f"{token}.json")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f)
+    return token
+
+
+def _load_pending_scan(token: str) -> dict | None:
+    if not token:
+        return None
+    path = os.path.join(_pending_scan_dir(), f"{token}.json")
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def _delete_pending_scan(token: str) -> None:
+    if not token:
+        return
+    path = os.path.join(_pending_scan_dir(), f"{token}.json")
+    try:
+        os.remove(path)
+    except OSError:
+        pass
+
+
 # ---------- Dashboard & Application Pipeline ----------
 
 
@@ -140,7 +203,7 @@ def dashboard():
 
     # Get baseline profile credentials from 'users' (normalized column name: user_type)
     cur.execute(
-        "SELECT email, username, contact_num FROM users WHERE user_id = %s",
+        "SELECT email, username, contact_num, user_type FROM users WHERE user_id = %s",
         (user_id,),
     )
     user = cur.fetchone()
@@ -148,13 +211,28 @@ def dashboard():
         cur.close()
         flash("User not found.", "error")
         return redirect(url_for("auth.login"))
-    email, username, contact = user
+    email, username, contact, user_type = user
 
-    # Retrieve the candidate's latest normalized application data
+    # Security check: only Applicant accounts may view this dashboard.
+    # Without this, a logged-in HR/Admin session could load /dashboard
+    # directly by URL and see the applicant portal.
+    if (user_type or "").strip().lower() != "applicant":
+        cur.close()
+        session.clear()
+        flash("Please log in through the correct portal.", "error")
+        return redirect(url_for("auth.staff_login"))
+
+    # Retrieve ALL of the candidate's applications (one row per job applied to).
+    # NOTE: this used to be LIMIT 1 (latest application only), which meant the
+    # "Application Info" panel showed the same (most recent) job's phase-1
+    # data no matter which job card the applicant clicked on. We now fetch
+    # every application and key the per-job data by job_id so each job's
+    # detail view only ever shows that job's own information.
     cur.execute(
         """
         SELECT
             app.application_id,
+            app.job_id,
             u.username,
             u.email,
             u.contact_num,
@@ -177,34 +255,44 @@ def dashboard():
         JOIN jobs j ON j.job_id = app.job_id
         WHERE u.user_id = %s
         ORDER BY app.application_id DESC
-        LIMIT 1
         """,
         (user_id,),
     )
-    row = cur.fetchone()
+    app_rows = cur.fetchall()
+
+    applications_by_job = {}
     applicant = None
-    if row:
-        applicant = {
-            "id": row[0],
+    for r in app_rows:
+        job_entry = {
+            "id": r[0],
+            "job_id": r[1],
             "user_id": user_id,
-            "name": row[1],
-            "email": row[2],
-            "contact": row[3],
-            "position": row[4],
-            "eligibility": "Eligible" if row[5] == "Passed Screening" else "Not Eligible",
-            "yearexperience": row[6],
+            "name": r[2],
+            "email": r[3],
+            "contact": r[4],
+            "position": r[5],
+            "eligibility": "Eligible" if r[6] == "Passed Screening" else "Not Eligible",
+            "yearexperience": int(r[7]) if r[7] is not None else 0,
             "level": "N/A",
-            "status": row[5],  # screening_status string
+            "status": r[6],  # screening_status string
             "confidence": 75,  # static fallback when not using live prediction state
             "address": None,
-            "education_level": row[7] or "N/A",
-            "skills": row[8] or "None listed",
-            "age": row[9]
+            "education_level": r[8] or "N/A",
+            "skills": r[9] or "None listed",
+            "age": int(r[10]) if r[10] is not None else None,
         }
-        # Sync simple session data for backward compatibility
-        session["position"] = row[4]
-        session["experience"] = row[6]
-        session["name"] = row[1]
+        # Keep only the latest application per job_id (rows are already
+        # ordered newest-first, so the first time we see a job_id wins).
+        applications_by_job.setdefault(r[1], job_entry)
+
+        if applicant is None:
+            # Most recent application overall — used for the general
+            # "Applicant Info" / Profile summary, not for the per-job cards.
+            applicant = job_entry
+            # Sync simple session data for backward compatibility
+            session["position"] = r[5]
+            session["experience"] = job_entry["yearexperience"]
+            session["name"] = r[2]
 
     # Fetch available job list and real-time candidate limit statistics
     cur.execute(
@@ -231,29 +319,68 @@ def dashboard():
     # Pull dynamic jobs and detailed description requirements
     cur.execute(
         """
-        SELECT j.job_name, j.application_status, j.opening_date, j.application_deadline,
-               jd.education_baseline, jd.required_exp_years, jd.minimum_age, jd.employment_type
+        SELECT
+            j.job_id,
+            j.job_name,
+            j.application_status,
+            j.application_deadline,
+            j.max_applicants,
+            jd.department,
+            jd.employment_type,
+            jd.education_baseline,
+            jd.required_exp_years,
+            jd.minimum_age,
+            EXISTS (
+                SELECT 1
+                FROM applications app
+                JOIN applicants a2 ON a2.applicant_id = app.applicant_id
+                WHERE app.job_id = j.job_id AND a2.user_id = %s
+            ) AS has_applied
         FROM jobs j
         LEFT JOIN job_desc jd ON jd.job_id = j.job_id
-        ORDER BY j.opening_date DESC, j.job_name ASC
-        """
+        ORDER BY jd.department ASC, j.job_name ASC
+        """,
+        (user_id,),
     )
     available_jobs = [
         {
-            "position": p[0],
-            "max_allowed": None,
-            "form_access": p[1],
-            "opening_date": p[2],
+            "id": p[0],
+            "position": p[1],
+            "application_status": p[2],
             "deadline_date": p[3],
-            "education_level": p[4],
-            "experience_years": p[5],
-            "min_age": p[6],
-            "employment_type": p[7],
+            "max_allowed": p[4],
+            "category": p[5] or "General",
+            "form_access": p[6],
+            "employment_type": p[6],
+            "education_level": p[7],
+            "experience_years": p[8],
+            "min_age": p[9],
+            "has_applied": bool(p[10]),
         }
         for p in cur.fetchall()
     ]
 
-    # Fetch assessment scores dynamically
+    # Fetch assessment scores dynamically, per position, so the chatbot
+    # section shown for one job never bleeds into another job's detail view.
+    cur.execute(
+        """
+        SELECT position, qualification_status, average_score, created_at
+        FROM chatbot
+        WHERE user_id = %s
+        ORDER BY created_at DESC
+        """,
+        (user_id,),
+    )
+    chatbot_by_position = {}
+    for pos, qual_status, avg_score, created_at in cur.fetchall():
+        key = (pos or "").strip().lower()
+        # Newest-first ordering, keep only the first (latest) row per position
+        chatbot_by_position.setdefault(key, {
+            "position": pos,
+            "qualification_status": qual_status,
+            "average_score": float(avg_score) if avg_score is not None else 0,
+        })
+
     chatbot_data = None
     name = session.get("name", username)
     result = session.get("result")
@@ -262,6 +389,20 @@ def dashboard():
     position = session.get("position")
     qualification_status = session.get("qualification_status", "")
     applied_role = position or "Business Analyst"
+
+    if position:
+        chatbot_data = chatbot_by_position.get(position.strip().lower())
+
+    # Attach each job's own chatbot result (if any) to its application entry,
+    # keyed by job_id, so the frontend can render Section 1 + Section 2 for
+    # the exact job the applicant clicked on rather than whichever job was
+    # applied to most recently.
+    for job_id, entry in applications_by_job.items():
+        entry_position_key = (entry.get("position") or "").strip().lower()
+        entry["chatbot"] = chatbot_by_position.get(entry_position_key)
+
+    # JSON-safe dict (job_id as string keys) for embedding into the page.
+    applications_by_job_json = {str(k): v for k, v in applications_by_job.items()}
 
     cur.close()
 
@@ -282,6 +423,7 @@ def dashboard():
         position_limits=position_limits,
         available_jobs=available_jobs,
         chatbot_data=chatbot_data,
+        applications_by_job=applications_by_job_json,
     )
 
 
@@ -607,15 +749,16 @@ def prescreen():
         (user_id,),
     )
     user = cur.fetchone()
-    cur.close()
 
     if not user:
+        cur.close()
         flash("User not found.", "error")
         return redirect(url_for("auth.login"))
 
     email, username, contact = user
     result = None
 
+    # ---- Legacy manual CART self-check (kept for backward compatibility) ----
     if request.method == "POST":
         education_level = request.form.get("education_level")
         age = int(request.form.get("age") or 0)
@@ -639,8 +782,52 @@ def prescreen():
             logger.error(f"CART prescreen error: {e}")
             flash("Error during prescreening.", "error")
             result = None
-    else:
-        result = session.get("prescreen_result")
+        cur.close()
+        return render_template(
+            "prescreen.html",
+            email=email,
+            username=username,
+            contact=contact,
+            result=result,
+            job=None,
+        )
+
+    result = session.get("prescreen_result")
+
+    # ---- Load the actual job posting so prescreen.html + /submit-resume ----
+    # ---- both know which job_id the uploaded resume is being scanned for --
+    job_id = request.args.get("job_id", type=int)
+    job = None
+    if job_id:
+        cur.execute(
+            """
+            SELECT j.job_id, j.job_name, j.application_status, j.application_deadline,
+                   jd.description, jd.department, jd.employment_type,
+                   jd.location, jd.salary_range, jd.vacancies
+            FROM jobs j
+            LEFT JOIN job_desc jd ON jd.job_id = j.job_id
+            WHERE j.job_id = %s
+            """,
+            (job_id,),
+        )
+        row = cur.fetchone()
+        if row:
+            job = {
+                "id": row[0],
+                "title": row[1],
+                "application_status": row[2],
+                "deadline": row[3],
+                "description": row[4],
+                "department": row[5],
+                "employment_type": row[6],
+                "location": row[7],
+                "salary_range": row[8],
+                "vacancies": row[9],
+            }
+        else:
+            flash("That job posting could not be found.", "error")
+
+    cur.close()
 
     return render_template(
         "prescreen.html",
@@ -648,7 +835,484 @@ def prescreen():
         username=username,
         contact=contact,
         result=result,
+        job=job,
     )
+
+
+def _username_fallback(user_id, cur):
+    """Best-effort name fallback if the resume parser can't guess a full name."""
+    try:
+        cur.execute("SELECT username FROM users WHERE user_id = %s", (user_id,))
+        row = cur.fetchone()
+        return row[0] if row else "Applicant"
+    except Exception:
+        return "Applicant"
+
+
+@applicants_bp.route("/submit-resume", methods=["POST"])
+def submit_resume_application():
+    """
+    STEP 1 of the resume-scanning pipeline used by templates/prescreen.html.
+
+    Flow: uploaded resume -> extract_text -> extract_all_info (ATS features,
+    contact info, skills, education, work experience) -> CART predict_fit
+    ("Strong Fit" / "Moderate Fit" / "Weak Fit"). Nothing is written to the
+    database at this point. The scanned/parsed result is parked on disk as
+    a "pending scan" (see _save_pending_scan) and the applicant is shown
+    resume_review.html — a Resume Screening Result card where they can
+    double-check (and manually correct) whatever the scanner picked up
+    before anything is saved. Confirming there posts to
+    /confirm-resume-application (see below), which is the step that
+    actually writes to auth_db.
+    """
+    if "user_id" not in session:
+        flash("You must be logged in to apply.", "error")
+        return redirect(url_for("auth.login"))
+
+    user_id = session["user_id"]
+    job_id = request.form.get("job_id", type=int)
+    resume_file = request.files.get("resume")
+
+    if not job_id:
+        flash("Missing job reference. Please open this job posting again.", "error")
+        return redirect(url_for("applicants.dashboard"))
+
+    if not resume_file or resume_file.filename == "":
+        flash("Please upload your resume before submitting.", "error")
+        return redirect(url_for("applicants.prescreen", job_id=job_id))
+
+    if not allowed_resume_file(resume_file.filename):
+        flash("Unsupported file type. Please upload a PDF, DOC, or DOCX.", "error")
+        return redirect(url_for("applicants.prescreen", job_id=job_id))
+
+    save_path = None
+    cur = mysql.connection.cursor()
+    try:
+        # ── 1. Load job + job_desc (same tables HR/admin already write to) ──
+        cur.execute(
+            """
+            SELECT j.job_id, j.job_name, j.max_applicants, j.application_status,
+                   jd.description, jd.department, jd.employment_type,
+                   jd.location, jd.salary_range, jd.vacancies,
+                   jd.education_baseline, jd.required_exp_years, jd.minimum_age
+            FROM jobs j
+            LEFT JOIN job_desc jd ON jd.job_id = j.job_id
+            WHERE j.job_id = %s
+            """,
+            (job_id,),
+        )
+        job_row = cur.fetchone()
+        if not job_row:
+            flash("The selected position does not exist.", "error")
+            return redirect(url_for("applicants.dashboard"))
+
+        (job_id, job_name, max_applicants, app_status,
+         description, department, employment_type, location, salary_range,
+         vacancies, education_baseline, required_exp_years, minimum_age) = job_row
+
+        if app_status != "Open":
+            flash("Applications for this position are currently closed.", "error")
+            return redirect(url_for("applicants.dashboard"))
+
+        cur.execute("SELECT COUNT(*) FROM applications WHERE job_id = %s", (job_id,))
+        if max_applicants and cur.fetchone()[0] >= max_applicants:
+            flash("This position has reached its maximum applicant limit.", "error")
+            return redirect(url_for("applicants.dashboard"))
+
+        # ── 2. Find (or note the absence of) this user's applicant record ───
+        cur.execute("SELECT applicant_id FROM applicants WHERE user_id = %s", (user_id,))
+        existing = cur.fetchone()
+        applicant_id_existing = existing[0] if existing else None
+
+        if applicant_id_existing:
+            cur.execute(
+                "SELECT application_id FROM applications WHERE job_id = %s AND applicant_id = %s",
+                (job_id, applicant_id_existing),
+            )
+            if cur.fetchone():
+                flash("You have already applied for this position.", "error")
+                return redirect(url_for("applicants.dashboard"))
+
+        # ── 3. Save the uploaded resume to disk ──────────────────────────────
+        ext = resume_file.filename.rsplit(".", 1)[1].lower()
+        unique_name = f"{uuid.uuid4().hex}.{ext}"
+        upload_dir = current_app.config.get("UPLOAD_FOLDER", "uploads")
+        if not os.path.isabs(upload_dir):
+            upload_dir = os.path.join(current_app.root_path, upload_dir)
+        os.makedirs(upload_dir, exist_ok=True)
+        save_path = os.path.join(upload_dir, unique_name)
+        resume_file.save(save_path)
+
+        # ── 4. Extract raw text ───────────────────────────────────────────────
+        text = resume_scanner.extract_text(save_path)
+        if not text.strip():
+            flash(
+                "We couldn't read any text from that resume. Please upload a "
+                "text-based PDF or DOCX (not a scanned image).",
+                "error",
+            )
+            os.remove(save_path)
+            return redirect(url_for("applicants.prescreen", job_id=job_id))
+
+        # ── 5. Build job keywords, then run the full ATS extraction ────────────
+        job_keywords = resume_scanner.extract_keywords_from_job_desc(
+            description=description or "", job_name=job_name or ""
+        )
+        extracted = resume_scanner.extract_all_info(text, job_keywords=job_keywords)
+        features = extracted["ats_features"]
+        contact_info = extracted["contact_info"]
+
+        # ── 6. CART fit prediction ───────────────────────────────────────────
+        model = resume_scanner.get_cart_model()
+        fit_result = resume_scanner.predict_fit(features, model=model)
+        eligible_labels = current_app.config.get(
+            "RESUME_ELIGIBLE_LABELS", {"Strong Fit", "Moderate Fit"}
+        )
+        is_eligible = fit_result["label"] in eligible_labels
+
+        applicant_years = resume_scanner.calculate_total_experience_years(
+            extracted["work_experience"]
+        )
+        education_check = resume_scanner.evaluate_education_requirement(
+            extracted["education"], education_baseline
+        )
+
+        full_name = (
+            contact_info.get("full_name")
+            or session.get("name")
+            or _username_fallback(user_id, cur)
+        )
+        dob = contact_info.get("date_of_birth") or f"{datetime.now().year - 25}-01-01"
+        location_val = contact_info.get("location") or "Not specified"
+        email_val = contact_info.get("email") or session.get("email", "")
+
+        # Skills the job actually asks for, split into found / missing so the
+        # review page can render the ✓ / ✗ checklist exactly like the
+        # "Resume Screening Result" mock-up.
+        required_skills_found = [kw for kw, c in features["keyword_hits"].items() if c > 0]
+        required_skills_missing = [kw for kw, c in features["keyword_hits"].items() if c == 0]
+        # Any other skill the scanner recognised in the resume text that
+        # wasn't one of this job's required keywords (still worth saving).
+        other_skills = [s for s in extracted["skills"] if s not in features["keyword_hits"]]
+
+        # ── 7. Park everything on disk as a "pending scan" — NOT saved yet ──
+        pending = {
+            "user_id": user_id,
+            "job_id": job_id,
+            "job_name": job_name,
+            "department": department,
+            "employment_type": employment_type,
+            "location": location,
+            "resume_path": save_path,
+            "applicant_id_existing": applicant_id_existing,
+            "required_exp_years": required_exp_years or 0,
+            "education_baseline": education_baseline,
+            "full_name": full_name,
+            "email": email_val,
+            "dob": dob,
+            "current_location": location_val,
+            "experience_years": applicant_years,
+            "degree_level": education_check.get("highest_level") or "Not detected",
+            "education_meets": education_check.get("meets", True),
+            "education_entries": extracted["education"],
+            "work_experience": extracted["work_experience"],
+            "required_skills_found": required_skills_found,
+            "required_skills_missing": required_skills_missing,
+            "other_skills": other_skills,
+            "match_score": round(fit_result["score"]),
+            "fit_label": fit_result["label"],
+            "fit_message": fit_result["message"],
+            "is_eligible": is_eligible,
+        }
+        token = _save_pending_scan(pending)
+        session["pending_resume_token"] = token
+
+        return render_template(
+            "resume_review.html",
+            job_id=job_id,
+            job_name=job_name,
+            token=token,
+            scan=pending,
+            degree_levels=["Entry-level track", "Diploma", "Associate", "Bachelor's", "Master's", "Doctoral"],
+        )
+
+    except Exception as e:
+        mysql.connection.rollback()
+        logger.error(f"submit_resume_application error: {e}")
+        if save_path and os.path.exists(save_path):
+            try:
+                os.remove(save_path)
+            except OSError:
+                pass
+        flash("Something went wrong while scanning your resume. Please try again.", "error")
+        return redirect(url_for("applicants.prescreen", job_id=job_id))
+    finally:
+        cur.close()
+
+
+@applicants_bp.route("/confirm-resume-application", methods=["POST"])
+def confirm_resume_application():
+    """
+    STEP 2 of the resume-scanning pipeline. Called from the "Confirm &
+    Submit" button on resume_review.html. Loads the pending scan the token
+    points to, overlays whatever the applicant corrected on the review
+    screen (name, email, years of experience, education level, which
+    skills actually apply), and only now writes to auth_db — applicants /
+    work_experience / educations / skills_master / applicant_skills /
+    applications — exactly like the old single-step flow used to.
+    """
+    if "user_id" not in session:
+        flash("You must be logged in to apply.", "error")
+        return redirect(url_for("auth.login"))
+
+    user_id = session["user_id"]
+    token = request.form.get("token") or session.get("pending_resume_token")
+    pending = _load_pending_scan(token)
+
+    if not pending or pending.get("user_id") != user_id:
+        flash("Your resume scan session has expired. Please upload your resume again.", "error")
+        return redirect(url_for("applicants.dashboard"))
+
+    job_id = pending["job_id"]
+    save_path = pending["resume_path"]
+
+    cur = mysql.connection.cursor()
+    try:
+        # ── Re-check the job is still open / not full / not already applied ──
+        cur.execute(
+            "SELECT max_applicants, application_status FROM jobs WHERE job_id = %s",
+            (job_id,),
+        )
+        job_row = cur.fetchone()
+        if not job_row:
+            flash("The selected position no longer exists.", "error")
+            return redirect(url_for("applicants.dashboard"))
+        max_applicants, app_status = job_row
+        if app_status != "Open":
+            flash("Applications for this position are currently closed.", "error")
+            return redirect(url_for("applicants.dashboard"))
+        cur.execute("SELECT COUNT(*) FROM applications WHERE job_id = %s", (job_id,))
+        if max_applicants and cur.fetchone()[0] >= max_applicants:
+            flash("This position has reached its maximum applicant limit.", "error")
+            return redirect(url_for("applicants.dashboard"))
+
+        cur.execute("SELECT applicant_id FROM applicants WHERE user_id = %s", (user_id,))
+        existing = cur.fetchone()
+        applicant_id_existing = existing[0] if existing else None
+        if applicant_id_existing:
+            cur.execute(
+                "SELECT application_id FROM applications WHERE job_id = %s AND applicant_id = %s",
+                (job_id, applicant_id_existing),
+            )
+            if cur.fetchone():
+                flash("You have already applied for this position.", "error")
+                return redirect(url_for("applicants.dashboard"))
+
+        # ── Pull the applicant's corrections from the review form ──────────
+        full_name = (request.form.get("full_name") or pending["full_name"]).strip()
+        email_val = (request.form.get("email") or pending["email"]).strip()
+        try:
+            experience_years = float(request.form.get("experience_years", pending["experience_years"]))
+        except (TypeError, ValueError):
+            experience_years = pending["experience_years"]
+        degree_level = request.form.get("degree_level") or pending["degree_level"]
+        dob = pending["dob"]
+        location_val = (request.form.get("current_location") or pending["current_location"]).strip()
+
+        # Skills: every checkbox named "skill" that's checked = kept/confirmed.
+        # Anything the applicant unchecked (that the scanner had flagged) is
+        # dropped, matching what they told us was inaccurate.
+        confirmed_skills = request.form.getlist("skill")
+        if not confirmed_skills:
+            # No checkboxes came through (e.g. JS-disabled form) — fall back
+            # to whatever the scanner originally found so nothing is lost.
+            confirmed_skills = pending["required_skills_found"] + pending["other_skills"]
+
+        required_exp_years = pending.get("required_exp_years", 0)
+        education_baseline = pending.get("education_baseline")
+        degree_order = ["Entry-level track", "Diploma", "Associate", "Bachelor's", "Master's", "Doctoral"]
+        try:
+            education_meets = (
+                degree_order.index(degree_level) >= degree_order.index(
+                    resume_scanner.evaluate_education_requirement([], education_baseline)["required_level"]
+                )
+                if resume_scanner.evaluate_education_requirement([], education_baseline)["required_level"]
+                else True
+            )
+        except (ValueError, KeyError):
+            education_meets = pending.get("education_meets", True)
+
+        is_eligible = pending["is_eligible"]
+        fit_label = pending["fit_label"]
+        match_score = pending["match_score"]
+
+        # ── Upsert applicants row ───────────────────────────────────────────
+        if applicant_id_existing:
+            applicant_id = applicant_id_existing
+            cur.execute(
+                """
+                UPDATE applicants
+                SET full_name = %s, date_of_birth = %s, current_location = %s, resume_url = %s
+                WHERE applicant_id = %s
+                """,
+                (full_name, dob, location_val, save_path, applicant_id),
+            )
+        else:
+            cur.execute(
+                """
+                INSERT INTO applicants
+                    (user_id, full_name, date_of_birth, current_location, preferred_location, resume_url)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                (user_id, full_name, dob, location_val, location_val, save_path),
+            )
+            applicant_id = cur.lastrowid
+
+        # ── Replace work_experience / educations / skills with the confirmed scan ──
+        cur.execute("DELETE FROM work_experience WHERE applicant_id = %s", (applicant_id,))
+        for exp in pending["work_experience"]:
+            if not exp.get("start_date"):
+                continue  # start_date is NOT NULL in schema.sql — skip unparsable entries
+            cur.execute(
+                """
+                INSERT INTO work_experience
+                    (applicant_id, job_title, company_name, start_date, end_date, description)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    applicant_id,
+                    exp.get("job_title") or "N/A",
+                    exp.get("company_name") or "N/A",
+                    exp.get("start_date"),
+                    exp.get("end_date"),
+                    exp.get("description"),
+                ),
+            )
+
+        cur.execute("DELETE FROM educations WHERE applicant_id = %s", (applicant_id,))
+        education_entries = pending["education_entries"]
+        if degree_level and degree_level != "Not detected" and not any(
+            (e.get("degree_level") or "") == degree_level for e in education_entries
+        ):
+            # The applicant corrected/overrode the degree level — save it
+            # even if the scanner never picked up a matching block of text.
+            education_entries = education_entries + [{
+                "degree_level": degree_level, "major": None,
+                "institution": None, "graduation_year": None,
+            }]
+        for edu in (education_entries or [{"degree_level": degree_level}]):
+            cur.execute(
+                """
+                INSERT INTO educations
+                    (applicant_id, degree_level, major, institution, graduation_year)
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                (
+                    applicant_id,
+                    edu.get("degree_level") or degree_level or "N/A",
+                    edu.get("major") or "N/A",
+                    edu.get("institution") or "N/A",
+                    edu.get("graduation_year") or datetime.now().year,
+                ),
+            )
+
+        cur.execute("DELETE FROM applicant_skills WHERE applicant_id = %s", (applicant_id,))
+        for skill_name in confirmed_skills:
+            cur.execute(
+                "INSERT INTO skills_master (skill_name) VALUES (%s) "
+                "ON DUPLICATE KEY UPDATE skill_name = skill_name",
+                (skill_name,),
+            )
+            cur.execute("SELECT skill_id FROM skills_master WHERE skill_name = %s", (skill_name,))
+            skill_id = cur.fetchone()[0]
+            cur.execute(
+                "INSERT IGNORE INTO applicant_skills (applicant_id, skill_id) VALUES (%s, %s)",
+                (applicant_id, skill_id),
+            )
+
+        # ── Record the application/screening result ─────────────────────────
+        screening_status = "Passed Screening" if is_eligible else "Failed Screening"
+        cur.execute(
+            """
+            INSERT INTO applications (job_id, applicant_id, screening_status, applied_at)
+            VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+            """,
+            (job_id, applicant_id, screening_status),
+        )
+
+        mysql.connection.commit()
+
+        # ── Prime the session for dashboard.html + the interview phase ──────
+        session["name"] = full_name
+        session["position"] = pending["job_name"]
+        session["experience"] = int(experience_years)
+        session["result"] = "Eligible" if is_eligible else "Not Eligible"
+        session["confidence"] = int(match_score)
+        session["reason"] = pending["fit_message"]
+        session["resume_screening_summary"] = {
+            "match_score": match_score,
+            "label": fit_label,
+            "skills_found": confirmed_skills,
+            "skills_missing": [s for s in pending["required_skills_missing"] if s not in confirmed_skills],
+            "experience_years_found": experience_years,
+            "experience_years_required": required_exp_years,
+            "education_meets": education_meets,
+            "proceed_to_interview": is_eligible,
+        }
+        session.pop("pending_resume_token", None)
+        _delete_pending_scan(token)
+
+        if is_eligible:
+            flash(
+                f"Resume screened: {fit_label} — you're eligible to proceed "
+                f"to the interview simulation.",
+                "success",
+            )
+            try:
+                send_step1_completed_email(email_val, full_name, pending["job_name"])
+            except Exception as e:
+                logger.error(f"Error sending Step 1 email: {e}")
+        else:
+            flash(f"Resume screened: {fit_label}. {pending['fit_message']}", "error")
+
+        return redirect(url_for("applicants.dashboard"))
+
+    except Exception as e:
+        mysql.connection.rollback()
+        logger.error(f"confirm_resume_application error: {e}")
+        flash("Something went wrong while saving your application. Please try again.", "error")
+        return redirect(url_for("applicants.prescreen", job_id=job_id))
+    finally:
+        cur.close()
+
+
+@applicants_bp.route("/cancel-resume-review", methods=["POST"])
+def cancel_resume_review():
+    """
+    "Re-upload a different resume" on resume_review.html. Discards the
+    pending scan (and the resume file that was saved for it) without
+    touching the database, then sends the applicant back to prescreen.html.
+    """
+    if "user_id" not in session:
+        return redirect(url_for("auth.login"))
+
+    token = request.form.get("token") or session.get("pending_resume_token")
+    job_id = request.form.get("job_id", type=int)
+    pending = _load_pending_scan(token)
+
+    if pending:
+        resume_path = pending.get("resume_path")
+        if resume_path and os.path.exists(resume_path):
+            try:
+                os.remove(resume_path)
+            except OSError:
+                pass
+        job_id = job_id or pending.get("job_id")
+
+    _delete_pending_scan(token)
+    session.pop("pending_resume_token", None)
+    flash("Scan discarded. You can upload your resume again.", "success")
+    return redirect(url_for("applicants.prescreen", job_id=job_id))
 
 
 @applicants_bp.route("/preapp", methods=["GET", "POST"])

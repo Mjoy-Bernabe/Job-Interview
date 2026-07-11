@@ -199,7 +199,7 @@
 
 <body>
   <div class="page-wrapper">
-    <h1>{{ job.title if job else "Job 1 - Business Analyst" }}</h1>
+    <h1>{{ job.title if job else "Select a job from your dashboard" }}</h1>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -213,16 +213,17 @@
       <div class="label">Description of job</div>
 
       <div class="job-meta">
-        <div><b>Department:</b> {{ job.department if job else "IT Department" }}</div>
-        <div><b>Employment Type:</b> {{ job.employment_type if job else "Full-Time" }}</div>
-        <div><b>Location:</b> {{ job.location if job else "Quezon City, Philippines" }}</div>
-        <div><b>Salary Range:</b> {{ job.salary_range if job else "₱25,000 – ₱35,000" }}</div>
-        <div><b>Number of Vacancies:</b> {{ job.vacancies if job else "5 Positions Available" }}</div>
-        <div><b>Application Deadline:</b> {{ job.deadline if job else "June 30, 2026" }}</div>
+        <div><b>Department:</b> {{ job.department if job else "—" }}</div>
+        <div><b>Employment Type:</b> {{ job.employment_type if job else "—" }}</div>
+        <div><b>Location:</b> {{ job.location if job else "—" }}</div>
+        <div><b>Salary Range:</b> {{ job.salary_range if job else "—" }}</div>
+        <div><b>Number of Vacancies:</b> {{ job.vacancies if job else "—" }}</div>
+        <div><b>Application Deadline:</b> {{ job.deadline if job else "—" }}</div>
       </div>
 
-      <form id="resumeForm" method="POST" action="/submit" enctype="multipart/form-data">
-        <input type="hidden" name="job_id" value="{{ job.id if job else '' }}">
+      {% if job %}
+      <form id="resumeForm" method="POST" action="{{ url_for('applicants.submit_resume_application') }}" enctype="multipart/form-data">
+        <input type="hidden" name="job_id" value="{{ job.id }}">
 
         <div class="upload-section">
           <label class="upload-btn" for="resumeInput">
@@ -241,6 +242,13 @@
           <button type="submit" class="submit-btn" id="submitBtn" disabled>Submit Application</button>
         </div>
       </form>
+      {% else %}
+      <p class="error-text" style="text-align:left;margin-top:16px;">
+        No job was selected. Please go back to your dashboard and choose a
+        position to open its prescreen page (this page expects a
+        <code>?job_id=</code> in the URL).
+      </p>
+      {% endif %}
     </div>
   </div>
 
@@ -281,15 +289,18 @@
       submitBtn.disabled = true;
     }
 
-    document.getElementById('resumeForm').addEventListener('submit', (e) => {
-      const input = document.getElementById('resumeInput');
-      const errorEl = document.getElementById('resumeError');
+    const resumeForm = document.getElementById('resumeForm');
+    if (resumeForm) {
+      resumeForm.addEventListener('submit', (e) => {
+        const input = document.getElementById('resumeInput');
+        const errorEl = document.getElementById('resumeError');
 
-      if (!input.files || input.files.length === 0) {
-        e.preventDefault();
-        errorEl.textContent = "Please upload your resume before submitting.";
-      }
-    });
+        if (!input.files || input.files.length === 0) {
+          e.preventDefault();
+          errorEl.textContent = "Please upload your resume before submitting.";
+        }
+      });
+    }
   </script>
 </body>
 

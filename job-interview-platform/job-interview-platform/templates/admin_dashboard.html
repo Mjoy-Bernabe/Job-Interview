@@ -3,201 +3,1083 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard | AceView</title>
+    <title>Dashboard</title>
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
     <style>
         :root {
-            --primary-red: #B2271B;
-            --primary-dark: #4B0E0A;
-            --bg-color: #f3f4f6;
-            --card-bg: #ffffff;
-            --text-main: #1f2937;
-            --text-muted: #6b7280;
+            --primary-red: #B3241B; /* deep red background */
+            --sidebar-active: #FDE8E8;
+            --text-red: #B3241B;
+            --text-green: #00B050;
+            --bg-gray: #DCDCDC;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            display: flex;
-        }
-
-        /* Sidebar Navigation */
-        .sidebar {
-            width: 250px;
-            height: 100vh;
-            background: linear-gradient(180deg, var(--primary-dark) 0%, var(--primary-red) 100%);
+            background-color: var(--primary-red);
             color: white;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        h1, h2, h3, h4, .count, .tab, .more-insights-title {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            background-color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: var(--text-red);
+        }
+
+        .logo-area {
             padding: 30px 20px;
-            position: fixed;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: 700;
+            font-size: 13px;
+            line-height: 1.2;
+            margin-bottom: 20px;
+            color: black;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .logo-icon {
+            background-color: var(--text-red);
+            color: white;
+            padding: 10px 15px;
+            font-size: 40px;
+            font-weight: 700;
+            letter-spacing: -3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .logo-icon::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            right: -15px;
+            width: 25px;
+            height: 25px;
+            background-color: white;
         }
 
-        .sidebar h2 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 24px;
-            margin-bottom: 40px;
-            text-align: center;
-        }
-
-        .nav-links { list-style: none; }
+        .nav-links { list-style: none; flex-grow: 1; margin-top: 20px; }
         .nav-links li { margin-bottom: 15px; }
         .nav-links a {
-            color: white;
+            color: var(--text-red);
             text-decoration: none;
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 10px;
-            border-radius: 8px;
-            transition: background 0.3s;
+            gap: 15px;
+            padding: 15px 30px;
+            font-weight: 600;
+            font-size: 16px;
         }
-        .nav-links a:hover, .nav-links a.active {
-            background: rgba(255, 255, 255, 0.15);
+        .nav-links a.active {
+            background-color: var(--sidebar-active);
+        }
+        .nav-links a i {
+            font-size: 24px;
         }
 
-        /* Main Content Area */
+        /* Main Content */
         .main-content {
-            margin-left: 250px;
-            padding: 40px;
-            width: calc(100% - 250px);
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            width: calc(100% - 320px);
         }
 
-        .header {
+        .top-tabs {
+            display: flex;
+            margin-top: 40px;
+            border-bottom: 2px solid white;
+        }
+        .top-tabs .tab {
+            padding: 12px 30px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .top-tabs .tab.active {
+            background-color: white;
+            color: var(--text-red);
+        }
+        .top-tabs .tab.inactive {
+            background-color: transparent;
+            color: white;
+        }
+
+        .dashboard-content {
+            padding: 40px;
+            width: 100%;
+        }
+
+        .top-stats-row {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 40px;
+            align-items: stretch;
+            width: 100%;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 12px;
+            padding: 30px;
+            color: var(--text-red);
+            box-shadow: 0 10px 4px rgba(0,0,0,0.15);
+        }
+
+        .applicants-card {
+            flex: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .applicants-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 40px;
+            margin-bottom: 15px;
+        }
+        .applicants-card h3 {
+            font-size: 24px;
+            margin-bottom: 0;
+        }
+        .applicants-card .count {
+            font-size: 56px;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .applicants-card .arrow-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .applicants-card .arrow-icon img {
+            width: 50px;
+            height: 50px;
         }
 
-        .header h1 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 28px;
+        .date-stats {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: flex-start;
+            justify-content: center;
         }
-
-        .logout-btn {
-            background-color: white;
-            color: var(--primary-red);
-            border: 1px solid var(--primary-red);
-            padding: 8px 16px;
-            border-radius: 6px;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s;
+        .date-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
         }
-        .logout-btn:hover {
-            background-color: var(--primary-red);
+        .date-info h3 {
+            font-family: 'Inter', sans-serif;
+            font-size: 24px;
             color: white;
+            line-height: 1.2;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+        .date-info p {
+            font-family: 'Inter', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: white;
+            line-height: 1.2;
+            letter-spacing: 1px;
         }
 
-        /* Dashboard Cards */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 24px;
+        .status-boxes {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            width: 320px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+            font-family: 'Inter', sans-serif;
+        }
+        .status-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            width: 100%;
+            padding: 16px 24px;
+            border-radius: 0;
+        }
+        .status-box.qualified {
+            background-color: #f4f4f4;
+            color: var(--text-green);
+            border: 1px solid var(--text-green);
+        }
+        .status-box.qualified span:first-child {
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .status-box.qualified span:last-child {
+            font-size: 16px;
+            font-weight: 600;
+            line-height: 1;
+        }
+        .status-box.rejected {
+            background-color: #e2dfdf;
+            color: #7f7f7f;
+            border: 1px solid #7f7f7f;
+            border-top: none;
+        }
+        .status-box.rejected span:first-child {
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .status-box.rejected span:last-child {
+            font-size: 16px;
+            font-weight: 600;
+            line-height: 1;
+        }
+
+        .distribution-card {
+            margin-bottom: 40px;
+            padding-bottom: 0;
+            width: 100%;
+        }
+        .distribution-card h3 {
+            font-size: 32px;
+            margin-bottom: 25px;
+        }
+        .distribution-card hr {
+            border: none;
+            border-top: 2px solid #E7E6E6;
             margin-bottom: 40px;
         }
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            height: 300px;
+            padding: 0 40px;
+        }
+        .bar {
+            width: 15%;
+            min-width: 80px;
+            background-color: #8C1C13;
+            border-top-left-radius: 4px;
+            border-top-right-radius: 4px;
+        }
+        .bar-1 { height: 40%; }
+        .bar-2 { height: 60%; }
+        .bar-3 { height: 90%; }
 
-        .stat-card {
-            background-color: var(--card-bg);
-            padding: 24px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        .more-insights-title {
+            font-size: 30px;
+            font-weight: 600;
+            margin-bottom: 25px;
+            border-top: 1px solid rgba(255,255,255,0.3);
+            padding-top: 25px;
+        }
+
+        .insights-slider-container {
+            width: 100%;
+            overflow: hidden;
+        }
+        .insights-slider-wrapper {
+            display: flex;
+            width: 400%; /* 4 slides */
+            transition: transform 0.5s ease-in-out;
+        }
+        .insights-row {
+            display: flex;
+            gap: 30px;
+            width: 25%; /* 100% / 4 */
+            flex-shrink: 0;
+        }
+        .insight-card {
+            flex: 1;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+        }
+        .insight-card h4 {
+            font-size: 22px;
+        }
+        .insight-card h2 {
+            font-size: 36px;
+            margin-top: 15px;
+        }
+        .insight-card .arrow-icon {
+            align-self: flex-end;
+            background-color: var(--text-red);
+            color: white;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .dots {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 40px;
+            padding-bottom: 40px;
+        }
+        .dot {
+            width: 10px;
+            height: 10px;
+            background-color: rgba(255,255,255,0.4);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .dot.active {
+            background-color: white;
+        }
+
+        /* View Applicants Layout */
+        #view-applicants-content {
+            display: none;
+            padding: 40px;
+            width: 100%;
+            font-family: 'Inter', sans-serif;
+        }
+        .va-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        .va-search {
+            display: flex;
+            align-items: center;
+            background-color: white;
+            border-radius: 8px;
+            padding: 10px 15px;
+            width: 350px;
+        }
+        .va-search input {
+            border: none;
+            outline: none;
+            flex-grow: 1;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            color: #333;
+        }
+        .va-search i {
+            color: #7f7f7f;
+            font-size: 18px;
+        }
+        .va-sort {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .va-sort-btn {
+            background-color: #f0a8a8;
+            color: var(--text-red);
+            border: none;
+            padding: 6px 20px;
+            border-radius: 4px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+        }
+        .va-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .va-list-title {
             display: flex;
             align-items: center;
             gap: 20px;
-        }
-
-        .stat-icon {
-            background-color: #fee2e2;
-            color: var(--primary-red);
-            width: 60px;
-            height: 60px;
-            border-radius: 12px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 28px;
-        }
-
-        .stat-info h3 {
-            font-size: 14px;
-            color: var(--text-muted);
-            margin-bottom: 4px;
-        }
-
-        .stat-info p {
             font-size: 24px;
-            font-weight: 600;
-            color: var(--text-main);
+            font-weight: 700;
+            color: white;
+            flex-grow: 1;
+        }
+        .va-list-title::after {
+            content: '';
+            display: block;
+            height: 2px;
+            flex-grow: 1;
+            background-color: white;
+            margin-right: 30px;
+        }
+        .va-filters {
+            display: flex;
+            border: none;
+            border-radius: 4px;
+            overflow: hidden;
+            font-size: 14px;
+            box-shadow: 0 8px 4px rgba(0,0,0,0.15);
+        }
+        .va-filter {
+            padding: 8px 20px;
+            color: #FFFFFF;
+            cursor: pointer;
+            font-weight: 700;
+            background-color: #762621;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+        }
+        .va-filter.active {
+            background-color: #FFFFFF;
+            color: #FF4135;
+        }
+        .va-list {
+            display: flex;
+            flex-direction: column;
+            background-color: white;
+        }
+        .va-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 30px;
+            border-bottom: 1px solid #e7e6e6;
+            color: var(--text-red);
+            font-weight: 700;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+        .va-list-item.rejected {
+            background-color: #D9D9D9;
+            color: var(--text-red);
+        }
+        .va-list-item:last-child {
+            border-bottom: none;
+        }
+        .va-list-item-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .va-list-item-right i {
+            background-color: var(--text-red);
+            color: white;
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
         }
 
-        /* Quick actions or info section */
-        .content-section {
-            background-color: var(--card-bg);
-            padding: 30px;
+        /* Hide CanvasJS watermark credits */
+        .canvasjs-chart-credit {
+            display: none !important;
+        }
+
+                /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #f4f4f4;
+            width: 900px; /* Scaled down from 1266 */
+            max-width: 95vw;
+            height: 850px; /* Scaled down from 1171 */
+            max-height: 95vh;
             border-radius: 12px;
+            position: relative;
+            padding: 40px;
+            overflow-y: hidden; /* No scrollbar */
+            color: black;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+        }
+        .close-btn {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        .close-btn img {
+            width: 32px;
+            height: 32px;
+        }
+        .modal-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        .modal-subtitle {
+            font-family: 'Poppins', sans-serif;
+            font-size: 20px;
+            color: #B3241B;
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+        .modal-cards-row {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start; /* Ensure cards align top */
+            margin-bottom: 30px;
+        }
+        .modal-card {
+            background: white;
+            border-radius: 12px;
+            /* Figma: 532x331 -> scaled down ~ 370x230 */
+            width: 370px;
+            height: 230px;
+            padding: 30px 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-card-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 25px;
+        }
+        .modal-card-status {
+            font-family: 'Poppins', sans-serif;
+            font-size: 30px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 25px;
+        }
+        .modal-card-status.eligible { color: #1256D4; }
+        .modal-card-status.qualified { color: #08C425; }
+        .modal-card-desc {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .left-col-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 370px;
+        }
+        .btn-resume {
+            background-color: #B3241B;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 15px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 8px 4px rgba(0,0,0,0.15);
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn-resume img { width: 24px; height: 24px; }
+        
+        .bottom-row-wrapper {
+            display: flex;
+            gap: 20px;
+            align-items: flex-end;
+            margin-top: auto;
+        }
+        
+        .qa-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            flex: 1;
+        }
+        .qa-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 20px;
+            color: #B3241B;
+            font-weight: 600;
+        }
+        .qa-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.5;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         }
-
-        .content-section h2 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 20px;
-            margin-bottom: 16px;
+        .recorded-text {
+            color: #B3241B;
+            font-size: 12px;
+            font-weight: 700;
+            display: block;
+            margin-top: 15px;
         }
-
+        
+        .modal-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            /* Figma: 278x58 -> scaled down width ~200px */
+            width: 200px;
+        }
+        .btn-action {
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 20px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            box-shadow: 0 8px 4px rgba(0,0,0,0.15);
+            cursor: pointer;
+            width: 100%;
+            height: 48px; /* Scaled from 58 */
+        }
+        .btn-action.accept { background-color: #B3241B; }
+        .btn-action.reject { background-color: #825F5C; }
+        .btn-action img { width: 24px; height: 24px; }
     </style>
+</style>
+
 </head>
 <body>
-
     <aside class="sidebar">
-        <h2>AceView Admin</h2>
+                <div class="logo-area" style="padding: 0; text-align: center;">
+            <img src="{{ url_for('static', filename='logo.svg') }}" alt="H2 Logo" style="width: 100%; display: block; margin: 0 auto;">
+            <div style="font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; color: #B3241B; letter-spacing: 4px; text-transform: uppercase; margin-top: 5px; margin-bottom: 25px;">Administration</div>
+        </div>
         <ul class="nav-links">
-            <li><a href="#" class="active"><i class='bx bxs-dashboard'></i> Dashboard</a></li>
-            <li><a href="#"><i class='bx bx-user-pin'></i> User Management</a></li>
-            <li><a href="#"><i class='bx bx-cog'></i> System Settings</a></li>
+            <li><a href="{{ url_for('admin.dashboard') }}" class="active"><img src="{{ url_for('static', filename='Dashboard Layout.svg') }}" alt="Dashboard" style="width: 2em; height: 2em;"> Dashboard</a></li>
+            <li><a href="{{ url_for('admin.recruitment') }}"><img src="{{ url_for('static', filename='Client Management.svg') }}" alt="Recruitment" style="width: 2em; height: 2em;"> Recruitment</a></li>
+            <li><a href="{{ url_for('admin.analytics') }}"><img src="{{ url_for('static', filename='Graph.svg') }}" alt="Analytics" style="width: 2em; height: 2em;"> Analytics</a></li>
+            <li><a href="#"><img src="{{ url_for('static', filename='Automation.svg') }}" alt="Settings" style="width: 2em; height: 2em;"> Settings</a></li>
+            <li><a href="#"><img src="{{ url_for('static', filename='Profile.svg') }}" alt="Profile" style="width: 2em; height: 2em;"> Profile</a></li>
         </ul>
     </aside>
 
     <main class="main-content">
-        <div class="header">
-            <h1>Welcome, {{ username }}</h1>
-            <a href="{{ url_for('auth.logout') }}" class="logout-btn"><i class='bx bx-log-out'></i> Logout</a>
+        <div class="top-tabs">
+            <div class="tab active" id="tab-monitoring" onclick="switchTab('monitoring')">Applicant Monitoring</div>
+            <div class="tab inactive" id="tab-applicants" onclick="switchTab('applicants')">View Applicants</div>
         </div>
 
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon"><i class='bx bx-group'></i></div>
-                <div class="stat-info">
-                    <h3>Total Users</h3>
-                    <p>{{ total_users }}</p>
+        <div class="dashboard-content" id="monitoring-content">
+            <div class="top-stats-row">
+                <div class="card applicants-card">
+                    <div class="applicants-header">
+                        <h3>Applicants</h3>
+                        <div class="arrow-icon">
+                            <img src="{{ url_for('static', filename='Circled Up Right.svg') }}" alt="Up Right Arrow">
+                        </div>
+                    </div>
+                    <div class="count">{{ total_applicants | default('22,026') }}</div>
+                </div>
+
+                <div class="date-stats">
+                    <div class="date-info">
+                        <h3>As of:</h3>
+                        <p id="dynamic-date">22/06/2026</p>
+                    </div>
+                    <div class="status-boxes">
+                        <div class="status-box qualified">
+                            <span>20,011</span>
+                            <span>Qualified</span>
+                        </div>
+                        <div class="status-box rejected">
+                            <span>2,015</span>
+                            <span>Rejected</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon"><i class='bx bx-briefcase'></i></div>
-                <div class="stat-info">
-                    <h3>HR Staff</h3>
-                    <p>{{ total_hr }}</p>
+
+            <div class="card distribution-card">
+                <h3>Applicant Distribution<br>per Job Position</h3>
+                <hr>
+                <div class="bar-chart">
+                    <div id="barChartContainer" style="height: 300px; width: 100%;"></div>
                 </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon"><i class='bx bx-user-voice'></i></div>
-                <div class="stat-info">
-                    <h3>Applicants</h3>
-                    <p>{{ total_applicants }}</p>
+
+            <div class="more-insights-title">More Insights...</div>
+            
+            <div class="insights-slider-container">
+                <div class="insights-slider-wrapper" id="insights-slider">
+                    <!-- Slide 1 -->
+                    <div class="insights-row">
+                        <div class="card insight-card">
+                            <h4>Avg Interview<br>Score</h4>
+                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
+                        </div>
+                        <div class="card insight-card">
+                            <h4>Recruitment<br>Process</h4>
+                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
+                        </div>
+                        <div class="card insight-card">
+                            <h4>Applicants</h4>
+                            <h2>22,0...</h2>
+                        </div>
+                    </div>
+                    <!-- Slide 2 -->
+                    <div class="insights-row">
+                        <div class="card insight-card">
+                            <h4>Avg Interview<br>Score</h4>
+                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
+                        </div>
+                        <div class="card insight-card">
+                            <h4>Recruitment<br>Process</h4>
+                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
+                        </div>
+                        <div class="card insight-card">
+                            <h4>Applicants</h4>
+                            <h2>22,0...</h2>
+                        </div>
+                    </div>
+                    <!-- Slide 3 -->
+                    <div class="insights-row">
+                        <div class="card insight-card">
+                            <h4>Avg Interview<br>Score</h4>
+                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
+                        </div>
+                        <div class="card insight-card">
+                            <h4>Recruitment<br>Process</h4>
+                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
+                        </div>
+                        <div class="card insight-card">
+                            <h4>Applicants</h4>
+                            <h2>22,0...</h2>
+                        </div>
+                    </div>
+                    <!-- Slide 4 -->
+                    <div class="insights-row">
+                        <div class="card insight-card">
+                            <h4>Avg Interview<br>Score</h4>
+                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
+                        </div>
+                        <div class="card insight-card">
+                            <h4>Recruitment<br>Process</h4>
+                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
+                        </div>
+                        <div class="card insight-card">
+                            <h4>Applicants</h4>
+                            <h2>22,0...</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dots">
+                <div class="dot active" onclick="goToSlide(0)"></div>
+                <div class="dot" onclick="goToSlide(1)"></div>
+                <div class="dot" onclick="goToSlide(2)"></div>
+                <div class="dot" onclick="goToSlide(3)"></div>
+            </div>
+        </div>
+
+        <div id="view-applicants-content">
+            <div class="va-header">
+                <div class="va-search">
+                    <input type="text" placeholder="Job applications and more">
+                    <i class='bx bx-search'></i>
+                </div>
+                <div class="va-sort">
+                    <i class='bx bx-slider-alt'></i>
+                    <button class="va-sort-btn">Sort By</button>
+                </div>
+            </div>
+            <div class="va-list-header">
+                <div class="va-list-title">Applicant List</div>
+                <div class="va-filters">
+                    <div class="va-filter active" id="va-filter-pending" onclick="switchFilter('pending')">Pending</div>
+                    <div class="va-filter" id="va-filter-accepted" onclick="switchFilter('accepted')">Accepted</div>
+                    <div class="va-filter" id="va-filter-rejected" onclick="switchFilter('rejected')">Rejected</div>
+                </div>
+            </div>
+            <div class="va-list">
+                <div class="va-list-item" onclick="openModal()"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
+                <div class="va-list-item" onclick="openModal()"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
+                <div class="va-list-item" onclick="openModal()"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
+                <div class="va-list-item" onclick="openModal()"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
+                <div class="va-list-item" onclick="openModal()"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
+                <div class="va-list-item" onclick="openModal()"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
+                <div class="va-list-item" onclick="openModal()"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
+            </div>
+        </div>
+
+                <!-- Applicant Modals -->
+<div id="applicantModalPending" class="modal-overlay" style="display: none;">
+            <div class="modal-content">
+                <button class="close-btn" onclick="closeModal()">
+                    <img src="{{ url_for('static', filename='Close Window.svg') }}" alt="Close">
+                </button>
+                
+                <h1 class="modal-title">Maryjoy Bernabe</h1>
+                <h3 class="modal-subtitle">Applying as: Software Engineer</h3>
+
+                <div class="modal-cards-row">
+                    <div class="left-col-wrapper">
+                        <div class="modal-card">
+                            <div class="modal-card-title">Pre-screening Outcome</div>
+                            <div class="modal-card-status eligible">ELIGIBLE</div>
+                            <div class="modal-card-desc">
+                                <strong>Experience:</strong> 4 yrs<br>
+                                <strong>Skills:</strong> Javascript, Laravel, Python, SQL
+                            </div>
+                        </div>
+                        <button class="btn-resume">
+                            View Resume <img src="{{ url_for('static', filename='Resume.svg') }}" alt="Resume">
+                        </button>
+                    </div>
+                    
+                    <div class="modal-card">
+                        <div class="modal-card-title">ANN Interview Evaluation</div>
+                        <div class="modal-card-status qualified">QUALIFIED</div>
+                        <div class="modal-card-desc">
+                            <strong>Average Score:</strong> 78% confidence level
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bottom-row-wrapper">
+                    <div class="qa-section">
+                        <h2 class="qa-title">Detailed Interview Q&A</h2>
+                        <div class="qa-content">
+                            <strong>Q1: Tell me about yourself.</strong><br>
+                            <em>"Good day! My name is Mary Joy Bernabe. I am a computer science student who is passionate about technology, problem-solving, and software development. I have experience creating web and mobile applications using different programming languages and tools such as Python, Flask, PHP, MySQL, HTML, CSS, and JavaScript. I am hardworking, willing to learn, and can adapt quickly to new environments. I also enjoy working with a team and improving my skills through projects and research. One of the projects I worked on is a job interview platform simulation that uses artificial intelligence concepts for applicant evaluation. I am seeking an opportunity where I can apply my knowledge, gain professional experience, and continue growing in the field of technology."</em><br>
+                            <span class="recorded-text">Recorded</span>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button class="btn-action accept">
+                            Accept <img src="{{ url_for('static', filename='Checkmark.svg') }}" alt="Accept">
+                        </button>
+                        <button class="btn-action reject">
+                            Reject <img src="{{ url_for('static', filename='Cancel.svg') }}" alt="Reject">
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+<div id="applicantModalAccepted" class="modal-overlay" style="display: none;">
+            <div class="modal-content">
+                <button class="close-btn" onclick="closeModal()">
+                    <img src="{{ url_for('static', filename='Close Window.svg') }}" alt="Close">
+                </button>
+                
+                <h1 class="modal-title">Maryjoy Bernabe</h1>
+                <h3 class="modal-subtitle">Applying as: Software Engineer</h3>
+
+                <div class="modal-cards-row">
+                    <div class="left-col-wrapper">
+                        <div class="modal-card">
+                            <div class="modal-card-title">Pre-screening Outcome</div>
+                            <div class="modal-card-status eligible">ELIGIBLE</div>
+                            <div class="modal-card-desc">
+                                <strong>Experience:</strong> 4 yrs<br>
+                                <strong>Skills:</strong> Javascript, Laravel, Python, SQL
+                            </div>
+                        </div>
+                        <button class="btn-resume">
+                            View Resume <img src="{{ url_for('static', filename='Resume.svg') }}" alt="Resume">
+                        </button>
+                    </div>
+                    
+                    <div class="modal-card">
+                        <div class="modal-card-title">ANN Interview Evaluation</div>
+                        <div class="modal-card-status qualified">QUALIFIED</div>
+                        <div class="modal-card-desc">
+                            <strong>Average Score:</strong> 78% confidence level
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bottom-row-wrapper">
+                    <div class="qa-section">
+                        <h2 class="qa-title">Detailed Interview Q&A</h2>
+                        <div class="qa-content">
+                            <strong>Q1: Tell me about yourself.</strong><br>
+                            <em>"Good day! My name is Mary Joy Bernabe. I am a computer science student who is passionate about technology, problem-solving, and software development. I have experience creating web and mobile applications using different programming languages and tools such as Python, Flask, PHP, MySQL, HTML, CSS, and JavaScript. I am hardworking, willing to learn, and can adapt quickly to new environments. I also enjoy working with a team and improving my skills through projects and research. One of the projects I worked on is a job interview platform simulation that uses artificial intelligence concepts for applicant evaluation. I am seeking an opportunity where I can apply my knowledge, gain professional experience, and continue growing in the field of technology."</em><br>
+                            <span class="recorded-text">Recorded</span>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button class="btn-action reject" style="cursor: default; pointer-events: none; width: 200px; background-color: #825F5C; display: flex; justify-content: center;">
+                            Accepted
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="content-section">
-            <h2>System Overview</h2>
-            <p style="color: var(--text-muted); font-size: 14px; line-height: 1.6;">
-                This is the central administrative hub. From here, you can manage user roles, oversee system activity, and configure application settings. More modules can be added here as needed.
-            </p>
+        <div id="applicantModalRejected" class="modal-overlay" style="display: none;">
+            <div class="modal-content" style="width: 700px; height: auto; max-height: 95vh; padding: 50px; align-items: center; text-align: center; overflow-y: auto;">
+                <button class="close-btn" onclick="closeModal()">
+                    <img src="{{ url_for('static', filename='Close Window.svg') }}" alt="Close">
+                </button>
+                
+                <h2 style="color: #B3241B; font-family: 'Poppins', sans-serif; font-size: 36px; font-weight: 600; margin-bottom: 25px;">Rejection of Applicant</h2>
+                
+                <p style="font-family: 'Poppins', sans-serif; font-size: 22px; font-weight: 400; margin-bottom: 10px;">Confirmation of rejecting<br>the applicant</p>
+                <p style="font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 300; font-style: italic; margin-bottom: 40px;">*This action is irreversible</p>
+
+                <div style="background: #FFFFFF; border: 5px solid #000000; border-radius: 12px; padding: 30px; width: 100%; max-width: 500px; margin-bottom: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <h1 style="font-family: 'Poppins', sans-serif; font-size: 32px; font-weight: 700; margin-bottom: 10px;">Maryjoy Bernabe</h1>
+                    <h3 style="font-family: 'Poppins', sans-serif; font-size: 18px; color: #B3241B; font-weight: 600;">Applying as: Software Engineer</h3>
+                </div>
+
+                <div style="display: flex; gap: 40px; justify-content: center;">
+                    <button class="btn-action accept" style="width: 200px; justify-content: center;">
+                        Reject <img src="{{ url_for('static', filename='Refuse.svg') }}" alt="Reject">
+                    </button>
+                    <button class="btn-action reject" style="width: 200px; justify-content: center;" onclick="closeModal()">
+                        Cancel <img src="{{ url_for('static', filename='Cancel.svg') }}" alt="Cancel">
+                    </button>
+                </div>
+            </div>
         </div>
+
     </main>
 
+    <script>
+
+        let currentFilterStatus = 'pending';
+
+        function openModal() {
+            if (currentFilterStatus === 'pending') {
+                document.getElementById('applicantModalPending').style.display = 'flex';
+            } else if (currentFilterStatus === 'accepted') {
+                document.getElementById('applicantModalAccepted').style.display = 'flex';
+            } else if (currentFilterStatus === 'rejected') {
+                document.getElementById('applicantModalRejected').style.display = 'flex';
+            }
+        }
+        function closeModal() {
+            document.getElementById('applicantModalPending').style.display = 'none';
+            document.getElementById('applicantModalAccepted').style.display = 'none';
+            document.getElementById('applicantModalRejected').style.display = 'none';
+        }
+
+        function switchTab(tab) {
+
+            const monitoringTab = document.getElementById('tab-monitoring');
+            const applicantsTab = document.getElementById('tab-applicants');
+            const monitoringContent = document.getElementById('monitoring-content');
+            const applicantsContent = document.getElementById('view-applicants-content');
+            
+            if (tab === 'monitoring') {
+                monitoringTab.className = 'tab active';
+                applicantsTab.className = 'tab inactive';
+                monitoringContent.style.display = 'block';
+                applicantsContent.style.display = 'none';
+            } else {
+                monitoringTab.className = 'tab inactive';
+                applicantsTab.className = 'tab active';
+                monitoringContent.style.display = 'none';
+                applicantsContent.style.display = 'block';
+            }
+        }
+
+        function switchFilter(status) {
+            currentFilterStatus = status;
+            const filters = ['pending', 'accepted', 'rejected'];
+            filters.forEach(f => {
+                const el = document.getElementById('va-filter-' + f);
+                if (f === status) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            });
+
+            const listItems = document.querySelectorAll('.va-list-item');
+            listItems.forEach(item => {
+                if (status === 'rejected') {
+                    item.classList.add('rejected');
+                } else {
+                    item.classList.remove('rejected');
+                }
+            });
+        }
+
+        function goToSlide(index) {
+            const slider = document.getElementById('insights-slider');
+            slider.style.transform = `translateX(-${index * 25}%)`;
+            
+            const dots = document.querySelectorAll('.dots .dot');
+            dots.forEach((dot, i) => {
+                if (i === index) dot.classList.add('active');
+                else dot.classList.remove('active');
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            var chart = new CanvasJS.Chart("barChartContainer", {
+                animationEnabled: true,
+                theme: "light2",
+                axisY: {
+                    title: "Applicants"
+                },
+                data: [{
+                    type: "column",
+                    showInLegend: false,
+                    color: "#8C1C13",
+                    dataPoints: [
+                        { y: 5500, label: "SE" },
+                        { y: 4200, label: "QA" },
+                        { y: 3800, label: "DevOps" },
+                        { y: 3100, label: "UI/UX" },
+                        { y: 2900, label: "PM" },
+                        { y: 2526, label: "Data" }
+                    ]
+                }]
+            });
+            chart.render();
+
+            const dateElement = document.getElementById('dynamic-date');
+            const today = new Date();
+            const dd = String(today.getDate()).padStart(2, '0');
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const yyyy = today.getFullYear();
+            dateElement.textContent = `${dd}/${mm}/${yyyy}`;
+        });
+    </script>
 </body>
 </html>

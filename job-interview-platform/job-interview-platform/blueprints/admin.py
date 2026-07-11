@@ -1,4 +1,5 @@
 # blueprints/admin.py
+# pyrefly: ignore [missing-import]
 from flask import Blueprint, render_template, session, redirect, url_for
 from extensions import mysql
 
@@ -46,4 +47,54 @@ def dashboard():
         total_users=total_users,
         total_hr=total_hr,
         total_applicants=total_applicants
+    )
+
+@admin_bp.route("/admin/recruitment")
+def recruitment():
+    # 1. Security Check: Ensure user is logged in
+    if "user_id" not in session:
+        return redirect(url_for("auth.login"))
+
+    user_id = session["user_id"]
+    cur = mysql.connection.cursor()
+
+    # 2. Security Check: Ensure the user is actually an Admin
+    cur.execute("SELECT username, user_type FROM users WHERE user_id = %s", (user_id,))
+    user = cur.fetchone()
+    
+    if not user or user[1] != 'Admin':
+        cur.close()
+        return redirect(url_for("auth.login"))
+
+    username = user[0]
+    cur.close()
+
+    return render_template(
+        "admin_recruitment.html",
+        username=username
+    )
+
+@admin_bp.route("/admin/analytics")
+def analytics():
+    # 1. Security Check: Ensure user is logged in
+    if "user_id" not in session:
+        return redirect(url_for("auth.login"))
+
+    user_id = session["user_id"]
+    cur = mysql.connection.cursor()
+
+    # 2. Security Check: Ensure the user is actually an Admin
+    cur.execute("SELECT username, user_type FROM users WHERE user_id = %s", (user_id,))
+    user = cur.fetchone()
+    
+    if not user or user[1] != 'Admin':
+        cur.close()
+        return redirect(url_for("auth.login"))
+
+    username = user[0]
+    cur.close()
+
+    return render_template(
+        "admin_analytics.html",
+        username=username
     )

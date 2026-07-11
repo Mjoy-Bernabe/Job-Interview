@@ -26,7 +26,7 @@ def hr_dashboard():
     
     # 1) Logged-in HR user info
     cur.execute(
-        "SELECT email, username FROM users WHERE user_id = %s",
+        "SELECT email, username, user_type FROM users WHERE user_id = %s",
         (user_id,)
     )
     user = cur.fetchone()
@@ -35,7 +35,14 @@ def hr_dashboard():
         cur.close()
         return redirect(url_for("auth.login"))
 
-    email, username = user
+    email, username, user_type = user
+
+    # Security check: only HR accounts may view the HR dashboard. Without
+    # this, any logged-in session (e.g. an Applicant) could load /hr
+    # directly by URL and see the HR portal.
+    if (user_type or "").strip().lower() not in ("hr", "hrpage"):
+        session.clear()
+        return redirect(url_for("auth.staff_login"))
 
     # 2) Standard Application Metrics (Replaces old CART/ANN logic)
     cur.execute("SELECT COUNT(*) FROM applications")

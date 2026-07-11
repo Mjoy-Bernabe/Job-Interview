@@ -852,51 +852,25 @@
                     <div class="dashboard-grid">
                         <article class="panel">
                             <h2>Section 1: Resume</h2>
-                            {% if has_applied %}
-                            <span class="status-pill {% if application_data.eligibility == 'Eligible' %}eligible{% elif application_data.eligibility == 'Not Eligible' %}not-eligible{% else %}pending{% endif %}">
-                                {{ application_data.eligibility or 'Pending' }}
-                            </span>
-                            <div class="detail-list">
-                                <div class="detail-row"><span>Name</span><span>{{ application_data.name }}</span></div>
-                                <div class="detail-row"><span>Email</span><span>{{ application_data.email }}</span></div>
-                                <div class="detail-row"><span>Position</span><span>{{ application_data.position|replace('_', ' ')|title }}</span></div>
-                                <div class="detail-row"><span>Experience</span><span>{{ application_data.yearexperience or 0 }} years</span></div>
-                                {% if application_data.education_level %}
-                                <div class="detail-row"><span>Education</span><span>{{ application_data.education_level|replace('_', ' ')|title }}</span></div>
-                                {% endif %}
-                                {% if application_data.skills %}
-                                <div class="detail-row"><span>Skills</span><span>{{ application_data.skills }}</span></div>
-                                {% endif %}
+                            <div id="section1Content">
+                                <p class="empty-note">Select a job to view its application status.</p>
                             </div>
-                            {% else %}
-                            <p class="empty-note">Submit your resume/application to start the screening process.</p>
-                            <a class="small-action" href="{{ url_for('applicants.prescreen') }}" style="margin-top:14px;">Start Application</a>
-                            {% endif %}
                         </article>
 
                         <article class="panel">
                             <h2>Section 2: Chatbot Interview</h2>
-                            {% if chatbot_data %}
-                            <span class="status-pill {% if chatbot_data.qualification_status == 'Qualified' %}qualified{% elif chatbot_data.qualification_status == 'Not Qualified' %}not-qualified{% else %}pending{% endif %}">
-                                {{ chatbot_data.qualification_status }}
-                            </span>
-                            <div class="detail-list">
-                                <div class="detail-row"><span>Job Position</span><span>{{ chatbot_data.position|replace('_', ' ')|title }}</span></div>
-                                <div class="detail-row"><span>Total Score</span><span>{{ chatbot_data.average_score }}%</span></div>
-                                <div class="detail-row"><span>Summary</span><span><a href="{{ url_for('summary.summary_report') }}">Open Report</a></span></div>
+                            <div id="section2Content">
+                                <p class="empty-note">Select a job to view its interview status.</p>
                             </div>
-                            {% elif has_applied and application_data.eligibility == 'Eligible' %}
-                            <p class="empty-note">You are eligible to proceed to the chatbot interview.</p>
-                            <a class="small-action" href="{{ url_for('interview.chatbot_page') }}" style="margin-top:14px;">Start Interview</a>
-                            {% elif has_applied %}
-                            <p class="empty-note">Chatbot interview is not available until your resume screening is eligible.</p>
-                            {% else %}
-                            <p class="empty-note">Complete Section 1 before taking the chatbot interview.</p>
-                            {% endif %}
                         </article>
                     </div>
                 </div>
             </section>
+
+            <!-- Per-job application data, keyed by job_id, so the detail panel
+                 above only ever shows the data for the job that was clicked
+                 (instead of always showing the most recently applied-to job). -->
+            <script type="application/json" id="applicationsByJobData">{{ applications_by_job | tojson }}</script>
 
             <section class="view" id="view-settings">
                 <h1 class="page-title">Settings</h1>
@@ -981,12 +955,106 @@
             document.getElementById('dash-detail').style.display = 'none';
         }
 
+        // Map of job_id -> that job's own application (+ chatbot) data.
+        // Parsed once on load; each job only ever reads its own entry here,
+        // so one job's phase-1/phase-2 info can never leak onto another job.
+        const URLS = {
+            summaryReport: "{{ url_for('summary.summary_report') }}",
+            chatbotPage: "{{ url_for('interview.chatbot_page') }}",
+            prescreen: "{{ url_for('applicants.prescreen') }}"
+        };
+
+        let applicationsByJob = {};
+        try {
+            const raw = document.getElementById('applicationsByJobData');
+            applicationsByJob = raw ? JSON.parse(raw.textContent || '{}') : {};
+        } catch (e) {
+            applicationsByJob = {};
+        }
+
+        function titleCase(str) {
+            if (!str) return '';
+            return String(str).replace(/_/g, ' ').replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str == null ? '' : String(str);
+            return div.innerHTML;
+        }
+
+        function renderSection1(jobId, jobRow, appData) {
+            const container = document.getElementById('section1Content');
+
+            if (!appData) {
+                container.innerHTML = `
+                    <p class="empty-note">Submit your resume/application to start the screening process.</p>
+                    <a class="small-action" id="startApplicationLink" href="${URLS.prescreen}?job_id=${encodeURIComponent(jobId)}" style="margin-top:14px;">Start Application</a>
+                `;
+                return;
+            }
+
+            const eligibility = appData.eligibility || 'Pending';
+            const pillClass = eligibility === 'Eligible' ? 'eligible' : (eligibility === 'Not Eligible' ? 'not-eligible' : 'pending');
+
+            let html = `
+                <span class="status-pill ${pillClass}">${escapeHtml(eligibility)}</span>
+                <div class="detail-list">
+                    <div class="detail-row"><span>Name</span><span>${escapeHtml(appData.name)}</span></div>
+                    <div class="detail-row"><span>Email</span><span>${escapeHtml(appData.email)}</span></div>
+                    <div class="detail-row"><span>Position</span><span>${escapeHtml(titleCase(appData.position))}</span></div>
+                    <div class="detail-row"><span>Experience</span><span>${escapeHtml(appData.yearexperience || 0)} years</span></div>
+            `;
+            if (appData.education_level && appData.education_level !== 'N/A') {
+                html += `<div class="detail-row"><span>Education</span><span>${escapeHtml(titleCase(appData.education_level))}</span></div>`;
+            }
+            if (appData.skills && appData.skills !== 'None listed') {
+                html += `<div class="detail-row"><span>Skills</span><span>${escapeHtml(appData.skills)}</span></div>`;
+            }
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        function renderSection2(jobId, appData) {
+            const container = document.getElementById('section2Content');
+            const chatbot = appData ? appData.chatbot : null;
+
+            if (chatbot) {
+                const qs = chatbot.qualification_status || '';
+                const pillClass = qs === 'Qualified' ? 'qualified' : (qs === 'Not Qualified' ? 'not-qualified' : 'pending');
+                container.innerHTML = `
+                    <span class="status-pill ${pillClass}">${escapeHtml(qs)}</span>
+                    <div class="detail-list">
+                        <div class="detail-row"><span>Job Position</span><span>${escapeHtml(titleCase(chatbot.position))}</span></div>
+                        <div class="detail-row"><span>Total Score</span><span>${escapeHtml(chatbot.average_score)}%</span></div>
+                        <div class="detail-row"><span>Summary</span><span><a href="${URLS.summaryReport}">Open Report</a></span></div>
+                    </div>
+                `;
+            } else if (appData && appData.eligibility === 'Eligible') {
+                container.innerHTML = `
+                    <p class="empty-note">You are eligible to proceed to the chatbot interview.</p>
+                    <a class="small-action" href="${URLS.chatbotPage}" style="margin-top:14px;">Start Interview</a>
+                `;
+            } else if (appData) {
+                container.innerHTML = `<p class="empty-note">Chatbot interview is not available until your resume screening is eligible.</p>`;
+            } else {
+                container.innerHTML = `<p class="empty-note">Complete Section 1 before taking the chatbot interview.</p>`;
+            }
+        }
+
         function showJobDetail(jobRow) {
             const title = jobRow.dataset.position || 'Application';
+            const jobId = jobRow.dataset.jobId;
+            const appData = applicationsByJob[jobId] || null;
+
             document.getElementById('detailJobTitle').textContent = title;
             document.getElementById('dash-joblist').style.display = 'none';
             document.getElementById('dash-detail').style.display = '';
             document.getElementById('dash-detail').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // Render THIS job's own data only — never another job's.
+            renderSection1(jobId, jobRow, appData);
+            renderSection2(jobId, appData);
         }
 
         function updateDateTime() {
