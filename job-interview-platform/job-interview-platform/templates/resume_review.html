@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ACEView : Resume Screening Result</title>
+  <title>H2 Software Consulting Services Inc. : Resume Screening Result</title>
 
   <link
     href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap"
@@ -359,9 +359,14 @@
         <input type="hidden" name="token" value="{{ token }}">
         <input type="hidden" name="job_id" value="{{ job_id }}">
 
-        <div class="field-row">
-          <label for="full_name">Applicant</label>
-          <input type="text" id="full_name" name="full_name" value="{{ scan.full_name }}" required>
+        <div class="field-row" style="grid-template-columns: 140px 1fr 1fr 70px;">
+          <label>Applicant</label>
+          <input type="text" id="last_name" name="last_name" placeholder="Last name"
+                 value="{{ scan.last_name }}" required>
+          <input type="text" id="first_name" name="first_name" placeholder="First name"
+                 value="{{ scan.first_name }}" required>
+          <input type="text" id="middle_initial" name="middle_initial" placeholder="M.I."
+                 value="{{ scan.middle_initial }}" maxlength="10">
         </div>
         <div class="field-row">
           <label for="email">Email</label>

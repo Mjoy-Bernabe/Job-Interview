@@ -14,6 +14,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from extensions import mysql, logger
 from services.otp_service import generate_otp, verify_otp
 from services.email_service import send_otp_email
+from session_utils import ADMIN_COOKIE, HR_COOKIE, use_portal_cookie
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -61,6 +62,11 @@ def _bounce_if_logged_in(allowed_roles):
 
     Returns a redirect response if the person should be bounced away, or
     None if the caller should continue rendering its own login page.
+
+    NOTE: this is for the /login and /register (Applicant) pages only,
+    which use the plain default session cookie. /staff-login and
+    /register-staff intentionally do NOT use any bounce logic — see the
+    comment at the top of staff_login() for why.
     """
     role = _current_session_role()
     if role is None:
@@ -148,9 +154,14 @@ def login():
 # ---------- 2. STAFF LOGIN (HR / ADMIN) ----------
 @auth_bp.route("/staff-login", methods=["GET", "POST"])
 def staff_login():
-    bounce = _bounce_if_logged_in(allowed_roles={"hr", "hrpage", "admin"})
-    if bounce:
-        return bounce
+    # NOTE: We deliberately do NOT auto-redirect GET requests here based on
+    # an existing HR or Admin session. Admin and HR have separate cookies
+    # (see session_utils.py) specifically so both can be logged in at once
+    # in the same browser — if this page bounced you straight to whichever
+    # one is already active, you could never reach the form to log into
+    # the OTHER role while the first stays logged in. So this page always
+    # shows the form; logging in just writes to the correct cookie for the
+    # role you authenticate as, leaving any other active portal untouched.
 
     error = None
     if request.method == "POST":
@@ -168,11 +179,22 @@ def staff_login():
                 if result[2] == 'Applicant':
                     error = "Applicants must use the standard login page (/login)."
                 else:
+                    target = _role_target(result[2])
+
+                    # Point this login at the correct portal cookie BEFORE
+                    # writing to `session`, so HR and Admin logins land in
+                    # their own cookie (admin_session / hr_session) instead
+                    # of overwriting each other. This is what lets someone
+                    # stay logged in as HR in one tab and Admin in another.
+                    if target == "hr.hr_dashboard":
+                        use_portal_cookie(HR_COOKIE)
+                    elif target == "admin.dashboard":
+                        use_portal_cookie(ADMIN_COOKIE)
+
+                    session.clear()
                     session["user_id"] = result[0]
                     session["email"] = email
-                    
-                    target = _role_target(result[2])
-                    
+
                     # Direct them to their specific dashboards
                     if target == "hr.hr_dashboard":
                         flash("Login successful! Welcome to the HR Portal.", "success")
@@ -193,9 +215,6 @@ def staff_login():
 # ---------- 3. STAFF REGISTRATION ----------
 @auth_bp.route("/register-staff", methods=["GET", "POST"])
 def register_staff():
-    bounce = _bounce_if_logged_in(allowed_roles={"hr", "hrpage", "admin"})
-    if bounce:
-        return bounce
 
     if request.method == "POST":
         # --- Verify reCAPTCHA ---
@@ -256,21 +275,46 @@ def register_staff():
 # ---------- 4. SESSION / LOGOUT / APPLICANT REGISTRATION ----------
 @auth_bp.route("/check_session")
 def check_session():
-    """Check if user is logged in"""
+    """
+    Check if user is logged in. Admin and HR each have their own cookie
+    now (see session_utils.py), and this endpoint is called from the
+    shared staff-login page, so it checks all three portals rather than
+    just the default cookie.
+    """
+    from session_utils import ADMIN_COOKIE, HR_COOKIE, read_portal_session
+
+    # Default cookie (Applicant, or whatever this path resolves to)
     if "user_id" in session:
         cur = mysql.connection.cursor()
         cur.execute("SELECT user_type FROM users WHERE user_id = %s", (session["user_id"],))
         result = cur.fetchone()
         cur.close()
-
         if result:
-            return {"logged_in": True, "user_type": result[0]}
+            # NOTE: both "user_type" and "usertype" are included since the
+            # front-end pages read different key spellings.
+            return {"logged_in": True, "user_type": result[0], "usertype": result[0]}
+
+    # Staff cookies
+    for cookie_name in (ADMIN_COOKIE, HR_COOKIE):
+        data = read_portal_session(cookie_name)
+        user_id = data.get("user_id")
+        if user_id:
+            cur = mysql.connection.cursor()
+            cur.execute("SELECT user_type FROM users WHERE user_id = %s", (user_id,))
+            result = cur.fetchone()
+            cur.close()
+            if result:
+                return {"logged_in": True, "user_type": result[0], "usertype": result[0]}
 
     return {"logged_in": False}
 
 
 @auth_bp.route("/logout")
 def logout():
+    # This is the Applicant portal's logout (default session cookie).
+    # Admin and HR now have their own dedicated logout routes
+    # (admin.logout / hr.logout) so logging out of one portal never
+    # touches the other's cookie — see session_utils.py.
     session.clear()
     response = redirect(url_for("auth.login"))
     # Prevent caching

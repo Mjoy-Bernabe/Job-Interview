@@ -150,7 +150,13 @@ def hr_dashboard():
             j.opening_date, j.application_deadline,
             jd.education_baseline, NULL AS target_school,
             jd.required_exp_years, jd.minimum_age, jd.location,
-            jd.employment_type
+            jd.employment_type, jd.department, jd.salary_range,
+            jd.vacancies,
+            (SELECT COUNT(*) FROM applications a WHERE a.job_id = j.job_id) AS applicant_count,
+            (SELECT GROUP_CONCAT(sm.skill_name ORDER BY sm.skill_name SEPARATOR ', ')
+             FROM job_required_skills jrs
+             JOIN skills_master sm ON sm.skill_id = jrs.skill_id
+             WHERE jrs.job_desc_id = jd.job_desc_id) AS skills
         FROM jobs j
         LEFT JOIN job_desc jd ON jd.job_id = j.job_id
         ORDER BY j.job_name ASC
@@ -168,6 +174,11 @@ def hr_dashboard():
             "min_age": row[8],
             "location": row[9],
             "employment_type": row[10],
+            "department": row[11],
+            "salary_range": row[12],
+            "vacancies": row[13],
+            "applicant_count": row[14],
+            "skills": row[15] or "",
         }
         for row in cur.fetchall()
     ]
@@ -233,7 +244,40 @@ def get_applicant_details(app_id):
         "qa_data": None
     })
 
-@hr_bp.route("/applicant-decision-json", methods=["POST"])
+@hr_bp.route("/hr/skills/search")
+def search_skills():
+    """
+    Autocomplete lookup against the HR-curated skills_master dictionary,
+    used by the "Add skills" search box on the job-posting form. Read-only —
+    it never creates rows; new skills only get inserted when the job form
+    is actually submitted (see schedule.update_requirements).
+    """
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    query = (request.args.get("q") or "").strip()
+    cur = mysql.connection.cursor()
+
+    if query:
+        cur.execute(
+            """
+            SELECT skill_name FROM skills_master
+            WHERE skill_name LIKE %s
+            ORDER BY skill_name ASC
+            LIMIT 10
+            """,
+            (f"%{query}%",),
+        )
+    else:
+        cur.execute(
+            "SELECT skill_name FROM skills_master ORDER BY skill_name ASC LIMIT 10"
+        )
+
+    skills = [row[0] for row in cur.fetchall()]
+    cur.close()
+    return jsonify({"skills": skills})
+
+@hr_bp.route("/hr/applicant-decision-json", methods=["POST"])
 def applicant_decision_json():
     if "user_id" not in session:
         return jsonify({"ok": False, "msg": "Unauthorized"}), 401
@@ -304,7 +348,15 @@ AceView Recruitment Team"""
         
     return jsonify({"ok": True})
 
-@hr_bp.route("/logout")
+@hr_bp.route("/hr/logout")
 def logout():
+    # Every /hr* route (including this one) is bound to its own
+    # "hr_session" cookie (see session_utils.py), so clearing `session`
+    # here only clears the HR portal — an Admin session logged in at the
+    # same time, in another tab, is untouched.
     session.clear()
-    return redirect(url_for("auth.login"))
+    response = redirect(url_for("auth.staff_login"))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, post-check=0, pre-check=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response

@@ -8,6 +8,7 @@ from flask import (
     flash,
 )
 import json
+import datetime
 from extensions import mysql
 
 schedule_bp = Blueprint("schedule", __name__)
@@ -27,10 +28,10 @@ def get_progress_data():
 
     cur.execute(
         """
-        SELECT j.job_name, j.max_applicants, COUNT(a.id) AS current_count
+        SELECT j.job_name, j.max_applicants, COUNT(a.application_id) AS current_count
         FROM jobs j
-        LEFT JOIN applications a ON a.job_id = j.id
-        GROUP BY j.id, j.job_name, j.max_applicants
+        LEFT JOIN applications a ON a.job_id = j.job_id
+        GROUP BY j.job_id, j.job_name, j.max_applicants
         ORDER BY j.job_name ASC
         """
     )
@@ -65,114 +66,147 @@ def schedule_page():
 # --- EXTENDED REQUIREMENTS (Recruitment tab & old page both use this) ---
 @schedule_bp.route("/update_requirements", methods=["POST"])
 def update_requirements():
-    print("--- DEBUG: FORM SUBMITTED ---")
-
-    # Core
+    # Core (jobs table)
     position = request.form.get("position")
     max_allowed = request.form.get("max_allowed")
-    form_access = request.form.get("form_access")
-
-    # Timeline
+    form_access = request.form.get("form_access") or "Open"
     opening_date = request.form.get("opening_date") or None
     deadline_date = request.form.get("deadline_date") or None
 
-    # Education & experience
-    education_level = request.form.get("education_level")
-    school = request.form.get("school")
+    # Descriptive fields (job_desc table)
+    department = request.form.get("department") or "General"
+    employment_type = request.form.get("employment_type") or "Full-time"
+    location = request.form.get("location") or "Not specified"
+    schedule_location = request.form.get("work_setup") or "Onsite"
+    salary_range = request.form.get("salary_range") or None
+    vacancies = request.form.get("vacancies")
+    education_level = request.form.get("education_level") or "Not specified"
     experience_years = request.form.get("experience_years")
-
-    # Demographics & details
     min_age = request.form.get("min_age")
-    location = request.form.get("location")
-    employment_type = request.form.get("employment_type")
+    school = request.form.get("school")  # education / CART notes
+    job_description = request.form.get("job_description") or "Not specified"
+
+    # Required skills (job_required_skills bridge table). This is the ONLY
+    # place allowed to add brand-new rows to skills_master — HR curates the
+    # skill dictionary per job posting; applicants can only ever link to
+    # skills that already exist here.
+    skills_raw = request.form.get("skills") or ""
+    skill_names = [s.strip() for s in skills_raw.split(",") if s.strip()]
 
     # Safe numeric conversion
-    exp_val = int(
-        experience_years) if experience_years and experience_years.isdigit() else 0
+    exp_val = int(experience_years) if experience_years and experience_years.isdigit() else 0
     age_val = int(min_age) if min_age and min_age.isdigit() else 18
-
-    print(
-        f"Received Data: Pos={position}, Max={max_allowed}, School={school}, Loc={location}, Open={opening_date}"
-    )
+    vacancies_val = int(vacancies) if vacancies and vacancies.isdigit() else 1
 
     if not position or not max_allowed:
-        flash("Position and Max Limit are required fields.", "danger")
-        # 🔁 back to where form came from (HR tab or old page)
+        flash("Job Title and Max Applicants are required fields.", "danger")
         return redirect(request.referrer or url_for("hr.hr_dashboard"))
+
+    # opening_date/application_deadline are NOT NULL on `jobs` — fall back to today
+    # so a job posted without dates picked still saves successfully.
+    opening_date = opening_date or datetime.date.today().isoformat()
+    deadline_date = deadline_date or opening_date
 
     try:
         cur = mysql.connection.cursor()
 
-        cur.execute(
-            "SELECT id FROM educations WHERE education_name = %s",
-            (education_level,),
-        )
-        edu_row = cur.fetchone()
-        education_id = edu_row[0] if edu_row else None
-
-        if not education_id and education_level:
-            cur.execute(
-                "INSERT INTO educations (education_name, cart_value) VALUES (%s, %s)",
-                (education_level, 1),
-            )
-            education_id = cur.lastrowid
-
-        cur.execute("SELECT id FROM jobs WHERE job_name = %s", (position,))
+        cur.execute("SELECT job_id FROM jobs WHERE job_name = %s", (position,))
         existing = cur.fetchone()
 
         if existing:
+            job_id = existing[0]
             cur.execute(
                 """
                 UPDATE jobs
                 SET max_applicants = %s,
-                    status = %s,
-                    start_date = %s,
-                    end_date = %s,
-                    required_education_id = %s,
-                    required_experience = %s,
-                    required_age = %s,
-                    description = %s
-                WHERE id = %s
+                    application_status = %s,
+                    opening_date = %s,
+                    application_deadline = %s
+                WHERE job_id = %s
                 """,
-                (
-                    max_allowed,
-                    form_access or "Open",
-                    opening_date,
-                    deadline_date,
-                    education_id,
-                    exp_val,
-                    age_val,
-                    location,
-                    existing[0],
-                ),
+                (max_allowed, form_access, opening_date, deadline_date, job_id),
             )
         else:
             cur.execute(
                 """
                 INSERT INTO jobs
-                (job_name, description, required_education_id, required_age,
-                 required_experience, max_applicants, start_date, end_date,
-                 status, created_by)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                    (job_name, max_applicants, application_status, opening_date, application_deadline)
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                (position, max_allowed, form_access, opening_date, deadline_date),
+            )
+            job_id = cur.lastrowid
+
+        cur.execute("SELECT job_desc_id FROM job_desc WHERE job_id = %s", (job_id,))
+        desc_row = cur.fetchone()
+
+        if desc_row:
+            job_desc_id = desc_row[0]
+            cur.execute(
+                """
+                UPDATE job_desc
+                SET description = %s,
+                    department = %s,
+                    employment_type = %s,
+                    schedule_location = %s,
+                    location = %s,
+                    salary_range = %s,
+                    vacancies = %s,
+                    education_baseline = %s,
+                    required_exp_years = %s,
+                    minimum_age = %s,
+                    education_notes = %s
+                WHERE job_id = %s
                 """,
                 (
-                    position,
-                    location,
-                    education_id,
-                    age_val,
-                    exp_val,
-                    max_allowed,
-                    opening_date,
-                    deadline_date,
-                    form_access or "Open",
-                    None,
+                    job_description, department, employment_type, schedule_location,
+                    location, salary_range, vacancies_val, education_level,
+                    exp_val, age_val, school, job_id,
                 ),
+            )
+        else:
+            cur.execute(
+                """
+                INSERT INTO job_desc
+                    (job_id, description, department, employment_type, schedule_location,
+                     location, salary_range, vacancies, education_baseline,
+                     required_exp_years, minimum_age, education_notes)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    job_id, job_description, department, employment_type, schedule_location,
+                    location, salary_range, vacancies_val, education_level,
+                    exp_val, age_val, school,
+                ),
+            )
+            job_desc_id = cur.lastrowid
+
+        # --- Required skills (job_required_skills) ---
+        # HR is the only actor allowed to create new skills_master rows.
+        # Re-sync this job posting's required-skill links from scratch.
+        cur.execute(
+            "DELETE FROM job_required_skills WHERE job_desc_id = %s", (job_desc_id,)
+        )
+        for skill_name in skill_names:
+            cur.execute(
+                "SELECT skill_id FROM skills_master WHERE skill_name = %s", (skill_name,)
+            )
+            sk_row = cur.fetchone()
+            if sk_row:
+                skill_id = sk_row[0]
+            else:
+                cur.execute(
+                    "INSERT INTO skills_master (skill_name) VALUES (%s)", (skill_name,)
+                )
+                skill_id = cur.lastrowid
+            cur.execute(
+                "INSERT IGNORE INTO job_required_skills (job_desc_id, skill_id) VALUES (%s, %s)",
+                (job_desc_id, skill_id),
             )
 
         mysql.connection.commit()
         cur.close()
-        print("--- SUCCESS: Database Updated ---")
-        flash(f"Requirements for {position} updated successfully!", "success")
+        flash(f"Job post for {position} saved successfully!", "success")
 
     except Exception as e:
         print(f"--- ERROR: {e} ---")

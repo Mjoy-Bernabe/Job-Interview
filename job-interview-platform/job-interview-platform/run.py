@@ -3,11 +3,15 @@ from config import Config
 from extensions import mysql, mail, limiter, logger
 from blueprints import register_blueprints
 from blueprints.admin import admin_bp
+from session_utils import PortalSessionInterface
 
 
 def create_app():
     app = Flask(__name__, template_folder="templates", static_folder="static")
     app.config.from_object(Config)
+    # Give Admin and HR their own session cookies so being logged into one
+    # portal doesn't clobber the other (see session_utils.py).
+    app.session_interface = PortalSessionInterface()
     app.register_blueprint(admin_bp)
 
     mysql.init_app(app)
@@ -22,6 +26,15 @@ def create_app():
         for rule in app.url_map.iter_rules():
             lines.append(f"{rule.endpoint} -> {rule}")
         return "<br>".join(lines)
+
+    @app.after_request
+    def add_security_headers(response):
+        # Only prevent caching for dynamic HTML pages, allow static files to cache
+        if 'text/html' in response.content_type:
+            response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+        return response
 
     logger.info("✅ Application created and blueprints registered.")
     return app

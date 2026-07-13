@@ -464,6 +464,11 @@ def submit_application():
 
         cur = mysql.connection.cursor()
 
+        name_parts = resume_scanner.split_full_name(name)
+        first_name = name_parts["first_name"]
+        middle_initial = name_parts["middle_initial"]
+        last_name = name_parts["last_name"]
+
         # --- 2. RETRIEVE OR GENERATE ATOMIC APPLICANT RECORD ---
         cur.execute("SELECT applicant_id FROM applicants WHERE user_id = %s", (user_id,))
         app_row = cur.fetchone()
@@ -475,18 +480,20 @@ def submit_application():
             cur.execute(
                 """
                 UPDATE applicants 
-                SET full_name = %s, date_of_birth = %s, current_location = %s 
+                SET first_name = %s, middle_initial = %s, last_name = %s,
+                    date_of_birth = %s, current_location = %s 
                 WHERE applicant_id = %s
                 """,
-                (name, dob_calc, address, applicant_id)
+                (first_name, middle_initial or None, last_name, dob_calc, address, applicant_id)
             )
         else:
             cur.execute(
                 """
-                INSERT INTO applicants (user_id, full_name, date_of_birth, current_location, preferred_location, resume_url)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                INSERT INTO applicants (user_id, first_name, middle_initial, last_name,
+                    date_of_birth, current_location, preferred_location, resume_url)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 """,
-                (user_id, name, dob_calc, address, address, "s3://resumes/placeholder_applicant.pdf")
+                (user_id, first_name, middle_initial or None, last_name, dob_calc, address, address, "s3://resumes/placeholder_applicant.pdf")
             )
             applicant_id = cur.lastrowid
 
@@ -551,7 +558,11 @@ def submit_application():
                 (applicant_id, job_title or "Employee", company or "Company", f"{start_yr}-01-01", f"{datetime.now().year}-01-01", responsibilities or "")
             )
 
-        # --- 6. ATOMIC SKILL MASTER LINKING ---
+        # --- 6. SKILL MASTER LINKING ---
+        # skills_master is curated by HR only (per job posting, via
+        # job_required_skills). Applicants can only link to skill names
+        # that already exist there — unrecognized skills are simply not
+        # linked, never inserted as new master rows.
         if skills:
             cur.execute("DELETE FROM applicant_skills WHERE applicant_id = %s", (applicant_id,))
             skills_list = [s.strip() for s in skills.split(",") if s.strip()]
@@ -560,13 +571,10 @@ def submit_application():
                 sk_row = cur.fetchone()
                 if sk_row:
                     skill_id = sk_row[0]
-                else:
-                    cur.execute("INSERT INTO skills_master (skill_name) VALUES (%s)", (sk,))
-                    skill_id = cur.lastrowid
-                cur.execute(
-                    "INSERT IGNORE INTO applicant_skills (applicant_id, skill_id) VALUES (%s, %s)",
-                    (applicant_id, skill_id)
-                )
+                    cur.execute(
+                        "INSERT IGNORE INTO applicant_skills (applicant_id, skill_id) VALUES (%s, %s)",
+                        (applicant_id, skill_id)
+                    )
 
         # --- 7. PROCESS RULES & MACHINE LEARNING (CART) ---
         rejection_reasons = []
@@ -982,6 +990,18 @@ def submit_resume_application():
             or session.get("name")
             or _username_fallback(user_id, cur)
         )
+        # Prefer the name parts the scanner already split out of the resume
+        # header; if it couldn't find a name there, fall back to splitting
+        # whatever full_name we ended up with (session name / username).
+        if contact_info.get("first_name") or contact_info.get("last_name"):
+            first_name = contact_info.get("first_name") or ""
+            middle_initial = contact_info.get("middle_initial") or ""
+            last_name = contact_info.get("last_name") or ""
+        else:
+            name_parts = resume_scanner.split_full_name(full_name)
+            first_name = name_parts["first_name"]
+            middle_initial = name_parts["middle_initial"]
+            last_name = name_parts["last_name"]
         dob = contact_info.get("date_of_birth") or f"{datetime.now().year - 25}-01-01"
         location_val = contact_info.get("location") or "Not specified"
         email_val = contact_info.get("email") or session.get("email", "")
@@ -1008,6 +1028,9 @@ def submit_resume_application():
             "required_exp_years": required_exp_years or 0,
             "education_baseline": education_baseline,
             "full_name": full_name,
+            "first_name": first_name,
+            "middle_initial": middle_initial,
+            "last_name": last_name,
             "email": email_val,
             "dob": dob,
             "current_location": location_val,
@@ -1109,7 +1132,19 @@ def confirm_resume_application():
                 return redirect(url_for("applicants.dashboard"))
 
         # ── Pull the applicant's corrections from the review form ──────────
-        full_name = (request.form.get("full_name") or pending["full_name"]).strip()
+        first_name = (request.form.get("first_name") or pending.get("first_name") or "").strip()
+        middle_initial = (request.form.get("middle_initial") or pending.get("middle_initial") or "").strip()
+        last_name = (request.form.get("last_name") or pending.get("last_name") or "").strip()
+        if not first_name and not last_name:
+            # Nothing usable came from the split fields — fall back to
+            # whatever single name string we had and split it ourselves.
+            name_parts = resume_scanner.split_full_name(pending.get("full_name"))
+            first_name = first_name or name_parts["first_name"]
+            middle_initial = middle_initial or name_parts["middle_initial"]
+            last_name = last_name or name_parts["last_name"]
+        full_name = " ".join(
+            p for p in [first_name, f"{middle_initial}." if middle_initial else "", last_name] if p
+        )
         email_val = (request.form.get("email") or pending["email"]).strip()
         try:
             experience_years = float(request.form.get("experience_years", pending["experience_years"]))
@@ -1152,19 +1187,21 @@ def confirm_resume_application():
             cur.execute(
                 """
                 UPDATE applicants
-                SET full_name = %s, date_of_birth = %s, current_location = %s, resume_url = %s
+                SET first_name = %s, middle_initial = %s, last_name = %s,
+                    date_of_birth = %s, current_location = %s, resume_url = %s
                 WHERE applicant_id = %s
                 """,
-                (full_name, dob, location_val, save_path, applicant_id),
+                (first_name, middle_initial or None, last_name, dob, location_val, save_path, applicant_id),
             )
         else:
             cur.execute(
                 """
                 INSERT INTO applicants
-                    (user_id, full_name, date_of_birth, current_location, preferred_location, resume_url)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                    (user_id, first_name, middle_initial, last_name, date_of_birth,
+                     current_location, preferred_location, resume_url)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 """,
-                (user_id, full_name, dob, location_val, location_val, save_path),
+                (user_id, first_name, middle_initial or None, last_name, dob, location_val, location_val, save_path),
             )
             applicant_id = cur.lastrowid
 
@@ -1216,19 +1253,21 @@ def confirm_resume_application():
                 ),
             )
 
+        # skills_master is curated by HR only (per job posting, via
+        # job_required_skills). The resume scanner may recognize skill
+        # keywords that HR never added — those are confirmed on-screen but
+        # NOT written into skills_master; we only link the ones that are
+        # already in the master dictionary.
         cur.execute("DELETE FROM applicant_skills WHERE applicant_id = %s", (applicant_id,))
         for skill_name in confirmed_skills:
-            cur.execute(
-                "INSERT INTO skills_master (skill_name) VALUES (%s) "
-                "ON DUPLICATE KEY UPDATE skill_name = skill_name",
-                (skill_name,),
-            )
             cur.execute("SELECT skill_id FROM skills_master WHERE skill_name = %s", (skill_name,))
-            skill_id = cur.fetchone()[0]
-            cur.execute(
-                "INSERT IGNORE INTO applicant_skills (applicant_id, skill_id) VALUES (%s, %s)",
-                (applicant_id, skill_id),
-            )
+            sk_row = cur.fetchone()
+            if sk_row:
+                skill_id = sk_row[0]
+                cur.execute(
+                    "INSERT IGNORE INTO applicant_skills (applicant_id, skill_id) VALUES (%s, %s)",
+                    (applicant_id, skill_id),
+                )
 
         # ── Record the application/screening result ─────────────────────────
         screening_status = "Passed Screening" if is_eligible else "Failed Screening"
@@ -1344,12 +1383,14 @@ def preapp():
         cur.execute("SELECT applicant_id FROM applicants WHERE user_id = %s", (user_id,))
         app_row = cur.fetchone()
         if not app_row:
+            name_parts = resume_scanner.split_full_name(name)
             cur.execute(
                 """
-                INSERT INTO applicants (user_id, full_name, date_of_birth, current_location)
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO applicants (user_id, first_name, middle_initial, last_name, date_of_birth, current_location)
+                VALUES (%s, %s, %s, %s, %s, %s)
                 """,
-                (user_id, name, "1998-01-01", "Unknown")
+                (user_id, name_parts["first_name"], name_parts["middle_initial"] or None,
+                 name_parts["last_name"], "1998-01-01", "Unknown")
             )
             applicant_id = cur.lastrowid
         else:

@@ -21,6 +21,7 @@ from .parser import (
     extract_keywords_from_job_desc,
     calculate_total_experience_years,
     evaluate_education_requirement,
+    split_full_name,
 )
 from .cart_model import load_or_train_model, predict_fit
 

@@ -10,6 +10,7 @@ USE auth_db;
 -- Disable foreign key checks temporarily to safely drop existing tables
 SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS applicant_skills;
+DROP TABLE IF EXISTS job_required_skills;
 DROP TABLE IF EXISTS skills_master;
 DROP TABLE IF EXISTS educations;
 DROP TABLE IF EXISTS work_experience;
@@ -37,11 +38,26 @@ CREATE TABLE users (
 -- Table: applicants
 -- -----------------------------------------------------
 -- Core applicant demographic profiles.
--- Satisfies 1NF by splitting 'location' into distinct columns.
+-- Satisfies 1NF by splitting 'location' into distinct columns, and by
+-- splitting the applicant's name into first/middle/last components so
+-- each name part scanned from a resume is stored atomically instead of
+-- as one combined string.
 CREATE TABLE applicants (
     applicant_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL UNIQUE,
-    full_name VARCHAR(100) NOT NULL,
+    first_name VARCHAR(60) NOT NULL,
+    middle_initial VARCHAR(10) NULL,
+    last_name VARCHAR(60) NOT NULL,
+    full_name VARCHAR(140) GENERATED ALWAYS AS (
+        TRIM(
+            CONCAT(
+                first_name,
+                ' ',
+                COALESCE(CONCAT(middle_initial, '. '), ''),
+                last_name
+            )
+        )
+    ) STORED,
     date_of_birth DATE NOT NULL,
     current_location VARCHAR(100) NOT NULL,
     preferred_location VARCHAR(100) NULL,
@@ -50,6 +66,8 @@ CREATE TABLE applicants (
         FOREIGN KEY (user_id) REFERENCES users (user_id)
         ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE INDEX idx_applicants_name ON applicants (last_name, first_name);
 
 -- -----------------------------------------------------
 -- Table: jobs
@@ -161,6 +179,27 @@ CREATE TABLE applicant_skills (
         FOREIGN KEY (applicant_id) REFERENCES applicants (applicant_id)
         ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_app_skills_master
+        FOREIGN KEY (skill_id) REFERENCES skills_master (skill_id)
+        ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------
+-- Table: job_required_skills
+-- -----------------------------------------------------
+-- Junction mapping a job posting's description (job_desc) to the skills
+-- HR marked as required for it. This is the ONLY path that is allowed to
+-- add brand-new rows to skills_master: HR curates the master skill
+-- dictionary per job posting. Applicants can only ever LINK to skills
+-- that already exist here — the resume-scanning/application flow never
+-- inserts new rows into skills_master.
+CREATE TABLE job_required_skills (
+    job_desc_id INT NOT NULL,
+    skill_id INT NOT NULL,
+    PRIMARY KEY (job_desc_id, skill_id),
+    CONSTRAINT fk_job_required_skills_job_desc
+        FOREIGN KEY (job_desc_id) REFERENCES job_desc (job_desc_id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_job_required_skills_master
         FOREIGN KEY (skill_id) REFERENCES skills_master (skill_id)
         ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

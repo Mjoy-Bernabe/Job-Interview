@@ -688,6 +688,52 @@ def guess_full_name(text: str) -> str | None:
     return None
 
 
+# Suffixes that shouldn't be mistaken for a last name / middle initial
+# when a resume header reads e.g. "Juan Dela Cruz Jr." or "Maria Santos III".
+_NAME_SUFFIXES = {"jr", "jr.", "sr", "sr.", "ii", "iii", "iv", "v"}
+
+
+def split_full_name(full_name: str | None) -> dict:
+    """
+    Break a single "First [Middle] Last [Suffix]" string into
+    first_name / middle_initial / last_name so each part can be stored
+    in its own normalized column instead of one combined field.
+
+    Rules of thumb (good enough for resume headers, not a full NLP parser):
+      - 1 word   -> treated as the last name (first_name left blank).
+      - 2 words  -> first_name, last_name.
+      - 3+ words -> first_name, middle word(s) reduced to an initial,
+                    remaining word(s) as last_name. A trailing suffix
+                    (Jr., III, ...) is kept attached to the last name.
+    """
+    if not full_name or not full_name.strip():
+        return {"first_name": "", "middle_initial": "", "last_name": ""}
+
+    parts = full_name.strip().split()
+
+    suffix = ""
+    if len(parts) > 1 and parts[-1].strip(".").lower() in _NAME_SUFFIXES:
+        suffix = " " + parts.pop()
+
+    if len(parts) == 1:
+        return {"first_name": "", "middle_initial": "", "last_name": parts[0] + suffix}
+
+    if len(parts) == 2:
+        return {"first_name": parts[0], "middle_initial": "", "last_name": parts[1] + suffix}
+
+    first_name = parts[0]
+    last_name = parts[-1] + suffix
+    middle_words = parts[1:-1]
+    middle_initial = "".join(w[0].upper() for w in middle_words if w)
+
+    return {"first_name": first_name, "middle_initial": middle_initial, "last_name": last_name}
+
+
+def guess_name_parts(text: str) -> dict:
+    """Resume-header equivalent of split_full_name(guess_full_name(text))."""
+    return split_full_name(guess_full_name(text))
+
+
 def extract_email(text: str) -> str | None:
     m = EMAIL_RE.search(text)
     return m.group(0) if m else None
@@ -990,12 +1036,18 @@ def extract_all_info(text: str, job_keywords: list = None) -> dict:
     """
     job_keywords = job_keywords or []
 
+    guessed_full_name = guess_full_name(text)
+    name_parts = split_full_name(guessed_full_name)
+
     contact_info = {
-        "full_name":     guess_full_name(text),
-        "email":         extract_email(text),
-        "contact_num":   extract_phone(text),
-        "location":      extract_address(text),
-        "date_of_birth": extract_birthdate(text),
+        "full_name":       guessed_full_name,
+        "first_name":      name_parts["first_name"],
+        "middle_initial":  name_parts["middle_initial"],
+        "last_name":       name_parts["last_name"],
+        "email":           extract_email(text),
+        "contact_num":     extract_phone(text),
+        "location":        extract_address(text),
+        "date_of_birth":   extract_birthdate(text),
     }
 
     skills          = extract_skills_from_text(text, extra_keywords=job_keywords)

@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin Dashboard{% endblock %}</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@400;500&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
+    <style>
+        :root {
+            --primary-red: #B3241B;
+            --bg-main: #E9E9E9;
+            --bg-sidebar: #FFFBFB;
+            --bg-navbar: #FAFAFA;
+            --text-dark: #000000;
+            --text-gray: #5B5959;
+            --text-light-gray: #5C5C5C;
+            --text-green: #0D9120;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-dark);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 229px;
+            height: 100vh;
+            background-color: var(--bg-sidebar);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 100;
+            border-right: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .company-logo {
+            width: 100%;
+            height: 75px;
+            background-color: var(--primary-red);
+            display: flex;
+            align-items: center;
+            padding-left: 13px;
+        }
+
+        .company-logo h2 {
+            font-weight: 700;
+            font-size: 18px;
+            color: #FFFFFF;
+            line-height: 27px;
+        }
+
+        .sidebar-menu {
+            display: flex;
+            flex-direction: column;
+            padding-top: 19px;
+            flex-grow: 1;
+        }
+
+        .menu-section {
+            padding: 0 10px;
+            margin-bottom: 20px;
+        }
+
+        .menu-title {
+            font-weight: 700;
+            font-size: 12px;
+            color: var(--text-gray);
+            margin-bottom: 10px;
+            padding-left: 10px;
+        }
+
+        .menu-link {
+            display: flex;
+            align-items: center;
+            padding: 6px 10px;
+            margin-bottom: 5px;
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 400;
+            font-size: 14px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .menu-link i {
+            font-size: 20px;
+            margin-right: 15px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .menu-link.active {
+            background-color: var(--primary-red);
+            color: #FFFFFF;
+            font-weight: 700;
+        }
+
+        .menu-link:hover:not(.active) {
+            background-color: rgba(179, 36, 27, 0.1);
+        }
+
+        .sidebar-divider {
+            width: 196px;
+            height: 0px;
+            border-top: 2px solid #A69C9C;
+            margin: 15px auto;
+        }
+
+        .logout-link {
+            margin-top: auto;
+            margin-bottom: 30px;
+            padding-left: 25px;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: var(--primary-red);
+            font-weight: 400;
+            font-size: 14px;
+        }
+
+        .logout-link i {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+
+        /* Top Navbar */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 229px;
+            width: calc(100% - 229px);
+            height: 75px;
+            background-color: var(--bg-navbar);
+            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 70px;
+            z-index: 90;
+        }
+
+        .page-title {
+            font-weight: 500;
+            font-size: 20px;
+            color: var(--primary-red);
+        }
+
+        .search-bar {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            padding: 0px 20px;
+            gap: 4px;
+            background-color: #E9E9E9;
+            width: 497px;
+            max-width: 720px;
+            height: 39px;
+        }
+
+        .search-bar i {
+            font-size: 20px;
+            color: #000;
+        }
+
+        .search-bar input {
+            border: none;
+            background: transparent;
+            outline: none;
+            width: 100%;
+            font-family: 'Roboto', sans-serif;
+            font-size: 16px;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .notification-bell {
+            position: relative;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+
+        .notification-bell:hover {
+            background-color: #E9E9E9;
+        }
+
+        .notification-bell i {
+            font-size: 24px;
+            color: var(--text-gray);
+        }
+
+        .notification-dot {
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            background-color: var(--primary-red);
+            border-radius: 50%;
+            border: 1.5px solid #FAFAFA;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            background-color: #E9E9E9;
+            padding: 5px 15px;
+            border-radius: 8px;
+            gap: 15px;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background-color: #ccc;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-info .name {
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--primary-red);
+            line-height: 1.2;
+        }
+
+        .user-info .role {
+            font-weight: 400;
+            font-size: 12px;
+            color: var(--text-light-gray);
+        }
+
+        /* Main Content Area */
+        .main-content {
+            margin-top: 75px;
+            margin-left: 229px;
+            width: calc(100% - 229px);
+            height: calc(100vh - 75px);
+            padding: 35px 70px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .navbar {
+                padding: 0 40px;
+            }
+
+            .main-content {
+                padding: 30px 40px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 0 20px;
+            }
+
+            .main-content {
+                padding: 20px;
+            }
+        }
+
+        /* Notification Popup */
+        .notification-popup {
+            display: none;
+            position: absolute;
+            top: 70px;
+            right: 80px;
+            width: 300px;
+            background: #FFFFFF;
+            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25);
+            border-radius: 6px;
+            z-index: 1000;
+            padding: 15px;
+            flex-direction: column;
+        }
+
+        .notification-popup.active {
+            display: flex;
+        }
+
+        .notif-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #5B5959;
+            margin-bottom: 10px;
+        }
+
+        .notif-header-title {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            font-size: 16px;
+            color: #000000;
+        }
+
+        .notif-close {
+            cursor: pointer;
+            font-size: 24px;
+            color: #B3241B;
+        }
+
+        .notif-row {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            padding: 10px 0px;
+            gap: 10px;
+            border-bottom: 1px solid #5B5959;
+        }
+
+        .notif-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            background: #E4C5C5;
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+
+        .notif-logo i {
+            font-size: 20px;
+            color: #B3241B;
+        }
+
+        .notif-content {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .notif-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2px;
+        }
+
+        .notif-title {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            font-size: 12px;
+            color: #000000;
+        }
+
+        .notif-time {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-size: 9px;
+            color: #B3241B;
+        }
+
+        .notif-desc {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 400;
+            font-size: 11px;
+            color: #5B5959;
+        }
+
+        .notif-footer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            padding-top: 10px;
+            cursor: pointer;
+        }
+
+        .notif-footer span {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            font-size: 12px;
+            color: #B3241B;
+        }
+
+        .notif-footer i {
+            font-size: 16px;
+            color: #B3241B;
+        }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="company-logo">
+            <h2>H2 Software Services</h2>
+        </div>
+
+        <div class="sidebar-menu">
+            <div class="menu-section">
+                <div class="menu-title">General</div>
+                <a href="{{ url_for('admin.dashboard') }}"
+                    class="menu-link {% if active_page == 'dashboard' %}active{% endif %}"><i
+                        class='bx bxs-dashboard'></i> Admin Dashboard</a>
+                <a href="{{ url_for('admin.user_management') }}"
+                    class="menu-link {% if active_page == 'user_management' %}active{% endif %}"><i
+                        class='bx bx-group'></i> User Management</a>
+                <a href="{{ url_for('admin.troubleshooting') }}"
+                    class="menu-link {% if active_page == 'troubleshooting' %}active{% endif %}"><i
+                        class='bx bx-wrench'></i> Troubleshooting</a>
+                <a href="{{ url_for('admin.analytics') }}"
+                    class="menu-link {% if active_page == 'analytics' %}active{% endif %}"><i
+                        class='bx bx-bar-chart-alt-2'></i> Analytics</a>
+                <a href="{{ url_for('admin.notifications') }}" class="menu-link {% if active_page == 'notifications' %}active{% endif %}"><i
+                        class='bx bx-bell'></i> Notifications</a>
+            </div>
+
+            <div class="sidebar-divider"></div>
+
+            <div class="menu-section">
+                <div class="menu-title">System Logs</div>
+                <a href="#" class="menu-link {% if active_page == 'audit_logs' %}active{% endif %}"><i
+                        class='bx bx-list-ul'></i> Audit Logs</a>
+            </div>
+
+            <div class="sidebar-divider"></div>
+
+            <div class="menu-section">
+                <div class="menu-title">Others</div>
+                <a href="#" class="menu-link {% if active_page == 'settings' %}active{% endif %}"><i
+                        class='bx bx-cog'></i> Settings</a>
+            </div>
+        </div>
+
+        <a href="{{ url_for('admin.logout') }}" class="logout-link"><i class='bx bx-log-out'></i> Log out</a>
+    </aside>
+
+    <!-- Top Navbar -->
+    <nav class="navbar">
+        <div class="page-title">{% block page_title %}Dashboard{% endblock %}</div>
+
+        <div class="nav-right">
+            <div class="search-bar">
+                <i class='bx bx-search'></i>
+                <input type="text" placeholder="Search">
+            </div>
+
+            <button class="notification-bell" onclick="toggleNotifications(event)">
+                <i class='bx bxs-bell'></i>
+                <div class="notification-dot"></div>
+            </button>
+
+            <!-- Notification Popup -->
+            <div id="notificationPopup" class="notification-popup">
+                <!-- Populated State (Task 2) -->
+                <div id="notifPopulatedState" style="display: flex; flex-direction: column; width: 100%;">
+                    <div class="notif-header">
+                        <span class="notif-header-title" onclick="clearNotifications()" style="cursor: pointer;"
+                            title="Click to clear notifications (Test Task 1)">Notifications</span>
+                        <i class='bx bx-x notif-close' onclick="closeNotifications(event)"></i>
+                    </div>
+                    <div class="notif-row">
+                        <div class="notif-logo"><i class='bx bxs-user-voice'></i></div>
+                        <div class="notif-content">
+                            <div class="notif-title-row">
+                                <span class="notif-title">Reported Complaint</span>
+                                <span class="notif-time">30 mins ago</span>
+                            </div>
+                            <span class="notif-desc">See the recent complaint submitted</span>
+                        </div>
+                    </div>
+                    <div class="notif-row">
+                        <div class="notif-logo"><i class='bx bxs-bar-chart-alt-2'></i></div>
+                        <div class="notif-content">
+                            <div class="notif-title-row">
+                                <span class="notif-title">Monthly Statistics</span>
+                                <span class="notif-time">1h 20m ago</span>
+                            </div>
+                            <span class="notif-desc">Analyze the newest system reports</span>
+                        </div>
+                    </div>
+                    <div class="notif-row">
+                        <div class="notif-logo"><i class='bx bxs-user-plus'></i></div>
+                        <div class="notif-content">
+                            <div class="notif-title-row">
+                                <span class="notif-title">New Users</span>
+                                <span class="notif-time">5h ago</span>
+                            </div>
+                            <span class="notif-desc">Overlook newest accounts created</span>
+                        </div>
+                    </div>
+                    <div class="notif-row">
+                        <div class="notif-logo"><i class='bx bxs-user-voice'></i></div>
+                        <div class="notif-content">
+                            <div class="notif-title-row">
+                                <span class="notif-title">Reported Complaint</span>
+                                <span class="notif-time">1 day ago</span>
+                            </div>
+                            <span class="notif-desc">See the recent complaint submitted</span>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('admin.notifications') }}" class="notif-footer" style="text-decoration: none;">
+                        <span>See All Notifications</span>
+                        <i class='bx bx-right-arrow-alt'></i>
+                    </a>
+                </div>
+
+                <!-- Empty State (Task 1) -->
+                <div id="notifEmptyState"
+                    style="display: none; flex-direction: column; align-items: center; padding: 20px 10px; text-align: center; position: relative;">
+                    <i class='bx bx-x notif-close' style="position: absolute; top: -10px; right: -5px;"
+                        onclick="closeNotifications(event)"></i>
+                    <i class='bx bxs-bell-off'
+                        style="font-size: 64px; color: #5B5959; margin-top: 10px; margin-bottom: 10px;"></i>
+                    <span
+                        style="font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 16px; color: #000000; margin-bottom: 5px;">No
+                        Notifications Yet</span>
+                    <span
+                        style="font-family: 'Poppins', sans-serif; font-weight: 400; font-size: 11px; color: #5B5959;">You
+                        have no notifications right now. Come back later</span>
+                </div>
+            </div>
+
+            <div class="user-profile">
+                <div class="user-avatar">
+                    <i class='bx bxs-user' style="font-size: 24px; color: #fff;"></i>
+                </div>
+                <div class="user-info">
+                    <span class="name">David T. Smith</span>
+                    <span class="role">System Administrator</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block scripts %}{% endblock %}
+
+    <script>
+        function toggleNotifications(event) {
+            event.stopPropagation();
+            const popup = document.getElementById('notificationPopup');
+            popup.classList.toggle('active');
+        }
+        function closeNotifications(event) {
+            event.stopPropagation();
+            const popup = document.getElementById('notificationPopup');
+            popup.classList.remove('active');
+        }
+        function clearNotifications() {
+            // Secretly toggle to empty state for testing Task 1
+            document.getElementById('notifPopulatedState').style.display = 'none';
+            document.getElementById('notifEmptyState').style.display = 'flex';
+            const dot = document.querySelector('.notification-dot');
+            if (dot) dot.style.display = 'none';
+        }
+        document.addEventListener('click', function (event) {
+            const popup = document.getElementById('notificationPopup');
+            const bell = document.querySelector('.notification-bell');
+            if (popup && popup.classList.contains('active')) {
+                if (!popup.contains(event.target) && !bell.contains(event.target)) {
+                    popup.classList.remove('active');
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

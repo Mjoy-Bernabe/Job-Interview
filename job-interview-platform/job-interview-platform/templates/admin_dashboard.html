@@ -1,1085 +1,212 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
-    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
-    <style>
-        :root {
-            --primary-red: #B3241B; /* deep red background */
-            --sidebar-active: #FDE8E8;
-            --text-red: #B3241B;
-            --text-green: #00B050;
-            --bg-gray: #DCDCDC;
-        }
+{% set active_page = 'dashboard' %}
+{% extends "admin_base.html" %}
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+{% block title %}Admin Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
 
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: var(--primary-red);
-            color: white;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
-        
-        h1, h2, h3, h4, .count, .tab, .more-insights-title {
-            font-family: 'Poppins', sans-serif;
-        }
-
-        /* Sidebar */
-        .sidebar {
-            width: 320px;
-            background-color: white;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            color: var(--text-red);
-        }
-
-        .logo-area {
-            padding: 30px 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            font-weight: 700;
-            font-size: 13px;
-            line-height: 1.2;
-            margin-bottom: 20px;
-            color: black;
-            font-family: 'Poppins', sans-serif;
-        }
-        
-        .logo-icon {
-            background-color: var(--text-red);
-            color: white;
-            padding: 10px 15px;
-            font-size: 40px;
-            font-weight: 700;
-            letter-spacing: -3px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-        
-        .logo-icon::after {
-            content: '';
-            position: absolute;
-            bottom: -15px;
-            right: -15px;
-            width: 25px;
-            height: 25px;
-            background-color: white;
-        }
-
-        .nav-links { list-style: none; flex-grow: 1; margin-top: 20px; }
-        .nav-links li { margin-bottom: 15px; }
-        .nav-links a {
-            color: var(--text-red);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px 30px;
-            font-weight: 600;
-            font-size: 16px;
-        }
-        .nav-links a.active {
-            background-color: var(--sidebar-active);
-        }
-        .nav-links a i {
-            font-size: 24px;
-        }
-
-        /* Main Content */
-        .main-content {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-            width: calc(100% - 320px);
-        }
-
-        .top-tabs {
-            display: flex;
-            margin-top: 40px;
-            border-bottom: 2px solid white;
-        }
-        .top-tabs .tab {
-            padding: 12px 30px;
-            font-weight: 600;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .top-tabs .tab.active {
-            background-color: white;
-            color: var(--text-red);
-        }
-        .top-tabs .tab.inactive {
-            background-color: transparent;
-            color: white;
-        }
-
-        .dashboard-content {
-            padding: 40px;
-            width: 100%;
-        }
-
-        .top-stats-row {
-            display: flex;
-            gap: 40px;
-            margin-bottom: 40px;
-            align-items: stretch;
-            width: 100%;
-        }
-
-        .card {
-            background-color: white;
-            border-radius: 12px;
-            padding: 30px;
-            color: var(--text-red);
-            box-shadow: 0 10px 4px rgba(0,0,0,0.15);
-        }
-
-        .applicants-card {
-            flex: 1;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        .applicants-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        .applicants-card h3 {
-            font-size: 24px;
-            margin-bottom: 0;
-        }
-        .applicants-card .count {
-            font-size: 56px;
-            font-weight: 700;
-            line-height: 1;
-        }
-        .applicants-card .arrow-icon {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .applicants-card .arrow-icon img {
-            width: 50px;
-            height: 50px;
-        }
-
-        .date-stats {
-            flex: 2;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            align-items: flex-start;
-            justify-content: center;
-        }
-        .date-info {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        .date-info h3 {
-            font-family: 'Inter', sans-serif;
-            font-size: 24px;
-            color: white;
-            line-height: 1.2;
-            margin-bottom: 5px;
-            letter-spacing: 1px;
-        }
-        .date-info p {
-            font-family: 'Inter', sans-serif;
-            font-size: 28px;
-            font-weight: 700;
-            color: white;
-            line-height: 1.2;
-            letter-spacing: 1px;
-        }
-
-        .status-boxes {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 0;
-            width: 320px;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
-            font-family: 'Inter', sans-serif;
-        }
-        .status-box {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            width: 100%;
-            padding: 16px 24px;
-            border-radius: 0;
-        }
-        .status-box.qualified {
-            background-color: #f4f4f4;
-            color: var(--text-green);
-            border: 1px solid var(--text-green);
-        }
-        .status-box.qualified span:first-child {
-            font-size: 28px;
-            font-weight: 700;
-            line-height: 1;
-        }
-        .status-box.qualified span:last-child {
-            font-size: 16px;
-            font-weight: 600;
-            line-height: 1;
-        }
-        .status-box.rejected {
-            background-color: #e2dfdf;
-            color: #7f7f7f;
-            border: 1px solid #7f7f7f;
-            border-top: none;
-        }
-        .status-box.rejected span:first-child {
-            font-size: 28px;
-            font-weight: 700;
-            line-height: 1;
-        }
-        .status-box.rejected span:last-child {
-            font-size: 16px;
-            font-weight: 600;
-            line-height: 1;
-        }
-
-        .distribution-card {
-            margin-bottom: 40px;
-            padding-bottom: 0;
-            width: 100%;
-        }
-        .distribution-card h3 {
-            font-size: 32px;
-            margin-bottom: 25px;
-        }
-        .distribution-card hr {
-            border: none;
-            border-top: 2px solid #E7E6E6;
-            margin-bottom: 40px;
-        }
-        .bar-chart {
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-around;
-            height: 300px;
-            padding: 0 40px;
-        }
-        .bar {
-            width: 15%;
-            min-width: 80px;
-            background-color: #8C1C13;
-            border-top-left-radius: 4px;
-            border-top-right-radius: 4px;
-        }
-        .bar-1 { height: 40%; }
-        .bar-2 { height: 60%; }
-        .bar-3 { height: 90%; }
-
-        .more-insights-title {
-            font-size: 30px;
-            font-weight: 600;
-            margin-bottom: 25px;
-            border-top: 1px solid rgba(255,255,255,0.3);
-            padding-top: 25px;
-        }
-
-        .insights-slider-container {
-            width: 100%;
-            overflow: hidden;
-        }
-        .insights-slider-wrapper {
-            display: flex;
-            width: 400%; /* 4 slides */
-            transition: transform 0.5s ease-in-out;
-        }
-        .insights-row {
-            display: flex;
-            gap: 30px;
-            width: 25%; /* 100% / 4 */
-            flex-shrink: 0;
-        }
-        .insight-card {
-            flex: 1;
-            min-height: 140px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            position: relative;
-        }
-        .insight-card h4 {
-            font-size: 22px;
-        }
-        .insight-card h2 {
-            font-size: 36px;
-            margin-top: 15px;
-        }
-        .insight-card .arrow-icon {
-            align-self: flex-end;
-            background-color: var(--text-red);
-            color: white;
-            border-radius: 50%;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-        }
-
-        .dots {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            margin-top: 40px;
-            padding-bottom: 40px;
-        }
-        .dot {
-            width: 10px;
-            height: 10px;
-            background-color: rgba(255,255,255,0.4);
-            border-radius: 50%;
-            cursor: pointer;
-        }
-        .dot.active {
-            background-color: white;
-        }
-
-        /* View Applicants Layout */
-        #view-applicants-content {
-            display: none;
-            padding: 40px;
-            width: 100%;
-            font-family: 'Inter', sans-serif;
-        }
-        .va-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 30px;
-        }
-        .va-search {
-            display: flex;
-            align-items: center;
-            background-color: white;
-            border-radius: 8px;
-            padding: 10px 15px;
-            width: 350px;
-        }
-        .va-search input {
-            border: none;
-            outline: none;
-            flex-grow: 1;
-            font-family: 'Inter', sans-serif;
-            font-size: 14px;
-            color: #333;
-        }
-        .va-search i {
-            color: #7f7f7f;
-            font-size: 18px;
-        }
-        .va-sort {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: white;
-            font-size: 14px;
-            cursor: pointer;
-        }
-        .va-sort-btn {
-            background-color: #f0a8a8;
-            color: var(--text-red);
-            border: none;
-            padding: 6px 20px;
-            border-radius: 4px;
-            font-weight: 700;
-            cursor: pointer;
-            font-family: 'Inter', sans-serif;
-        }
-        .va-list-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .va-list-title {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            font-size: 24px;
-            font-weight: 700;
-            color: white;
-            flex-grow: 1;
-        }
-        .va-list-title::after {
-            content: '';
-            display: block;
-            height: 2px;
-            flex-grow: 1;
-            background-color: white;
-            margin-right: 30px;
-        }
-        .va-filters {
-            display: flex;
-            border: none;
-            border-radius: 4px;
-            overflow: hidden;
-            font-size: 14px;
-            box-shadow: 0 8px 4px rgba(0,0,0,0.15);
-        }
-        .va-filter {
-            padding: 8px 20px;
-            color: #FFFFFF;
-            cursor: pointer;
-            font-weight: 700;
-            background-color: #762621;
-            font-family: 'Inter', sans-serif;
-            transition: all 0.3s ease;
-        }
-        .va-filter.active {
-            background-color: #FFFFFF;
-            color: #FF4135;
-        }
-        .va-list {
-            display: flex;
-            flex-direction: column;
-            background-color: white;
-        }
-        .va-list-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 18px 30px;
-            border-bottom: 1px solid #e7e6e6;
-            color: var(--text-red);
-            font-weight: 700;
-            font-size: 18px;
-            transition: all 0.3s ease;
-        }
-        .va-list-item.rejected {
-            background-color: #D9D9D9;
-            color: var(--text-red);
-        }
-        .va-list-item:last-child {
-            border-bottom: none;
-        }
-        .va-list-item-right {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        .va-list-item-right i {
-            background-color: var(--text-red);
-            color: white;
-            border-radius: 50%;
-            width: 26px;
-            height: 26px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-        }
-
-        /* Hide CanvasJS watermark credits */
-        .canvasjs-chart-credit {
-            display: none !important;
-        }
-
-                /* Modal Styles */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-        .modal-content {
-            background-color: #f4f4f4;
-            width: 900px; /* Scaled down from 1266 */
-            max-width: 95vw;
-            height: 850px; /* Scaled down from 1171 */
-            max-height: 95vh;
-            border-radius: 12px;
-            position: relative;
-            padding: 40px;
-            overflow-y: hidden; /* No scrollbar */
-            color: black;
-            font-family: 'Inter', sans-serif;
-            display: flex;
-            flex-direction: column;
-        }
-        .close-btn {
-            position: absolute;
-            top: 25px;
-            right: 25px;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-        .close-btn img {
-            width: 32px;
-            height: 32px;
-        }
-        .modal-title {
-            font-family: 'Poppins', sans-serif;
-            font-size: 36px;
-            font-weight: 700;
-            margin-bottom: 5px;
-        }
-        .modal-subtitle {
-            font-family: 'Poppins', sans-serif;
-            font-size: 20px;
-            color: #B3241B;
-            font-weight: 600;
-            margin-bottom: 30px;
-        }
-        .modal-cards-row {
-            display: flex;
-            gap: 15px;
-            align-items: flex-start; /* Ensure cards align top */
-            margin-bottom: 30px;
-        }
-        .modal-card {
-            background: white;
-            border-radius: 12px;
-            /* Figma: 532x331 -> scaled down ~ 370x230 */
-            width: 370px;
-            height: 230px;
-            padding: 30px 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            display: flex;
-            flex-direction: column;
-        }
-        .modal-card-title {
-            font-family: 'Poppins', sans-serif;
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 25px;
-        }
-        .modal-card-status {
-            font-family: 'Poppins', sans-serif;
-            font-size: 30px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            margin-bottom: 25px;
-        }
-        .modal-card-status.eligible { color: #1256D4; }
-        .modal-card-status.qualified { color: #08C425; }
-        .modal-card-desc {
-            font-size: 14px;
-            line-height: 1.5;
-        }
-        .left-col-wrapper {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            width: 370px;
-        }
-        .btn-resume {
-            background-color: #B3241B;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 8px 15px;
-            font-family: 'Poppins', sans-serif;
-            font-size: 18px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            box-shadow: 0 8px 4px rgba(0,0,0,0.15);
-            cursor: pointer;
-            width: 100%;
-        }
-        .btn-resume img { width: 24px; height: 24px; }
-        
-        .bottom-row-wrapper {
-            display: flex;
-            gap: 20px;
-            align-items: flex-end;
-            margin-top: auto;
-        }
-        
-        .qa-section {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            flex: 1;
-        }
-        .qa-title {
-            font-family: 'Poppins', sans-serif;
-            font-size: 20px;
-            color: #B3241B;
-            font-weight: 600;
-        }
-        .qa-content {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            font-size: 13px;
-            line-height: 1.5;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        }
-        .recorded-text {
-            color: #B3241B;
-            font-size: 12px;
-            font-weight: 700;
-            display: block;
-            margin-top: 15px;
-        }
-        
-        .modal-actions {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            /* Figma: 278x58 -> scaled down width ~200px */
-            width: 200px;
-        }
-        .btn-action {
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 8px 20px;
-            font-family: 'Poppins', sans-serif;
-            font-size: 20px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            box-shadow: 0 8px 4px rgba(0,0,0,0.15);
-            cursor: pointer;
-            width: 100%;
-            height: 48px; /* Scaled from 58 */
-        }
-        .btn-action.accept { background-color: #B3241B; }
-        .btn-action.reject { background-color: #825F5C; }
-        .btn-action img { width: 24px; height: 24px; }
-    </style>
+{% block head %}
+<style>
+    /* Specific CSS for Dashboard */
+    /* Header Card */
+    .header-card { background-color: #FFFFFF; border: 1px solid #CCCCCC; box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.25); border-radius: 8px; padding: 20px 30px; display: flex; align-items: center; gap: 30px; margin-bottom: 25px; }
+    .header-card i.bx-data { font-size: 96px; color: var(--primary-red); }
+    .header-divider { width: 1px; height: 80px; background-color: #A69C9C; }
+    .header-text { display: flex; flex-direction: column; gap: 15px; max-width: 650px; }
+    .header-title { font-weight: 600; font-size: 16px; color: var(--primary-red); }
+    .header-subtitle { font-weight: 400; font-size: 15px; line-height: 22px; color: var(--text-dark); }
+    /* Middle Cards Row */
+    .stats-row { display: flex; gap: 30px; margin-bottom: 25px; }
+    .stat-card { background: #FFFFFF; border: 1px solid #D9D9D9; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25); border-radius: 6px; padding: 15px; flex: 1; display: flex; flex-direction: column; }
+    .stat-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+    .stat-header i { font-size: 20px; color: var(--primary-red); }
+    .stat-title { font-weight: 600; font-size: 20px; color: var(--primary-red); }
+    .stat-value { font-weight: 700; font-size: 40px; color: var(--primary-red); margin-bottom: 5px; padding-left: 5px; }
+    .stat-feedback { display: flex; align-items: center; gap: 5px; font-weight: 400; font-size: 14px; padding-left: 5px; }
+    .feedback-positive { color: var(--text-green); }
+    .feedback-neutral { color: #837C75; }
+    /* Bottom Row */
+    .bottom-row { display: flex; gap: 30px; }
+    .chart-card { background: #FFFFFF; border: 1px solid #D9D9D9; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25); border-radius: 6px; padding: 20px; }
+    .system-reports { flex: 1; max-width: 272px; display: flex; flex-direction: column; align-items: center; }
+    .system-reports .chart-title { font-weight: 600; font-size: 20px; color: var(--primary-red); align-self: flex-start; margin-bottom: 40px; }
+    .pie-container { width: 176px; height: 176px; position: relative; margin-bottom: 20px; }
+    .legend-row { display: flex; gap: 15px; align-items: center; width: 100%; justify-content: center; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 10px; }
+    .legend-color { width: 18px; height: 17px; border-radius: 50%; }
+    .user-traffic { flex: 2; display: flex; flex-direction: column; }
+    .traffic-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+    .traffic-header .chart-title { font-weight: 600; font-size: 20px; color: var(--primary-red); }
+    .year-select { display: flex; align-items: center; gap: 10px; border: 1px solid var(--primary-red); border-radius: 10px; padding: 5px 10px; font-family: 'Inter', sans-serif; font-weight: 500; font-size: 16px; cursor: pointer; }
+    .year-select i { color: var(--primary-red); }
+    #trafficChartContainer { width: 100%; height: 213px; flex-grow: 1; }
+    /* Hide CanvasJS watermark credits */
+    .canvasjs-chart-credit { display: none !important; }
 </style>
+{% endblock %}
 
-</head>
-<body>
-    <aside class="sidebar">
-                <div class="logo-area" style="padding: 0; text-align: center;">
-            <img src="{{ url_for('static', filename='logo.svg') }}" alt="H2 Logo" style="width: 100%; display: block; margin: 0 auto;">
-            <div style="font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; color: #B3241B; letter-spacing: 4px; text-transform: uppercase; margin-top: 5px; margin-bottom: 25px;">Administration</div>
+{% block content %}
+    <!-- Header Card -->
+    <div class="header-card">
+        <i class='bx bx-data'></i>
+        <div class="header-divider"></div>
+        <div class="header-text">
+            <div class="header-title">Server is Up and Running!</div>
+            <div class="header-subtitle">Monitor system uptime, track applicant and HR activity pipelines, and manage background infrastructure performance.</div>
         </div>
-        <ul class="nav-links">
-            <li><a href="{{ url_for('admin.dashboard') }}" class="active"><img src="{{ url_for('static', filename='Dashboard Layout.svg') }}" alt="Dashboard" style="width: 2em; height: 2em;"> Dashboard</a></li>
-            <li><a href="{{ url_for('admin.recruitment') }}"><img src="{{ url_for('static', filename='Client Management.svg') }}" alt="Recruitment" style="width: 2em; height: 2em;"> Recruitment</a></li>
-            <li><a href="{{ url_for('admin.analytics') }}"><img src="{{ url_for('static', filename='Graph.svg') }}" alt="Analytics" style="width: 2em; height: 2em;"> Analytics</a></li>
-            <li><a href="#"><img src="{{ url_for('static', filename='Automation.svg') }}" alt="Settings" style="width: 2em; height: 2em;"> Settings</a></li>
-            <li><a href="#"><img src="{{ url_for('static', filename='Profile.svg') }}" alt="Profile" style="width: 2em; height: 2em;"> Profile</a></li>
-        </ul>
-    </aside>
+    </div>
 
-    <main class="main-content">
-        <div class="top-tabs">
-            <div class="tab active" id="tab-monitoring" onclick="switchTab('monitoring')">Applicant Monitoring</div>
-            <div class="tab inactive" id="tab-applicants" onclick="switchTab('applicants')">View Applicants</div>
-        </div>
-
-        <div class="dashboard-content" id="monitoring-content">
-            <div class="top-stats-row">
-                <div class="card applicants-card">
-                    <div class="applicants-header">
-                        <h3>Applicants</h3>
-                        <div class="arrow-icon">
-                            <img src="{{ url_for('static', filename='Circled Up Right.svg') }}" alt="Up Right Arrow">
-                        </div>
-                    </div>
-                    <div class="count">{{ total_applicants | default('22,026') }}</div>
-                </div>
-
-                <div class="date-stats">
-                    <div class="date-info">
-                        <h3>As of:</h3>
-                        <p id="dynamic-date">22/06/2026</p>
-                    </div>
-                    <div class="status-boxes">
-                        <div class="status-box qualified">
-                            <span>20,011</span>
-                            <span>Qualified</span>
-                        </div>
-                        <div class="status-box rejected">
-                            <span>2,015</span>
-                            <span>Rejected</span>
-                        </div>
-                    </div>
-                </div>
+    <!-- Stats Row -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-header">
+                <i class='bx bx-group'></i>
+                <span class="stat-title">Applicants</span>
             </div>
-
-            <div class="card distribution-card">
-                <h3>Applicant Distribution<br>per Job Position</h3>
-                <hr>
-                <div class="bar-chart">
-                    <div id="barChartContainer" style="height: 300px; width: 100%;"></div>
-                </div>
-            </div>
-
-            <div class="more-insights-title">More Insights...</div>
-            
-            <div class="insights-slider-container">
-                <div class="insights-slider-wrapper" id="insights-slider">
-                    <!-- Slide 1 -->
-                    <div class="insights-row">
-                        <div class="card insight-card">
-                            <h4>Avg Interview<br>Score</h4>
-                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
-                        </div>
-                        <div class="card insight-card">
-                            <h4>Recruitment<br>Process</h4>
-                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
-                        </div>
-                        <div class="card insight-card">
-                            <h4>Applicants</h4>
-                            <h2>22,0...</h2>
-                        </div>
-                    </div>
-                    <!-- Slide 2 -->
-                    <div class="insights-row">
-                        <div class="card insight-card">
-                            <h4>Avg Interview<br>Score</h4>
-                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
-                        </div>
-                        <div class="card insight-card">
-                            <h4>Recruitment<br>Process</h4>
-                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
-                        </div>
-                        <div class="card insight-card">
-                            <h4>Applicants</h4>
-                            <h2>22,0...</h2>
-                        </div>
-                    </div>
-                    <!-- Slide 3 -->
-                    <div class="insights-row">
-                        <div class="card insight-card">
-                            <h4>Avg Interview<br>Score</h4>
-                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
-                        </div>
-                        <div class="card insight-card">
-                            <h4>Recruitment<br>Process</h4>
-                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
-                        </div>
-                        <div class="card insight-card">
-                            <h4>Applicants</h4>
-                            <h2>22,0...</h2>
-                        </div>
-                    </div>
-                    <!-- Slide 4 -->
-                    <div class="insights-row">
-                        <div class="card insight-card">
-                            <h4>Avg Interview<br>Score</h4>
-                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
-                        </div>
-                        <div class="card insight-card">
-                            <h4>Recruitment<br>Process</h4>
-                            <div class="arrow-icon"><i class='bx bx-right-arrow-alt'></i></div>
-                        </div>
-                        <div class="card insight-card">
-                            <h4>Applicants</h4>
-                            <h2>22,0...</h2>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="dots">
-                <div class="dot active" onclick="goToSlide(0)"></div>
-                <div class="dot" onclick="goToSlide(1)"></div>
-                <div class="dot" onclick="goToSlide(2)"></div>
-                <div class="dot" onclick="goToSlide(3)"></div>
+            <div class="stat-value">128</div>
+            <div class="stat-feedback feedback-positive">
+                <i class='bx bx-chevrons-up'></i> 20% last month
             </div>
         </div>
 
-        <div id="view-applicants-content">
-            <div class="va-header">
-                <div class="va-search">
-                    <input type="text" placeholder="Job applications and more">
-                    <i class='bx bx-search'></i>
-                </div>
-                <div class="va-sort">
-                    <i class='bx bx-slider-alt'></i>
-                    <button class="va-sort-btn">Sort By</button>
-                </div>
+        <div class="stat-card">
+            <div class="stat-header">
+                <i class='bx bx-time-five'></i>
+                <span class="stat-title">Daily Active Users</span>
             </div>
-            <div class="va-list-header">
-                <div class="va-list-title">Applicant List</div>
-                <div class="va-filters">
-                    <div class="va-filter active" id="va-filter-pending" onclick="switchFilter('pending')">Pending</div>
-                    <div class="va-filter" id="va-filter-accepted" onclick="switchFilter('accepted')">Accepted</div>
-                    <div class="va-filter" id="va-filter-rejected" onclick="switchFilter('rejected')">Rejected</div>
-                </div>
-            </div>
-            <div class="va-list">
-                <div class="va-list-item" onclick="openModal()"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
-                <div class="va-list-item" onclick="openModal()"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
-                <div class="va-list-item" onclick="openModal()"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
-                <div class="va-list-item" onclick="openModal()"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
-                <div class="va-list-item" onclick="openModal()"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
-                <div class="va-list-item" onclick="openModal()"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
-                <div class="va-list-item" onclick="openModal()"><span>Applicant</span><div class="va-list-item-right"><span>See More</span><i class='bx bx-up-arrow-alt' style='transform: rotate(45deg);'></i></div></div>
+            <div class="stat-value">25</div>
+            <div class="stat-feedback feedback-neutral">
+                <i class='bx bx-chevrons-down'></i> 20% last month
             </div>
         </div>
 
-                <!-- Applicant Modals -->
-<div id="applicantModalPending" class="modal-overlay" style="display: none;">
-            <div class="modal-content">
-                <button class="close-btn" onclick="closeModal()">
-                    <img src="{{ url_for('static', filename='Close Window.svg') }}" alt="Close">
-                </button>
-                
-                <h1 class="modal-title">Maryjoy Bernabe</h1>
-                <h3 class="modal-subtitle">Applying as: Software Engineer</h3>
-
-                <div class="modal-cards-row">
-                    <div class="left-col-wrapper">
-                        <div class="modal-card">
-                            <div class="modal-card-title">Pre-screening Outcome</div>
-                            <div class="modal-card-status eligible">ELIGIBLE</div>
-                            <div class="modal-card-desc">
-                                <strong>Experience:</strong> 4 yrs<br>
-                                <strong>Skills:</strong> Javascript, Laravel, Python, SQL
-                            </div>
-                        </div>
-                        <button class="btn-resume">
-                            View Resume <img src="{{ url_for('static', filename='Resume.svg') }}" alt="Resume">
-                        </button>
-                    </div>
-                    
-                    <div class="modal-card">
-                        <div class="modal-card-title">ANN Interview Evaluation</div>
-                        <div class="modal-card-status qualified">QUALIFIED</div>
-                        <div class="modal-card-desc">
-                            <strong>Average Score:</strong> 78% confidence level
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bottom-row-wrapper">
-                    <div class="qa-section">
-                        <h2 class="qa-title">Detailed Interview Q&A</h2>
-                        <div class="qa-content">
-                            <strong>Q1: Tell me about yourself.</strong><br>
-                            <em>"Good day! My name is Mary Joy Bernabe. I am a computer science student who is passionate about technology, problem-solving, and software development. I have experience creating web and mobile applications using different programming languages and tools such as Python, Flask, PHP, MySQL, HTML, CSS, and JavaScript. I am hardworking, willing to learn, and can adapt quickly to new environments. I also enjoy working with a team and improving my skills through projects and research. One of the projects I worked on is a job interview platform simulation that uses artificial intelligence concepts for applicant evaluation. I am seeking an opportunity where I can apply my knowledge, gain professional experience, and continue growing in the field of technology."</em><br>
-                            <span class="recorded-text">Recorded</span>
-                        </div>
-                    </div>
-
-                    <div class="modal-actions">
-                        <button class="btn-action accept">
-                            Accept <img src="{{ url_for('static', filename='Checkmark.svg') }}" alt="Accept">
-                        </button>
-                        <button class="btn-action reject">
-                            Reject <img src="{{ url_for('static', filename='Cancel.svg') }}" alt="Reject">
-                        </button>
-                    </div>
-                </div>
+        <div class="stat-card">
+            <div class="stat-header">
+                <i class='bx bx-desktop'></i>
+                <span class="stat-title">System Status</span>
+            </div>
+            <div class="stat-value">OK</div>
+            <div class="stat-feedback feedback-positive">
+                <i class='bx bx-check-square'></i> Good maintenance!
             </div>
         </div>
-<div id="applicantModalAccepted" class="modal-overlay" style="display: none;">
-            <div class="modal-content">
-                <button class="close-btn" onclick="closeModal()">
-                    <img src="{{ url_for('static', filename='Close Window.svg') }}" alt="Close">
-                </button>
-                
-                <h1 class="modal-title">Maryjoy Bernabe</h1>
-                <h3 class="modal-subtitle">Applying as: Software Engineer</h3>
+    </div>
 
-                <div class="modal-cards-row">
-                    <div class="left-col-wrapper">
-                        <div class="modal-card">
-                            <div class="modal-card-title">Pre-screening Outcome</div>
-                            <div class="modal-card-status eligible">ELIGIBLE</div>
-                            <div class="modal-card-desc">
-                                <strong>Experience:</strong> 4 yrs<br>
-                                <strong>Skills:</strong> Javascript, Laravel, Python, SQL
-                            </div>
-                        </div>
-                        <button class="btn-resume">
-                            View Resume <img src="{{ url_for('static', filename='Resume.svg') }}" alt="Resume">
-                        </button>
-                    </div>
-                    
-                    <div class="modal-card">
-                        <div class="modal-card-title">ANN Interview Evaluation</div>
-                        <div class="modal-card-status qualified">QUALIFIED</div>
-                        <div class="modal-card-desc">
-                            <strong>Average Score:</strong> 78% confidence level
-                        </div>
-                    </div>
+    <!-- Bottom Row -->
+    <div class="bottom-row">
+        <!-- Pie Chart Card -->
+        <div class="chart-card system-reports">
+            <div class="chart-title">System Reports</div>
+            <div class="pie-container" id="pieChartContainer"></div>
+            <div class="legend-row">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #66B3FF;"></div>
+                    <span>Unopened</span>
                 </div>
-
-                <div class="bottom-row-wrapper">
-                    <div class="qa-section">
-                        <h2 class="qa-title">Detailed Interview Q&A</h2>
-                        <div class="qa-content">
-                            <strong>Q1: Tell me about yourself.</strong><br>
-                            <em>"Good day! My name is Mary Joy Bernabe. I am a computer science student who is passionate about technology, problem-solving, and software development. I have experience creating web and mobile applications using different programming languages and tools such as Python, Flask, PHP, MySQL, HTML, CSS, and JavaScript. I am hardworking, willing to learn, and can adapt quickly to new environments. I also enjoy working with a team and improving my skills through projects and research. One of the projects I worked on is a job interview platform simulation that uses artificial intelligence concepts for applicant evaluation. I am seeking an opportunity where I can apply my knowledge, gain professional experience, and continue growing in the field of technology."</em><br>
-                            <span class="recorded-text">Recorded</span>
-                        </div>
-                    </div>
-
-                    <div class="modal-actions">
-                        <button class="btn-action reject" style="cursor: default; pointer-events: none; width: 200px; background-color: #825F5C; display: flex; justify-content: center;">
-                            Accepted
-                        </button>
-                    </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #99CCFF;"></div>
+                    <span>Resolved</span>
                 </div>
             </div>
         </div>
 
-        <div id="applicantModalRejected" class="modal-overlay" style="display: none;">
-            <div class="modal-content" style="width: 700px; height: auto; max-height: 95vh; padding: 50px; align-items: center; text-align: center; overflow-y: auto;">
-                <button class="close-btn" onclick="closeModal()">
-                    <img src="{{ url_for('static', filename='Close Window.svg') }}" alt="Close">
-                </button>
-                
-                <h2 style="color: #B3241B; font-family: 'Poppins', sans-serif; font-size: 36px; font-weight: 600; margin-bottom: 25px;">Rejection of Applicant</h2>
-                
-                <p style="font-family: 'Poppins', sans-serif; font-size: 22px; font-weight: 400; margin-bottom: 10px;">Confirmation of rejecting<br>the applicant</p>
-                <p style="font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 300; font-style: italic; margin-bottom: 40px;">*This action is irreversible</p>
-
-                <div style="background: #FFFFFF; border: 5px solid #000000; border-radius: 12px; padding: 30px; width: 100%; max-width: 500px; margin-bottom: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                    <h1 style="font-family: 'Poppins', sans-serif; font-size: 32px; font-weight: 700; margin-bottom: 10px;">Maryjoy Bernabe</h1>
-                    <h3 style="font-family: 'Poppins', sans-serif; font-size: 18px; color: #B3241B; font-weight: 600;">Applying as: Software Engineer</h3>
-                </div>
-
-                <div style="display: flex; gap: 40px; justify-content: center;">
-                    <button class="btn-action accept" style="width: 200px; justify-content: center;">
-                        Reject <img src="{{ url_for('static', filename='Refuse.svg') }}" alt="Reject">
-                    </button>
-                    <button class="btn-action reject" style="width: 200px; justify-content: center;" onclick="closeModal()">
-                        Cancel <img src="{{ url_for('static', filename='Cancel.svg') }}" alt="Cancel">
-                    </button>
+        <!-- Line Chart Card -->
+        <div class="chart-card user-traffic">
+            <div class="traffic-header">
+                <div class="chart-title">User Traffic — Overview</div>
+                <div class="year-select">
+                    <span>2026</span>
+                    <i class='bx bx-chevron-down'></i>
                 </div>
             </div>
+            <div id="trafficChartContainer"></div>
         </div>
+    </div>
+{% endblock %}
 
-    </main>
-
-    <script>
-
-        let currentFilterStatus = 'pending';
-
-        function openModal() {
-            if (currentFilterStatus === 'pending') {
-                document.getElementById('applicantModalPending').style.display = 'flex';
-            } else if (currentFilterStatus === 'accepted') {
-                document.getElementById('applicantModalAccepted').style.display = 'flex';
-            } else if (currentFilterStatus === 'rejected') {
-                document.getElementById('applicantModalRejected').style.display = 'flex';
-            }
-        }
-        function closeModal() {
-            document.getElementById('applicantModalPending').style.display = 'none';
-            document.getElementById('applicantModalAccepted').style.display = 'none';
-            document.getElementById('applicantModalRejected').style.display = 'none';
-        }
-
-        function switchTab(tab) {
-
-            const monitoringTab = document.getElementById('tab-monitoring');
-            const applicantsTab = document.getElementById('tab-applicants');
-            const monitoringContent = document.getElementById('monitoring-content');
-            const applicantsContent = document.getElementById('view-applicants-content');
-            
-            if (tab === 'monitoring') {
-                monitoringTab.className = 'tab active';
-                applicantsTab.className = 'tab inactive';
-                monitoringContent.style.display = 'block';
-                applicantsContent.style.display = 'none';
-            } else {
-                monitoringTab.className = 'tab inactive';
-                applicantsTab.className = 'tab active';
-                monitoringContent.style.display = 'none';
-                applicantsContent.style.display = 'block';
-            }
-        }
-
-        function switchFilter(status) {
-            currentFilterStatus = status;
-            const filters = ['pending', 'accepted', 'rejected'];
-            filters.forEach(f => {
-                const el = document.getElementById('va-filter-' + f);
-                if (f === status) {
-                    el.classList.add('active');
-                } else {
-                    el.classList.remove('active');
-                }
-            });
-
-            const listItems = document.querySelectorAll('.va-list-item');
-            listItems.forEach(item => {
-                if (status === 'rejected') {
-                    item.classList.add('rejected');
-                } else {
-                    item.classList.remove('rejected');
-                }
-            });
-        }
-
-        function goToSlide(index) {
-            const slider = document.getElementById('insights-slider');
-            slider.style.transform = `translateX(-${index * 25}%)`;
-            
-            const dots = document.querySelectorAll('.dots .dot');
-            dots.forEach((dot, i) => {
-                if (i === index) dot.classList.add('active');
-                else dot.classList.remove('active');
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            var chart = new CanvasJS.Chart("barChartContainer", {
-                animationEnabled: true,
-                theme: "light2",
-                axisY: {
-                    title: "Applicants"
-                },
-                data: [{
-                    type: "column",
-                    showInLegend: false,
-                    color: "#8C1C13",
-                    dataPoints: [
-                        { y: 5500, label: "SE" },
-                        { y: 4200, label: "QA" },
-                        { y: 3800, label: "DevOps" },
-                        { y: 3100, label: "UI/UX" },
-                        { y: 2900, label: "PM" },
-                        { y: 2526, label: "Data" }
-                    ]
-                }]
-            });
-            chart.render();
-
-            const dateElement = document.getElementById('dynamic-date');
-            const today = new Date();
-            const dd = String(today.getDate()).padStart(2, '0');
-            const mm = String(today.getMonth() + 1).padStart(2, '0');
-            const yyyy = today.getFullYear();
-            dateElement.textContent = `${dd}/${mm}/${yyyy}`;
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Render Doughnut Chart for System Reports
+        var pieChart = new CanvasJS.Chart("pieChartContainer", {
+            animationEnabled: true,
+            backgroundColor: "transparent",
+            data: [{
+                type: "doughnut",
+                innerRadius: "60%",
+                startAngle: -90,
+                dataPoints: [
+                    { y: 35, color: "#99CCFF" }, // Resolved
+                    { y: 65, color: "#66B3FF" }  // Unopened
+                ]
+            }]
         });
-    </script>
-</body>
-</html>
+        pieChart.render();
+
+        // Render Line Chart for User Traffic
+        var trafficChart = new CanvasJS.Chart("trafficChartContainer", {
+            animationEnabled: true,
+            theme: "light2",
+            axisX: {
+                interval: 1,
+                gridThickness: 1,
+                gridColor: "#E0E0E0",
+                lineColor: "#CCCCCC",
+                labelFontFamily: "Inter"
+            },
+            axisY: {
+                gridThickness: 1,
+                gridColor: "#E0E0E0",
+                lineColor: "#CCCCCC",
+                labelFontFamily: "Inter"
+            },
+            data: [
+            {
+                type: "line",
+                color: "#1AE7AB",
+                markerType: "circle",
+                markerColor: "#FFFFFF",
+                markerBorderColor: "#1AE7AB",
+                markerBorderThickness: 2,
+                dataPoints: [
+                    { x: 0, y: 20 },
+                    { x: 1, y: 20 },
+                    { x: 2, y: 75 },
+                    { x: 3, y: 5 },
+                    { x: 4, y: 10 },
+                    { x: 5, y: 60 },
+                    { x: 6, y: 95 },
+                    { x: 7, y: 100 },
+                    { x: 8, y: 95 },
+                    { x: 9, y: 5 },
+                    { x: 10, y: 60 },
+                    { x: 11, y: 100 }
+                ]
+            },
+            {
+                type: "line",
+                color: "#6C0C41",
+                markerType: "circle",
+                markerColor: "#FFFFFF",
+                markerBorderColor: "#6C0C41",
+                markerBorderThickness: 2,
+                dataPoints: [
+                    { x: 0, y: 5 },
+                    { x: 1, y: 25 },
+                    { x: 2, y: 95 },
+                    { x: 3, y: 75 },
+                    { x: 4, y: 5 },
+                    { x: 5, y: 20 },
+                    { x: 6, y: 35 },
+                    { x: 7, y: 50 },
+                    { x: 8, y: 15 },
+                    { x: 9, y: 50 },
+                    { x: 10, y: 80 },
+                    { x: 11, y: 85 }
+                ]
+            }
+            ]
+        });
+        trafficChart.render();
+    });
+</script>
+{% endblock %}
