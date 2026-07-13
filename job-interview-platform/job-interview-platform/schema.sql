@@ -116,6 +116,14 @@ CREATE TABLE applications (
     job_id INT NOT NULL,
     applicant_id INT NOT NULL,
     screening_status VARCHAR(50) NOT NULL DEFAULT 'Pending',
+    shortlisted TINYINT(1) NOT NULL DEFAULT 0,
+    interview_result VARCHAR(50) NULL,
+    final_interview_status VARCHAR(50) NOT NULL DEFAULT 'Pending',
+    final_interview_date DATE NULL,
+    final_interviewer VARCHAR(100) NULL,
+    virtual_interview_status VARCHAR(50) NOT NULL DEFAULT 'Pending',
+    transcript_status VARCHAR(50) NOT NULL DEFAULT 'Not Generated',
+    interview_type VARCHAR(50) NOT NULL DEFAULT 'Chat',
     applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_applications_jobs
         FOREIGN KEY (job_id) REFERENCES jobs (job_id)
@@ -202,4 +210,43 @@ CREATE TABLE job_required_skills (
     CONSTRAINT fk_job_required_skills_master
         FOREIGN KEY (skill_id) REFERENCES skills_master (skill_id)
         ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------
+-- Table: chatbot
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS chatbot (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    user_name VARCHAR(100) NOT NULL,
+    position VARCHAR(100) NOT NULL,
+    experience VARCHAR(100) NULL,
+    skills TEXT NULL,
+    qualification_status VARCHAR(50) NOT NULL,
+    advice TEXT NULL,
+    assessment_data TEXT NULL,
+    confidence DOUBLE NOT NULL DEFAULT 0.0,
+    average_score DOUBLE NOT NULL DEFAULT 0.0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_chatbot_users FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------
+-- Table: chatbot_limits
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS chatbot_limits (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    position VARCHAR(100) NOT NULL UNIQUE,
+    max_allowed INT NOT NULL DEFAULT 10
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------
+-- Table: schedules
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS schedules (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    schedule_date DATE NOT NULL,
+    schedule_time TIME NOT NULL,
+    recurring_days VARCHAR(255) NULL,
+    end_date DATE NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

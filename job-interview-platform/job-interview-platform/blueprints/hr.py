@@ -1,4 +1,7 @@
 # blueprints/hr.py
+import io
+import csv
+from flask import Response
 from flask import (
     Blueprint,
     render_template,
@@ -44,20 +47,64 @@ def hr_dashboard():
         session.clear()
         return redirect(url_for("auth.staff_login"))
 
-    # 2) Standard Application Metrics (Replaces old CART/ANN logic)
+    # 2) Standard Application Metrics
     cur.execute("SELECT COUNT(*) FROM applications")
     total_requests = cur.fetchone()[0] or 0
 
     cur.execute("SELECT COUNT(*) FROM applications WHERE screening_status = 'Pending'")
     pending_applications = cur.fetchone()[0] or 0
 
-    cur.execute("SELECT COUNT(*) FROM applications WHERE screening_status IN ('Approved', 'Eligible')")
+    cur.execute("SELECT COUNT(*) FROM applications WHERE screening_status IN ('Approved', 'Eligible', 'Passed Screening')")
     approved_applications = cur.fetchone()[0] or 0
 
     cur.execute("SELECT COUNT(*) FROM applications WHERE screening_status IN ('Rejected', 'Denied', 'Not Qualified')")
     rejected_applicants = cur.fetchone()[0] or 0
 
     avg_interview_score = 0.0
+
+    # CART: Eligible vs Not Eligible (pre-screening)
+    cur.execute("SELECT COUNT(*) FROM applications WHERE screening_status IN ('Passed Screening','Approved','Eligible','Shortlisted','Hired','Talent Pool')")
+    cart_eligible = cur.fetchone()[0] or 0
+    cur.execute("SELECT COUNT(*) FROM applications WHERE screening_status NOT IN ('Passed Screening','Approved','Eligible','Shortlisted','Hired','Talent Pool')")
+    cart_not_eligible = cur.fetchone()[0] or 0
+
+    # ANN / chatbot: Qualified vs Not Qualified
+    cur.execute("SELECT COUNT(*) FROM chatbot WHERE qualification_status = 'Qualified'")
+    ann_qualified = cur.fetchone()[0] or 0
+    cur.execute("SELECT COUNT(*) FROM chatbot WHERE qualification_status != 'Qualified'")
+    ann_not_qualified = cur.fetchone()[0] or 0
+
+    # Pipeline counts
+    cur.execute("SELECT COUNT(*) FROM applications WHERE screening_status = 'Hired'")
+    hired_count = cur.fetchone()[0] or 0
+
+    cur.execute("SELECT COUNT(*) FROM applications WHERE screening_status IN ('Interview Scheduled', 'Interviewed', 'Interview Done', 'Interview Completed')")
+    interviewed_count = cur.fetchone()[0] or 0
+
+    cur.execute("SELECT COUNT(*) FROM applications WHERE screening_status IN ('Interview Scheduled', 'Approved')")
+    interview_scheduled = cur.fetchone()[0] or 0
+
+    cur.execute("SELECT COUNT(*) FROM applications WHERE shortlisted = 1")
+    try:
+        shortlisted_count = cur.fetchone()[0] or 0
+    except Exception:
+        shortlisted_count = 0
+
+    cur.execute("SELECT COUNT(*) FROM applications WHERE screening_status = 'Talent Pool'")
+    talent_pool_count = cur.fetchone()[0] or 0
+
+    # Trend data (last 6 months)
+    cur.execute("""
+        SELECT DATE_FORMAT(applied_at, '%b') AS month_label, COUNT(*) AS cnt
+        FROM applications
+        WHERE applied_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+        GROUP BY DATE_FORMAT(applied_at, '%Y-%m'), DATE_FORMAT(applied_at, '%b')
+        ORDER BY MIN(applied_at) ASC
+        LIMIT 6
+    """)
+    trend_rows = cur.fetchall()
+    trend_labels = [r[0] for r in trend_rows]
+    trend_counts = [r[1] for r in trend_rows]
 
     # 3) Job Position Distribution
     cur.execute("""
@@ -72,37 +119,68 @@ def hr_dashboard():
         for row in cur.fetchall()
     ]
 
-    # 4) Recent Applicants
+    # 4) Recent Applicants (full details for Candidate Pipeline)
     cur.execute("""
         SELECT 
-            a.application_id, 
-            u.username, 
-            u.email, 
-            j.job_name, 
+            a.application_id,
+            u.username,
+            u.email,
+            u.contact_num,
+            j.job_name,
             a.screening_status,
-            a.applied_at
+            a.applied_at,
+            COALESCE(c.qualification_status, 'Pending') AS ann_status,
+            COALESCE(c.average_score * 100, 0.0) AS ann_score,
+            ap.resume_url,
+            COALESCE(a.shortlisted, 0) AS shortlisted,
+            COALESCE(a.interview_result, '') AS interview_result,
+            COALESCE(a.final_interview_status, '') AS final_status,
+            a.final_interview_date,
+            COALESCE(a.final_interviewer, '') AS final_interviewer,
+            COALESCE(a.virtual_interview_status, 'Pending') AS virtual_interview_status,
+            COALESCE(a.transcript_status, 'Not Generated') AS transcript_status,
+            COALESCE(a.interview_type, 'Chat') AS interview_type
         FROM applications a
         JOIN applicants ap ON ap.applicant_id = a.applicant_id
         JOIN users u ON u.user_id = ap.user_id
         JOIN jobs j ON j.job_id = a.job_id
+        LEFT JOIN chatbot c ON c.user_id = u.user_id AND c.position = j.job_name
         ORDER BY a.application_id DESC
         LIMIT 15
     """)
     applicant_rows = cur.fetchall()
-    
+
     recent_applicants = []
     for row in applicant_rows:
-        applied_date = row[5]
+        applied_date = row[6]
         applied_date_val = applied_date if isinstance(applied_date, (datetime.date, datetime.datetime)) else None
-        
+
+        db_status = row[5]
+        ann_status = row[7]
+        ann_score = row[8]
+
+        cart_status = 'Eligible' if db_status in ('Passed Screening', 'Approved', 'Eligible', 'Rejected', 'Talent Pool', 'Hired', 'Shortlisted') else 'Not Eligible'
+        hr_status = db_status if db_status in ('Approved', 'Rejected', 'Talent Pool', 'Hired') else 'Pending'
+
         recent_applicants.append({
             "id": row[0],
             "name": row[1],
             "email": row[2],
-            "role": row[3],
-            "status": row[4],
-            "score": 0.0, # Placeholder, DB schema lacks scores
+            "role": row[4],
+            "cart_status": cart_status,
+            "ann_status": ann_status,
+            "hr_status": hr_status,
+            "score": float(ann_score) if ann_score is not None else 0.0,
             "applied_date": applied_date_val,
+            "resume_url": row[9],
+            "shortlisted": "Yes" if row[10] else "No",
+            "interview_result": row[11] or "Needs Review",
+            "final_status": row[12] or "Pending",
+            "final_date": row[13].strftime("%Y-%m-%d") if isinstance(row[13], (datetime.date, datetime.datetime)) else (str(row[13]) if row[13] else ""),
+            "final_interviewer": row[14] or "",
+            "virtual_interview_status": row[15] or "Pending",
+            "transcript_status": row[16] or "Not Generated",
+            "interview_type": row[17] or "Chat",
         })
 
     # 5) Upcoming Interviews
@@ -198,6 +276,17 @@ def hr_dashboard():
         upcoming_interviews=upcoming_interviews,
         recent_applicants=recent_applicants,
         progress_data=progress_data,
+        cart_eligible=cart_eligible,
+        cart_not_eligible=cart_not_eligible,
+        ann_qualified=ann_qualified,
+        ann_not_qualified=ann_not_qualified,
+        hired_count=hired_count,
+        interviewed_count=interviewed_count,
+        interview_scheduled=interview_scheduled,
+        shortlisted_count=shortlisted_count,
+        talent_pool_count=talent_pool_count,
+        trend_labels=trend_labels,
+        trend_counts=trend_counts,
         cart_ann_matrix=cart_ann_matrix,
         cart_metrics=cart_metrics,
         ann_metrics=ann_metrics,
@@ -360,3 +449,34 @@ def logout():
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
     return response
+
+@hr_bp.route("/hr/export-all")
+def export_all_data():
+    if "user_id" not in session:
+        return redirect(url_for("auth.login"))
+        
+    cur = mysql.connection.cursor()
+    # Fetching core candidate data based on your existing database structure
+    cur.execute("""
+        SELECT u.username, u.email, j.job_name, a.screening_status, a.applied_at
+        FROM applications a
+        JOIN applicants ap ON ap.applicant_id = a.applicant_id
+        JOIN users u ON u.user_id = ap.user_id
+        JOIN jobs j ON j.job_id = a.job_id
+    """)
+    rows = cur.fetchall()
+    cur.close()
+
+    # Generate the CSV
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Name', 'Email', 'Position', 'Status', 'Applied Date']) # Header row
+    for row in rows:
+        writer.writerow(row)
+
+    # Return as a downloadable file
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment;filename=applicant_data.csv"}
+    )

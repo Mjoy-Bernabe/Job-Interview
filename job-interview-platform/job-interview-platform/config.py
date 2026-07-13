@@ -11,6 +11,7 @@ class Config:
     MYSQL_USER = os.environ.get("MYSQL_USER", "root")
     MYSQL_PASSWORD = os.environ.get("MYSQL_PASSWORD", "")
     MYSQL_DB = os.environ.get("MYSQL_DB", "auth_db")
+    MYSQL_PORT = 3307 
 
     # uploads
     UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER", "uploads")

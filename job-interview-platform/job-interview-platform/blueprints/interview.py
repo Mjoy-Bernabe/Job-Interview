@@ -31,7 +31,7 @@ def chat_app():
     user_id = session["user_id"]
     cur = mysql.connection.cursor()
     cur.execute(
-        "SELECT email, username, contact_number FROM users WHERE id = %s",
+        "SELECT email, username, contact_num FROM users WHERE user_id = %s",
         (user_id,),
     )
     user = cur.fetchone()
@@ -260,3 +260,51 @@ def get_interview_summary():
     advice = generate_detailed_advice(
         summary["answers"], summary["average_score"])
     return jsonify({"summary": summary, "advice": advice, "answers": answers_history})
+
+
+@interview_bp.route("/hr/meet/<int:app_id>")
+def live_meet(app_id):
+    if "user_id" not in session:
+        return redirect(url_for("auth.login"))
+
+    user_id = session["user_id"]
+    user_type = session.get("user_type", "Applicant")
+
+    cur = mysql.connection.cursor()
+    cur.execute("""
+        SELECT 
+            a.application_id,
+            u.username AS applicant_name,
+            u.email AS applicant_email,
+            j.job_name,
+            a.final_interview_status,
+            a.final_interview_date,
+            a.final_interviewer
+        FROM applications a
+        JOIN applicants ap ON ap.applicant_id = a.applicant_id
+        JOIN users u ON u.user_id = ap.user_id
+        JOIN jobs j ON j.job_id = a.job_id
+        WHERE a.application_id = %s
+    """, (app_id,))
+    row = cur.fetchone()
+    cur.close()
+
+    if not row:
+        flash("Meeting session not found.", "error")
+        return redirect(url_for("applicants.dashboard") if user_type == "Applicant" else url_for("hr.hr_dashboard"))
+
+    app_id, applicant_name, applicant_email, job_name, status, f_date, f_interviewer = row
+
+    # Determine if user is HR/Staff or Applicant
+    role = "HR" if user_type in ("HR", "Staff", "Admin") else "Applicant"
+
+    return render_template(
+        "video_meet.html",
+        app_id=app_id,
+        role=role,
+        applicant_name=applicant_name,
+        applicant_email=applicant_email,
+        job_name=job_name,
+        final_interviewer=f_interviewer or "HR Interviewer",
+        status=status
+    )

@@ -248,7 +248,10 @@ def dashboard():
              FROM applicant_skills ask 
              JOIN skills_master sm ON sm.skill_id = ask.skill_id 
              WHERE ask.applicant_id = a.applicant_id) AS skills,
-            TIMESTAMPDIFF(YEAR, a.date_of_birth, CURDATE()) AS age
+            TIMESTAMPDIFF(YEAR, a.date_of_birth, CURDATE()) AS age,
+            app.final_interview_status,
+            app.final_interview_date,
+            app.final_interviewer
         FROM applications app
         JOIN applicants a ON a.applicant_id = app.applicant_id
         JOIN users u ON u.user_id = a.user_id
@@ -280,6 +283,9 @@ def dashboard():
             "education_level": r[8] or "N/A",
             "skills": r[9] or "None listed",
             "age": int(r[10]) if r[10] is not None else None,
+            "final_interview_status": r[11] or "Pending",
+            "final_interview_date": str(r[12]) if r[12] else "",
+            "final_interviewer": r[13] or ""
         }
         # Keep only the latest application per job_id (rows are already
         # ordered newest-first, so the first time we see a job_id wins).

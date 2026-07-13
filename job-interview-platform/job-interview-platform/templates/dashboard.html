@@ -863,6 +863,13 @@
                                 <p class="empty-note">Select a job to view its interview status.</p>
                             </div>
                         </article>
+
+                        <article class="panel" id="section3Panel" style="display:none;">
+                            <h2>Section 3: Live Video Meeting</h2>
+                            <div id="section3Content">
+                                <p class="empty-note">Select a job to view meeting details.</p>
+                            </div>
+                        </article>
                     </div>
                 </div>
             </section>
@@ -1042,6 +1049,50 @@
             }
         }
 
+        function renderSection3(jobId, appData) {
+            const panel = document.getElementById('section3Panel');
+            const container = document.getElementById('section3Content');
+
+            if (appData && (appData.final_interview_status === 'Scheduled' || appData.final_interview_date)) {
+                panel.style.display = 'block';
+                const dateStr = appData.final_interview_date || 'TBD';
+                const interviewerStr = appData.final_interviewer || 'Assigned HR Panelist';
+                
+                container.innerHTML = `
+                    <span class="status-pill eligible" style="background:#e0f2fe; color:#0369a1;">Scheduled</span>
+                    <div class="detail-list" style="margin-bottom:15px;">
+                        <div class="detail-row"><span>Meeting Date</span><span>${escapeHtml(dateStr)}</span></div>
+                        <div class="detail-row"><span>Interviewer</span><span>${escapeHtml(interviewerStr)}</span></div>
+                        <div class="detail-row"><span>Room Status</span><span>Ready</span></div>
+                    </div>
+                    <a class="small-action" href="/interview/meet/${appData.id}" target="_blank" style="background:#0284c7; width:100%; display:inline-flex; align-items:center; justify-content:center; gap:8px; text-decoration:none;">
+                        <i class='bx bxs-video'></i> Join Live Meeting Room
+                    </a>
+                `;
+            } else if (appData && appData.final_interview_status === 'Hired') {
+                panel.style.display = 'block';
+                container.innerHTML = `
+                    <span class="status-pill eligible">Hired</span>
+                    <p class="empty-note" style="color:var(--accent-green); font-weight:600;">Congratulations! You have been hired for this position.</p>
+                `;
+            } else if (appData && appData.final_interview_status === 'Rejected') {
+                panel.style.display = 'block';
+                container.innerHTML = `
+                    <span class="status-pill not-eligible">Rejected</span>
+                    <p class="empty-note">Thank you for your time. Your application was not selected at this time.</p>
+                `;
+            } else if (appData && appData.final_interview_status === 'Talent Pool') {
+                panel.style.display = 'block';
+                container.innerHTML = `
+                    <span class="status-pill pending" style="background:#fef3c7; color:#92400e;">Talent Pool</span>
+                    <p class="empty-note">Your application has been placed in our corporate talent pool for future opportunities.</p>
+                `;
+            } else {
+                panel.style.display = 'none';
+                container.innerHTML = '';
+            }
+        }
+
         function showJobDetail(jobRow) {
             const title = jobRow.dataset.position || 'Application';
             const jobId = jobRow.dataset.jobId;
@@ -1055,6 +1106,7 @@
             // Render THIS job's own data only — never another job's.
             renderSection1(jobId, jobRow, appData);
             renderSection2(jobId, appData);
+            renderSection3(jobId, appData);
         }
 
         function updateDateTime() {

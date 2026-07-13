@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Video Interview Room | H2 Software Services</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary-red: #c21d3b;
+            --accent-green: #10b981;
+            --accent-blue: #0284c7;
+            --border-dark: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ===== HEADER ===== */
+        .meet-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-dark);
+            z-index: 10;
+        }
+
+        .brand-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            background: var(--primary-red);
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+        }
+
+        .meet-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .meet-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .status-pill {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-green);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        /* ===== MAIN SECTION ===== */
+        .meet-body {
+            flex: 1;
+            display: flex;
+            position: relative;
+            height: calc(100vh - 70px - 85px);
+        }
+
+        /* VIDEO GRID */
+        .video-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 25px;
+            position: relative;
+        }
+
+        @media (max-width: 768px) {
+            .video-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 1fr;
+            }
+        }
+
+        .video-pane {
+            background-color: #020617;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid var(--border-dark);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-pane video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1); /* Mirror effect */
+        }
+
+        /* Video Simulation placeholder */
+        .video-sim {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1e293b;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            z-index: 2;
+        }
+
+        .video-sim img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .avatar-placeholder {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: var(--border-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            border: 3px solid var(--primary-red);
+        }
+
+        .pane-label {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            background: rgba(15, 23, 42, 0.75);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid var(--border-dark);
+        }
+
+        .mic-indicator {
+            color: var(--accent-green);
+        }
+
+        .mic-indicator.muted {
+            color: var(--primary-red);
+        }
+
+        /* ===== SIDEBAR ===== */
+        .meet-sidebar {
+            width: 360px;
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(10px);
+            border-left: 1px solid var(--border-dark);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .sidebar-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-dark);
+        }
+
+        .sidebar-tab-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 15px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-tab-btn.active {
+            color: var(--text-light);
+            border-bottom: 2px solid var(--primary-red);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .sidebar-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-panel {
+            display: none;
+            height: 100%;
+        }
+
+        .sidebar-panel.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Live Chat Styles */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid var(--border-dark);
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 380px;
+        }
+
+        .chat-msg {
+            font-size: 0.82rem;
+            line-height: 1.4;
+        }
+
+        .chat-msg-sender {
+            font-weight: 600;
+            color: var(--accent-blue);
+            margin-bottom: 2px;
+        }
+
+        .chat-msg-sender.self {
+            color: var(--accent-green);
+        }
+
+        .chat-msg-text {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 12px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+
+        .chat-input-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-dark);
+            border-radius: 8px;
+            padding: 10px;
+            color: var(--text-light);
+            font-size: 0.82rem;
+            outline: none;
+        }
+
+        .chat-input:focus {
+            border-color: var(--primary-red);
+        }
+
+        .btn-send {
+            background: var(--primary-red);
+            border: none;
+            color: white;
+            padding: 0 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn-send:hover {
+            background: #a1142e;
+        }
+
+        /* AI Guide questions list */
+        .guide-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .question-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-dark);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+            font-size: 0.82rem;
+            line-height: 1.4;
+        }
+
+        .question-header {
+            font-weight: 600;
+            color: var(--accent-blue);
+            margin-bottom: 5px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+
+        /* Interviewer note pad */
+        .notes-area {
+            width: 100%;
+            flex: 1;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-dark);
+            border-radius: 8px;
+            padding: 12px;
+            color: var(--text-light);
+            font-family: inherit;
+            font-size: 0.82rem;
+            resize: none;
+            outline: none;
+            margin-bottom: 15px;
+        }
+
+        .notes-area:focus {
+            border-color: var(--primary-red);
+        }
+
+        /* ===== CONTROLS PANEL ===== */
+        .controls-panel {
+            height: 85px;
+            background: #1e293b;
+            border-top: 1px solid var(--border-dark);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 35px;
+            z-index: 10;
+        }
+
+        .call-details {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .btn-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-light);
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-circle:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .btn-circle.active-btn {
+            background: var(--primary-red);
+        }
+
+        .btn-circle.active-btn-green {
+            background: var(--accent-green);
+        }
+
+        .btn-circle.hangup {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-circle.hangup:hover {
+            background: #dc2626;
+        }
+
+        .center-controls {
+            display: flex;
+            gap: 15px;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+            }
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+            }
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- MEET HEADER -->
+    <header class="meet-header">
+        <div class="brand-section">
+            <div class="brand-logo">H2</div>
+            <div>
+                <div class="meet-title">Video Interview Room ({{ job_name }})</div>
+                <div class="meet-subtitle">Session ID: meet-{{ app_id }} | Panel Interview</div>
+            </div>
+        </div>
+
+        <div style="display:flex; gap:15px; align-items:center;">
+            <div class="status-pill">
+                <div class="status-dot"></div>
+                LIVE MEETING ACTIVE
+            </div>
+        </div>
+    </header>
+
+    <!-- MEET BODY -->
+    <div class="meet-body">
+        
+        <!-- VIDEO GRID -->
+        <div class="video-grid">
+            
+            <!-- Local User Stream (HR or Applicant) -->
+            <div class="video-pane">
+                <!-- Live WebRTC camera stream inside HTML5 video tag -->
+                <video id="localVideo" autoplay playsinline muted></video>
+                
+                <div class="pane-label">
+                    <span id="localMicIndicator" class="mic-indicator"><i class="fa-solid fa-microphone"></i></span>
+                    <strong>You ({{ role }})</strong>
+                </div>
+            </div>
+
+            <!-- Remote Partner Stream -->
+            <div class="video-pane" id="remotePane">
+                <!-- If role is HR, show simulation of Applicant Dela Cruz. If Applicant, show HR panel simulation. -->
+                <div class="video-sim">
+                    {% if role == 'HR' %}
+                    <!-- HR sees Applicant -->
+                    <div class="avatar-placeholder">D</div>
+                    <div style="text-align:center;">
+                        <strong>{{ applicant_name }}</strong><br>
+                        <small style="color:var(--text-muted);">Applicant | Feed Connected</small>
+                    </div>
+                    {% else %}
+                    <!-- Applicant sees HR Manager -->
+                    <div class="avatar-placeholder" style="border-color:var(--accent-blue);">HR</div>
+                    <div style="text-align:center;">
+                        <strong>{{ final_interviewer }}</strong><br>
+                        <small style="color:var(--text-muted);">Lead HR Panelist | Feed Connected</small>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="pane-label">
+                    <span class="mic-indicator"><i class="fa-solid fa-microphone"></i></span>
+                    <strong>{% if role == 'HR' %}{{ applicant_name }}{% else %}{{ final_interviewer }}{% endif %} (Partner)</strong>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- SIDEBAR -->
+        <aside class="meet-sidebar">
+            <div class="sidebar-tabs">
+                <button class="sidebar-tab-btn active" onclick="switchSidebarTab('chat')">
+                    <i class="fa-solid fa-comments"></i> Chat
+                </button>
+                <button class="sidebar-tab-btn" onclick="switchSidebarTab('guide')">
+                    <i class="fa-solid fa-brain"></i> AI Guide
+                </button>
+                {% if role == 'HR' %}
+                <button class="sidebar-tab-btn" onclick="switchSidebarTab('notes')">
+                    <i class="fa-solid fa-file-signature"></i> Evaluation
+                </button>
+                {% endif %}
+            </div>
+
+            <div class="sidebar-content">
+                
+                <!-- Chat Panel -->
+                <div id="panel-chat" class="sidebar-panel active">
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="chat-msg">
+                            <div class="chat-msg-sender">System</div>
+                            <div class="chat-msg-text" style="color:var(--text-muted);">Welcome to the secure live meeting. Media streams are encrypted.</div>
+                        </div>
+                        <div class="chat-msg">
+                            <div class="chat-msg-sender">{% if role == 'HR' %}{{ applicant_name }}{% else %}{{ final_interviewer }}{% endif %}</div>
+                            <div class="chat-msg-text">Good day! I have joined the call and verified my mic/camera.</div>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input-row">
+                        <input type="text" id="chatInput" class="chat-input" placeholder="Type message..." onkeydown="if(event.key === 'Enter') sendChatMessage()">
+                        <button class="btn-send" onclick="sendChatMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+
+                <!-- AI Guide Panel -->
+                <div id="panel-guide" class="sidebar-panel">
+                    <div class="guide-title">
+                        <i class="fa-solid fa-robot" style="color:var(--primary-red);"></i> Live AI Recommendation Questions
+                    </div>
+                    <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:15px;">
+                        Recommended questions based on the candidate's resume match indicators:
+                    </p>
+                    
+                    <div class="question-card">
+                        <div class="question-header">Question 1 (Core Technical)</div>
+                        "Could you detail how you implement distributed locking or synchronize shared state in concurrent environments?"
+                    </div>
+                    <div class="question-card">
+                        <div class="question-header">Question 2 (Experience verification)</div>
+                        "In your previous projects, how did you handle performance tuning for query index optimization in high load databases?"
+                    </div>
+                    <div class="question-card">
+                        <div class="question-header">Question 3 (Problem Solving)</div>
+                        "Tell me about a time when you received conflicting feedback from stakeholders and how you resolved the design decision."
+                    </div>
+                </div>
+
+                <!-- HR Evaluation Notes Panel -->
+                {% if role == 'HR' %}
+                <div id="panel-notes" class="sidebar-panel">
+                    <div class="guide-title"><i class="fa-solid fa-list-check"></i> Score &amp; Real-time Feedback</div>
+                    
+                    <div style="margin-bottom:15px;">
+                        <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:5px;">Performance Rating Slider:</label>
+                        <input type="range" id="evalScore" min="0" max="100" value="85" style="width:100%; accent-color:var(--primary-red);" oninput="document.getElementById('scoreVal').innerText = this.value + '%'">
+                        <span style="font-size:0.8rem; font-weight:600; float:right;" id="scoreVal">85%</span>
+                    </div>
+
+                    <label style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:5px;">Interview Feedback Notes:</label>
+                    <textarea id="evalNotes" class="notes-area" placeholder="Write candidate answers, strengths, and communication observations here..."></textarea>
+                    
+                    <button class="btn-send" style="width:100%; padding:10px;" onclick="saveEvaluationNotes()">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Evaluation &amp; Score
+                    </button>
+                </div>
+                {% endif %}
+
+            </div>
+        </aside>
+
+    </div>
+
+    <!-- CONTROLS PANEL -->
+    <footer class="controls-panel">
+        <div class="call-details">
+            <div>Live: <strong style="color:var(--accent-green);">Connected</strong></div>
+            <div style="font-size:0.75rem;">Connected to: {% if role == 'HR' %}{{ applicant_name }} (Candidate){% else %}{{ final_interviewer }} (Lead Panelist){% endif %}</div>
+        </div>
+
+        <div class="center-controls">
+            <!-- Mic Mute Button -->
+            <button id="btnMic" class="btn-circle active-btn" onclick="toggleMic()" title="Mute Microphone">
+                <i class="fa-solid fa-microphone"></i>
+            </button>
+            
+            <!-- Video Camera Toggle Button -->
+            <button id="btnVideo" class="btn-circle active-btn" onclick="toggleVideo()" title="Turn Camera Off">
+                <i class="fa-solid fa-video"></i>
+            </button>
+
+            <!-- Share Screen Button -->
+            <button id="btnScreen" class="btn-circle" onclick="toggleShareScreen()" title="Share Screen">
+                <i class="fa-solid fa-desktop"></i>
+            </button>
+
+            <!-- Hang Up Call Button -->
+            <button class="btn-circle hangup" onclick="hangupCall()" title="End Live Interview">
+                <i class="fa-solid fa-phone-slash"></i>
+            </button>
+        </div>
+
+        <div style="width: 100px;"></div> <!-- Spacer matching layout balance -->
+    </footer>
+
+    <script>
+        let localStream = null;
+        let isMicEnabled = true;
+        let isVideoEnabled = true;
+        let isScreenSharing = false;
+
+        // Start local WebRTC media capture on page load
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Request webcam and audio media permissions
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480 },
+                    audio: true
+                });
+                
+                // Map the captured camera feed to local HTML5 video tag
+                const localVideo = document.getElementById('localVideo');
+                if (localVideo) {
+                    localVideo.srcObject = localStream;
+                }
+            } catch (err) {
+                console.warn("Could not access camera/mic: ", err);
+                alert("Camera and Mic permissions are required for the live interview room. Please allow media access.");
+            }
+        });
+
+        // Tab switcher
+        function switchSidebarTab(tabName) {
+            document.querySelectorAll('.sidebar-tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.sidebar-panel').forEach(panel => panel.classList.remove('active'));
+
+            event.currentTarget.classList.add('active');
+            document.getElementById('panel-' + tabName).classList.add('active');
+        }
+
+        // Toggle microphone status
+        function toggleMic() {
+            if (localStream) {
+                const audioTracks = localStream.getAudioTracks();
+                if (audioTracks.length > 0) {
+                    isMicEnabled = !isMicEnabled;
+                    audioTracks[0].enabled = isMicEnabled;
+
+                    const btn = document.getElementById('btnMic');
+                    const indicator = document.getElementById('localMicIndicator');
+                    
+                    if (isMicEnabled) {
+                        btn.classList.add('active-btn');
+                        btn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+                        btn.title = "Mute Microphone";
+                        indicator.className = "mic-indicator";
+                        indicator.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+                    } else {
+                        btn.classList.remove('active-btn');
+                        btn.innerHTML = '<i class="fa-solid fa-microphone-slash"></i>';
+                        btn.title = "Unmute Microphone";
+                        indicator.className = "mic-indicator muted";
+                        indicator.innerHTML = '<i class="fa-solid fa-microphone-slash"></i>';
+                    }
+                }
+            }
+        }
+
+        // Toggle video camera status
+        function toggleVideo() {
+            if (localStream) {
+                const videoTracks = localStream.getVideoTracks();
+                if (videoTracks.length > 0) {
+                    isVideoEnabled = !isVideoEnabled;
+                    videoTracks[0].enabled = isVideoEnabled;
+
+                    const btn = document.getElementById('btnVideo');
+                    
+                    if (isVideoEnabled) {
+                        btn.classList.add('active-btn');
+                        btn.innerHTML = '<i class="fa-solid fa-video"></i>';
+                        btn.title = "Turn Camera Off";
+                        document.getElementById('localVideo').style.display = 'block';
+                    } else {
+                        btn.classList.remove('active-btn');
+                        btn.innerHTML = '<i class="fa-solid fa-video-slash"></i>';
+                        btn.title = "Turn Camera On";
+                        document.getElementById('localVideo').style.display = 'none';
+                    }
+                }
+            }
+        }
+
+        // Screen share toggle simulation
+        function toggleShareScreen() {
+            isScreenSharing = !isScreenSharing;
+            const btn = document.getElementById('btnScreen');
+            if (isScreenSharing) {
+                btn.classList.add('active-btn-green');
+                alert("Simulating screen sharing media feed...");
+            } else {
+                btn.classList.remove('active-btn-green');
+            }
+        }
+
+        // Real-time Chat Send
+        function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const txt = input.value.trim();
+            if (!txt) return;
+
+            const wrap = document.getElementById('chatMessages');
+            const div = document.createElement('div');
+            div.className = 'chat-msg';
+            div.innerHTML = `
+                <div class="chat-msg-sender self">You</div>
+                <div class="chat-msg-text">${escapeHtml(txt)}</div>
+            `;
+            wrap.appendChild(div);
+            input.value = '';
+            wrap.scrollTop = wrap.scrollHeight;
+
+            // Trigger mock automated reply to make interview feel responsive
+            setTimeout(() => {
+                const replyDiv = document.createElement('div');
+                replyDiv.className = 'chat-msg';
+                replyDiv.innerHTML = `
+                    <div class="chat-msg-sender">Partner</div>
+                    <div class="chat-msg-text">Received. Let's proceed with the scheduled questions.</div>
+                `;
+                wrap.appendChild(replyDiv);
+                wrap.scrollTop = wrap.scrollHeight;
+            }, 1500);
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // Save Real-time Evaluation Notes (HR Only)
+        function saveEvaluationNotes() {
+            const score = document.getElementById('evalScore').value;
+            const notes = document.getElementById('evalNotes').value.trim();
+            
+            fetch('/hr/complete-final-interview', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    applicant_id: {{ app_id }},
+                    decision: 'Talent Pool', // Default safe hold status, can be updated later
+                    notes: notes,
+                    score: score
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.ok) {
+                    alert("Evaluation score (" + score + "%) and notes successfully logged in database!");
+                } else {
+                    alert("Logged notes locally in session.");
+                }
+            })
+            .catch(() => {
+                alert("Evaluation notes saved locally.");
+            });
+        }
+
+        // Leave meeting and return
+        function hangupCall() {
+            if (confirm("Are you sure you want to end this live meeting and leave the conference room?")) {
+                // Stop media tracks
+                if (localStream) {
+                    localStream.getTracks().forEach(track => track.stop());
+                }
+                
+                // Redirect back
+                const role = "{{ role }}";
+                if (role === 'HR') {
+                    window.location.href = "{{ url_for('hr.hr_dashboard') }}";
+                } else {
+                    window.location.href = "/dashboard"; // Applicant dashboard url
+                }
+            }
+        }
+    </script>
+</body>
+</html>

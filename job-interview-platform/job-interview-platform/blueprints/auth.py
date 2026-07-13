@@ -127,7 +127,7 @@ def login():
 
         cur = mysql.connection.cursor()
         cur.execute(
-            "SELECT user_id, password, user_type FROM users WHERE email = %s",
+            "SELECT user_id, password_hash, user_type FROM users WHERE email = %s",
             (email,),
         )
         result = cur.fetchone()
@@ -169,7 +169,7 @@ def staff_login():
         password = request.form["password"]
 
         cur = mysql.connection.cursor()
-        cur.execute("SELECT user_id, password, user_type FROM users WHERE email = %s", (email,))
+        cur.execute("SELECT user_id, password_hash, user_type FROM users WHERE email = %s", (email,))
         result = cur.fetchone()
         cur.close()
 
@@ -259,7 +259,7 @@ def register_staff():
 
         # Insert new staff member
         cur.execute("""
-            INSERT INTO users (email, username, password, user_type, contact_num)
+            INSERT INTO users (email, username, password_hash, user_type, contact_num)
             VALUES (%s, %s, %s, %s, %s)
         """, (email, username, password, usertype, contact_num))
 
@@ -348,7 +348,7 @@ def register():
         username = request.form["username"]
         password = generate_password_hash(request.form["password"])
         usertype = "Applicant" # Hardcoded to Applicant for public registration
-        contact_num = request.form.get("contact_num")
+        contact_num = request.form.get("contact_num") or request.form.get("contact_number")
 
         cur = mysql.connection.cursor()
         
@@ -366,7 +366,7 @@ def register():
 
         # Insert new user
         cur.execute("""
-            INSERT INTO users (email, username, password, user_type, contact_num)
+            INSERT INTO users (email, username, password_hash, user_type, contact_num)
             VALUES (%s, %s, %s, %s, %s)
         """, (email, username, password, usertype, contact_num))
 
@@ -469,7 +469,7 @@ def reset_password(token):
         new_password = generate_password_hash(request.form["password"])
         cur = mysql.connection.cursor()
         cur.execute(
-            "UPDATE users SET password = %s WHERE email = %s",
+            "UPDATE users SET password_hash = %s WHERE email = %s",
             (new_password, token),
         )
         mysql.connection.commit()
