@@ -341,17 +341,17 @@
             <div class="stat-panel">
                 <div class="stat-box">
                     <div class="stat-label">Users</div>
-                    <div class="stat-value">70,290</div>
+                    <div class="stat-value">{{ total_users }}</div>
                     <div class="stat-trend"><i class='bx bxs-up-arrow'></i> 49.9 %</div>
                     <div class="stat-subtext">Monthly comparison</div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-label">Active HR Users</div>
-                    <div class="stat-value">60,000</div>
+                    <div class="stat-value">{{ active_hr }}</div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-label">Active Applicants</div>
-                    <div class="stat-value">10,290</div>
+                    <div class="stat-value">{{ active_applicants }}</div>
                 </div>
             </div>
         </div>
@@ -947,15 +947,15 @@
                 <div class="metrics-grid">
                     <div class="metric-card">
                         <div class="metric-label">TOTAL USERS</div>
-                        <div class="metric-value">70,290</div>
+                        <div class="metric-value">{{ total_users }}</div>
                     </div>
                     <div class="metric-card">
                         <div class="metric-label">ACTIVE HR USERS</div>
-                        <div class="metric-value">60,000</div>
+                        <div class="metric-value">{{ active_hr }}</div>
                     </div>
                     <div class="metric-card">
                         <div class="metric-label">ACTIVE APPLICANTS</div>
-                        <div class="metric-value">10,290</div>
+                        <div class="metric-value">{{ active_applicants }}</div>
                     </div>
                     <div class="metric-card">
                         <div class="metric-label">AVG. REVIEW TIME</div>
@@ -970,7 +970,7 @@
                     </div>
                     <div class="metric-card" style="grid-column: span 2;">
                         <div class="metric-label">APPLICATIONS (YTD)</div>
-                        <div class="metric-value">6,500 Total Applications</div>
+                        <div class="metric-value">{{ total_apps }} Total Applications</div>
                         <div style="font-size: 11px; color: #5B5959; margin-top: 5px;">Peak: December (950) | Low: January (150)</div>
                     </div>
                 </div>

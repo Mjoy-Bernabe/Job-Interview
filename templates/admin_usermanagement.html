@@ -294,7 +294,7 @@
     </div>
 
     <div class="users-count">
-        1,400 <span>Users</span>
+        {{ total_users }} <span>Users</span>
     </div>
 
     <!-- User Table -->
@@ -309,14 +309,22 @@
                 </tr>
             </thead>
             <tbody>
-                <!-- Row 1 -->
+                {% for user in users %}
                 <tr>
                     <td>
-                        <div class="user-name">Francis Adrian H. Gapol</div>
-                        <div class="user-email">francisadriangapol@gmail.com</div>
+                        <div class="user-name">{{ user.name }}</div>
+                        <div class="user-email">{{ user.email }}</div>
                     </td>
-                    <td><span class="badge-role badge-applicant">Applicant</span></td>
-                    <td class="status-active">Active</td>
+                    <td>
+                        {% if user.role == 'Applicant' %}
+                            <span class="badge-role badge-applicant">Applicant</span>
+                        {% elif user.role == 'HR' %}
+                            <span class="badge-role badge-hr">HR Staff</span>
+                        {% else %}
+                            <span class="badge-role" style="background: #e0e0e0; border: 1px solid #777; color: #333;">{{ user.role }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="status-active">{{ user.status }}</td>
                     <td>
                         <div class="action-buttons">
                             <button class="btn-action">Message</button>
@@ -324,66 +332,7 @@
                         </div>
                     </td>
                 </tr>
-                <!-- Row 2 -->
-                <tr>
-                    <td>
-                        <div class="user-name">Francis Adrian H. Gapol</div>
-                        <div class="user-email">francisadriangapol@gmail.com</div>
-                    </td>
-                    <td><span class="badge-role badge-hr">HR Staff</span></td>
-                    <td class="status-active">Active</td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn-action">Message</button>
-                            <button class="btn-action">Edit</button>
-                        </div>
-                    </td>
-                </tr>
-                <!-- Row 3 -->
-                <tr>
-                    <td>
-                        <div class="user-name">Francis Adrian H. Gapol</div>
-                        <div class="user-email">francisadriangapol@gmail.com</div>
-                    </td>
-                    <td><span class="badge-role badge-hr">HR Staff</span></td>
-                    <td class="status-inactive">Inactive</td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn-action">Message</button>
-                            <button class="btn-action">Edit</button>
-                        </div>
-                    </td>
-                </tr>
-                <!-- Row 4 -->
-                <tr>
-                    <td>
-                        <div class="user-name">Francis Adrian H. Gapol</div>
-                        <div class="user-email">francisadriangapol@gmail.com</div>
-                    </td>
-                    <td><span class="badge-role badge-applicant">Applicant</span></td>
-                    <td class="status-active">Active</td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn-action">Message</button>
-                            <button class="btn-action">Edit</button>
-                        </div>
-                    </td>
-                </tr>
-                <!-- Row 5 -->
-                <tr>
-                    <td>
-                        <div class="user-name">Francis Adrian H. Gapol</div>
-                        <div class="user-email">francisadriangapol@gmail.com</div>
-                    </td>
-                    <td><span class="badge-role badge-applicant">Applicant</span></td>
-                    <td class="status-active">Active</td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn-action">Message</button>
-                            <button class="btn-action">Edit</button>
-                        </div>
-                    </td>
-                </tr>
+                {% endfor %}
                 <!-- Empty State -->
                 <tr id="um-empty-state" style="display: none;">
                     <td colspan="4" style="text-align: center; padding: 40px; color: #5B5959; font-family: 'Poppins', sans-serif;">
