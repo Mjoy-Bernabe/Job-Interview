@@ -305,6 +305,13 @@
                     <td class="action-text">Log-In</td>
                     <td class="details-text">No details...</td>
                 </tr>
+                <!-- Empty State -->
+                <tr id="log-empty-state" style="display: none;">
+                    <td colspan="5" style="text-align: center; padding: 40px; color: #5B5959; font-family: 'Poppins', sans-serif;">
+                        <i class='bx bx-search' style="font-size: 40px; color: #CCCCCC; margin-bottom: 10px;"></i>
+                        <br>No records available based on your search filters.
+                    </td>
+                </tr>
             </tbody>
         </table>
     </div>
@@ -317,7 +324,8 @@
         const toDate = document.getElementById('log-to-date');
         const actionFilter = document.getElementById('log-action-filter');
         const tbody = document.querySelector('.logs-table tbody');
-        let rows = Array.from(tbody.querySelectorAll('tr'));
+        const emptyState = document.getElementById('log-empty-state');
+        let rows = Array.from(tbody.querySelectorAll('tr')).filter(r => r !== emptyState);
 
         function filterLogs() {
             const query = searchInput.value.toLowerCase();
@@ -327,6 +335,8 @@
             
             if (from) from.setHours(0,0,0,0);
             if (to) to.setHours(23,59,59,999);
+
+            let visibleCount = 0;
 
             rows.forEach(row => {
                 const userId = row.cells[0].innerText.toLowerCase();
@@ -346,8 +356,17 @@
                 if (from && rowDate < from) matchesDate = false;
                 if (to && rowDate > to) matchesDate = false;
 
-                row.style.display = (matchesSearch && matchesAction && matchesDate) ? '' : 'none';
+                const isVisible = matchesSearch && matchesAction && matchesDate;
+                row.style.display = isVisible ? '' : 'none';
+                if (isVisible) visibleCount++;
             });
+            
+            // Handle empty state
+            if (visibleCount === 0) {
+                emptyState.style.display = '';
+            } else {
+                emptyState.style.display = 'none';
+            }
         }
 
         searchInput.addEventListener('input', filterLogs);
