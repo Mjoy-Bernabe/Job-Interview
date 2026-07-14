@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recruitment Management</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-red: #B3241B; /* deep red background */
+            --sidebar-active: #FDE8E8;
+            --text-red: #B3241B;
+            --text-green: #00B050;
+            --bg-gray: #DCDCDC;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--primary-red);
+            color: white;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        h1, h2, h3, h4, .count, .tab, .rm-card h2, .va-list-title {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            background-color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: var(--text-red);
+        }
+
+        .logo-area {
+            padding: 30px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: 700;
+            font-size: 13px;
+            line-height: 1.2;
+            margin-bottom: 20px;
+            color: black;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .logo-icon {
+            background-color: var(--text-red);
+            color: white;
+            padding: 10px 15px;
+            font-size: 40px;
+            font-weight: 700;
+            letter-spacing: -3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .logo-icon::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            right: -15px;
+            width: 25px;
+            height: 25px;
+            background-color: white;
+        }
+
+        .nav-links { list-style: none; flex-grow: 1; margin-top: 20px; }
+        .nav-links li { margin-bottom: 15px; }
+        .nav-links a {
+            color: var(--text-red);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 30px;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        .nav-links a.active {
+            background-color: var(--sidebar-active);
+        }
+        .nav-links a i {
+            font-size: 24px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            width: calc(100% - 320px);
+        }
+
+        /* Recruitment Top Card */
+        .rm-card-container {
+            padding: 40px 40px 10px 40px;
+        }
+        .rm-card {
+            background-color: #F38A84;
+            padding: 25px 40px;
+            border-radius: 12px;
+            color: white;
+            box-shadow: 0 10px 4px rgba(0,0,0,0.15);
+        }
+        .rm-card h2 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+        .rm-card p {
+            font-size: 16px;
+            font-style: italic;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .top-tabs {
+            display: flex;
+            margin-top: 20px;
+            border-bottom: 2px solid white;
+        }
+        .top-tabs .tab {
+            padding: 12px 30px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .top-tabs .tab.active {
+            background-color: white;
+            color: var(--text-red);
+        }
+        .top-tabs .tab.inactive {
+            background-color: transparent;
+            color: white;
+        }
+
+        .dashboard-content {
+            padding: 40px;
+            width: 100%;
+        }
+
+        /* View Layout (Reused styles from View Applicants) */
+        .va-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 40px;
+        }
+        .va-search {
+            display: flex;
+            align-items: center;
+            background-color: white;
+            border-radius: 8px;
+            padding: 10px 15px;
+            width: 350px;
+        }
+        .va-search input {
+            border: none;
+            outline: none;
+            flex-grow: 1;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            color: #333;
+        }
+        .va-search i {
+            color: #7f7f7f;
+            font-size: 18px;
+        }
+        .va-sort {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .va-sort-btn {
+            background-color: #f0a8a8;
+            color: var(--text-red);
+            border: none;
+            padding: 6px 20px;
+            border-radius: 4px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+        }
+        .va-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .va-list-title {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+            flex-grow: 1;
+            line-height: 1.2;
+        }
+        .va-list-title::after {
+            content: '';
+            display: block;
+            height: 2px;
+            flex-grow: 1;
+            background-color: white;
+        }
+        
+        .recruitment-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            margin-top: 20px;
+        }
+        .recruitment-table th {
+            background-color: #FF4135;
+            color: white;
+            padding: 10px;
+            border: 1px solid white;
+            text-align: center;
+        }
+        .recruitment-table td {
+            background-color: white;
+            color: #FF4135;
+            padding: 8px 10px;
+            border: 1px solid #FF4135;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+                <div class="logo-area" style="padding: 0; text-align: center;">
+            <img src="{{ url_for('static', filename='logo.svg') }}" alt="H2 Logo" style="width: 100%; display: block; margin: 0 auto;">
+            <div style="font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; color: #B3241B; letter-spacing: 4px; text-transform: uppercase; margin-top: 5px; margin-bottom: 25px;">Administration</div>
+        </div>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('admin.dashboard') }}"><img src="{{ url_for('static', filename='Dashboard Layout.svg') }}" alt="Dashboard" style="width: 2em; height: 2em;"> Dashboard</a></li>
+            <li><a href="{{ url_for('admin.recruitment') }}" class="active"><img src="{{ url_for('static', filename='Client Management.svg') }}" alt="Recruitment" style="width: 2em; height: 2em;"> Recruitment</a></li>
+            <li><a href="{{ url_for('admin.analytics') }}"><img src="{{ url_for('static', filename='Graph.svg') }}" alt="Analytics" style="width: 2em; height: 2em;"> Analytics</a></li>
+            <li><a href="#"><img src="{{ url_for('static', filename='Automation.svg') }}" alt="Settings" style="width: 2em; height: 2em;"> Settings</a></li>
+            <li><a href="#"><img src="{{ url_for('static', filename='Profile.svg') }}" alt="Profile" style="width: 2em; height: 2em;"> Profile</a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <div class="rm-card-container">
+            <div class="rm-card">
+                <h2>Recruitment Management</h2>
+                <p>Manage position requirements and set applicant limits.</p>
+            </div>
+        </div>
+
+        <div class="top-tabs">
+            <div class="tab active" id="tab-active-jobs">Active Job Posts</div>
+            <div class="tab inactive" id="tab-post-job">Post a Job</div>
+        </div>
+
+        <div class="dashboard-content" id="active-jobs-content">
+            <div class="va-header">
+                <div class="va-search">
+                    <input type="text" placeholder="Job applications and more">
+                    <i class='bx bx-search'></i>
+                </div>
+                <div class="va-sort">
+                    <i class='bx bx-slider-alt'></i>
+                    <button class="va-sort-btn">Sort By</button>
+                </div>
+            </div>
+            
+            <div class="va-list-header">
+                <div class="va-list-title">Active Job<br>Application List</div>
+            </div>
+
+            <table class="recruitment-table">
+                <thead>
+                    <tr>
+                        <th>Position</th>
+                        <th>Status</th>
+                        <th>Limit</th>
+                        <th>Education</th>
+                        <th>Experience</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Generate 16 rows -->
+                    <tr><td>Position</td><td>Status</td><td>Limit</td><td>Education</td><td>Experience</td><td>Status</td></tr>
+                    <tr><td>Position</td><td>Status</td><td>Limit</td><td>Education</td><td>Experience</td><td>Status</td></tr>
+                    <tr><td>Position</td><td>Status</td><td>Limit</td><td>Education</td><td>Experience</td><td>Status</td></tr>
+                    <tr><td>Position</td><td>Status</td><td>Limit</td><td>Education</td><td>Experience</td><td>Status</td></tr>
+                    <tr><td>Position</td><td>Status</td><td>Limit</td><td>Education</td><td>Experience</td><td>Status</td></tr>
+                    <tr><td>Position</td><td>Status</td><td>Limit</td><td>Education</td><td>Experience</td><td>Status</td></tr>
+                    <tr><td>Position</td><td>Status</td><td>Limit</td><td>Education</td><td>Experience</td><td>Status</td></tr>
+                    <tr><td>Position</td><td>Status</td><td>Limit</td><td>Education</td><td>Experience</td><td>Status</td></tr>
+                    <tr><td>Position</td><td>Status</td><td>Limit</td><td>Education</td><td>Experience</td><td>Status</td></tr>
+                    <tr><td>Position</td><td>Status</td><td>Limit</td><td>Education</td><td>Experience</td><td>Status</td></tr>
+                    <tr><td>Position</td><td>Status</td><td>Limit</td><td>Education</td><td>Experience</td><td>Status</td></tr>
+                    <tr><td>Position</td><td>Status</td><td>Limit</td><td>Education</td><td>Experience</td><td>Status</td></tr>
+                    <tr><td>Position</td><td>Status</td><td>Limit</td><td>Education</td><td>Experience</td><td>Status</td></tr>
+                    <tr><td>Position</td><td>Status</td><td>Limit</td><td>Education</td><td>Experience</td><td>Status</td></tr>
+                    <tr><td>Position</td><td>Status</td><td>Limit</td><td>Education</td><td>Experience</td><td>Status</td></tr>
+                    <tr><td>Position</td><td>Status</td><td>Limit</td><td>Education</td><td>Experience</td><td>Status</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</body>
+</html>

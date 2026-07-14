@@ -1,0 +1,429 @@
+{% set active_page = 'troubleshooting' %}
+{% extends "admin_base.html" %}
+
+{% block title %}Troubleshooting{% endblock %}
+{% block page_title %}Troubleshooting{% endblock %}
+
+{% block head %}
+<style>
+    /* Specific CSS for Troubleshooting */
+    /* Header Card */
+    .ts-header-card { 
+        background-color: #FFFFFF; 
+        border: 1px solid #CCCCCC; 
+        box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.25); 
+        border-radius: 8px; 
+        padding: 20px 30px; 
+        display: flex; 
+        align-items: center; 
+        gap: 30px; 
+        margin-bottom: 25px; 
+    }
+    
+    .ts-icon {
+        font-size: 80px;
+        color: var(--primary-red);
+    }
+
+    .ts-header-divider { width: 1px; height: 80px; background-color: #A69C9C; }
+    
+    .ts-header-text { 
+        display: flex; 
+        flex-direction: column; 
+        gap: 15px; 
+        max-width: 650px; 
+    }
+    
+    .ts-header-title { 
+        font-weight: 500; 
+        font-size: 15px; 
+        color: var(--primary-red); 
+    }
+
+    .ts-header-subtitle { 
+        font-weight: 400; 
+        font-size: 15px; 
+        line-height: 22px; 
+        color: var(--text-dark); 
+    }
+
+    /* Action Bar (Search & Filter) */
+    .action-bar {
+        background-color: #FFFFFF;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: 6px;
+        padding: 15px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .action-search {
+        display: flex;
+        align-items: center;
+        background-color: #E9E9E9;
+        border-radius: 4px;
+        padding: 8px 15px;
+        gap: 10px;
+        flex: 1;
+        max-width: 400px;
+    }
+
+    .action-search input {
+        border: none;
+        background: transparent;
+        outline: none;
+        width: 100%;
+        font-family: 'Poppins', sans-serif;
+        font-size: 14px;
+        color: var(--text-gray);
+    }
+
+    .action-filter {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .action-select {
+        border: 1px solid rgba(91, 89, 89, 0.3);
+        border-radius: 5px;
+        padding: 8px 15px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 12px;
+        color: var(--text-gray);
+        background-color: transparent;
+        outline: none;
+        cursor: pointer;
+        width: 150px;
+    }
+
+    /* Count Title */
+    .complaints-count {
+        font-weight: 700;
+        font-size: 40px;
+        color: var(--primary-red);
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .complaints-count span {
+        font-size: 20px;
+        color: var(--text-dark);
+        font-weight: 600;
+    }
+
+    /* Table Styles */
+    .ts-table-container {
+        background-color: #FFFFFF;
+        border: 2px solid rgba(166, 156, 156, 0.5);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .ts-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+
+    .ts-table th {
+        padding: 15px 20px;
+        font-weight: 600;
+        font-size: 15px;
+        color: #FFFFFF;
+        background-color: var(--primary-red);
+    }
+
+    .ts-table td {
+        padding: 20px;
+        border-bottom: 1px solid #D2CDCD;
+        vertical-align: middle;
+        font-weight: 600;
+        font-size: 12px;
+        color: var(--text-gray);
+    }
+
+    .ts-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Table Columns Alignment */
+    .col-id { width: 10%; text-align: center; }
+    .col-contact { width: 25%; text-align: center; }
+    .col-date { width: 15%; text-align: center; }
+    .col-category { width: 15%; text-align: center; }
+    .col-summary { width: 20%; text-align: center; }
+    .col-status { width: 15%; text-align: center; }
+
+    .ts-table td {
+        text-align: center;
+    }
+    
+    .ts-table td:nth-child(2) {
+        font-weight: 300;
+        text-decoration: underline;
+    }
+    
+    .ts-table td:nth-child(5) {
+        font-weight: 300;
+    }
+    
+    .ts-table td:nth-child(3) {
+        font-weight: 500;
+    }
+
+    /* Active Row State */
+    .ts-table tr.row-active {
+        background-color: rgba(102, 179, 255, 0.15);
+    }
+    .ts-table tbody tr {
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    /* Status Dropdown */
+    .status-dropdown {
+        position: relative;
+        display: inline-block;
+    }
+    .status-dropdown-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        margin-top: 5px;
+        background-color: #2C2C2C;
+        border-radius: 4px;
+        padding: 8px;
+        z-index: 10;
+        flex-direction: column;
+        gap: 8px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+    }
+    .status-dropdown-menu.show {
+        display: flex;
+    }
+    .status-dropdown-menu .status-badge {
+        pointer-events: auto; /* Ensure clickable */
+    }
+
+    /* Status Badges */
+    .status-badge {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 5px;
+        border-radius: 3px;
+        font-size: 12px;
+        font-weight: 600;
+        text-align: center;
+        width: 100px;
+        box-sizing: border-box;
+        white-space: nowrap;
+        cursor: pointer;
+        user-select: none;
+    }
+    .status-badge i {
+        font-size: 14px;
+    }
+    
+    .status-active {
+        background-color: #66B3FF;
+        border: 1px solid #1256D4;
+        color: #1256D4;
+    }
+    
+    .status-resolved {
+        background-color: rgba(34, 178, 56, 0.47);
+        border: 1px solid #0D9120;
+        color: #0D9120;
+    }
+    
+    .status-inprogress {
+        background-color: #B35474;
+        border: 1px solid #6C0C41;
+        color: #6C0C41;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <!-- Header Card -->
+    <div class="ts-header-card">
+        <i class='bx bx-error ts-icon'></i>
+        <div class="ts-header-divider"></div>
+        <div class="ts-header-text">
+            <div class="ts-header-title">Monitor and resolve system issues.</div>
+            <div class="ts-header-subtitle">View reported errors, diagnose problems, and manage issue resolutions.</div>
+        </div>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="action-bar">
+        <div class="action-search">
+            <i class='bx bx-menu'></i>
+            <input type="text" placeholder="Search applicants or staff">
+            <i class='bx bx-search'></i>
+        </div>
+        <div class="action-filter">
+            <select class="action-select">
+                <option>Select user type</option>
+                <option>Applicant</option>
+                <option>HR Staff</option>
+            </select>
+            <select class="action-select">
+                <option>Date Joined</option>
+                <option>Newest</option>
+                <option>Oldest</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="complaints-count">
+        100 <span>Ongoing Complaints</span>
+    </div>
+
+    <!-- User Table -->
+    <div class="ts-table-container">
+        <table class="ts-table">
+            <thead>
+                <tr>
+                    <th class="col-id">Case ID</th>
+                    <th class="col-contact">Contact</th>
+                    <th class="col-date">Date</th>
+                    <th class="col-category">Category</th>
+                    <th class="col-summary">Summary</th>
+                    <th class="col-status">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Row 1 -->
+                <tr>
+                    <td>10002</td>
+                    <td><a href="mailto:mailto:@gmail.com" style="color: inherit; text-decoration: underline;">mailto:@gmail.com</a></td>
+                    <td>06/07/2024</td>
+                    <td style="color: #333;">Internet</td>
+                    <td>Complaints...</td>
+                    <td><span class="status-badge status-active">Active</span></td>
+                </tr>
+                <!-- Row 2 -->
+                <tr>
+                    <td>10003</td>
+                    <td><a href="mailto:mailto:@gmail.com" style="color: inherit; text-decoration: underline;">mailto:@gmail.com</a></td>
+                    <td>06/07/2024</td>
+                    <td style="color: #333;">Maintenance</td>
+                    <td>Complaints...</td>
+                    <td><span class="status-badge status-resolved">Resolved</span></td>
+                </tr>
+                <!-- Row 3 -->
+                <tr>
+                    <td>10004</td>
+                    <td><a href="mailto:mailto:@gmail.com" style="color: inherit; text-decoration: underline;">mailto:@gmail.com</a></td>
+                    <td>06/07/2024</td>
+                    <td style="color: #333;">Software</td>
+                    <td>Complaints...</td>
+                    <td><span class="status-badge status-inprogress">In-Progress</span></td>
+                </tr>
+                <!-- Row 4 -->
+                <tr>
+                    <td>10005</td>
+                    <td><a href="mailto:mailto:@gmail.com" style="color: inherit; text-decoration: underline;">mailto:@gmail.com</a></td>
+                    <td>06/07/2024</td>
+                    <td style="color: #333;">Internet</td>
+                    <td>Complaints...</td>
+                    <td><span class="status-badge status-active">Active</span></td>
+                </tr>
+                <!-- Row 5 -->
+                <tr>
+                    <td>10001</td>
+                    <td><a href="mailto:mailto:@gmail.com" style="color: inherit; text-decoration: underline;">mailto:@gmail.com</a></td>
+                    <td>06/07/2024</td>
+                    <td style="color: #333;">Internet</td>
+                    <td>Complaints...</td>
+                    <td><span class="status-badge status-active">Active</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const badges = document.querySelectorAll('.ts-table tbody .status-badge');
+    
+    badges.forEach(badge => {
+        // 1. Add chevron icon
+        badge.innerHTML += " <i class='bx bx-chevron-down'></i>";
+        
+        // 2. Wrap in dropdown container
+        const wrapper = document.createElement('div');
+        wrapper.className = 'status-dropdown';
+        badge.parentNode.insertBefore(wrapper, badge);
+        wrapper.appendChild(badge);
+        
+        // 3. Create dropdown menu
+        const menu = document.createElement('div');
+        menu.className = 'status-dropdown-menu';
+        
+        const options = [
+            { text: "Active", class: "status-active" },
+            { text: "Resolved", class: "status-resolved" },
+            { text: "In-Progress", class: "status-inprogress" }
+        ];
+        
+        options.forEach(opt => {
+            const optBadge = document.createElement('span');
+            optBadge.className = `status-badge ${opt.class}`;
+            optBadge.innerHTML = opt.text;
+            
+            optBadge.addEventListener('click', function(e) {
+                e.stopPropagation();
+                // Update parent badge
+                badge.className = `status-badge ${opt.class}`;
+                badge.innerHTML = opt.text + " <i class='bx bx-chevron-down'></i>";
+                menu.classList.remove('show');
+            });
+            
+            menu.appendChild(optBadge);
+        });
+        
+        wrapper.appendChild(menu);
+        
+        // 4. Toggle menu on click
+        badge.addEventListener('click', function(e) {
+            e.stopPropagation();
+            // Close other menus first
+            document.querySelectorAll('.status-dropdown-menu').forEach(m => {
+                if (m !== menu) m.classList.remove('show');
+            });
+            menu.classList.toggle('show');
+            
+            // Trigger row active
+            const row = wrapper.closest('tr');
+            document.querySelectorAll('.ts-table tbody tr').forEach(r => r.classList.remove('row-active'));
+            if(row) row.classList.add('row-active');
+        });
+    });
+    
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.status-dropdown-menu').forEach(m => m.classList.remove('show'));
+    });
+    
+    // Row click event for highlighting
+    document.querySelectorAll('.ts-table tbody tr').forEach(row => {
+        row.addEventListener('click', function() {
+            document.querySelectorAll('.ts-table tbody tr').forEach(r => r.classList.remove('row-active'));
+            this.classList.add('row-active');
+        });
+    });
+});
+</script>
+{% endblock %}

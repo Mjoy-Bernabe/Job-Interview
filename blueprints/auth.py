@@ -14,8 +14,75 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from extensions import mysql, logger
 from services.otp_service import generate_otp, verify_otp
 from services.email_service import send_otp_email
+from session_utils import ADMIN_COOKIE, HR_COOKIE, use_portal_cookie
 
 auth_bp = Blueprint("auth", __name__)
+
+
+def _role_target(user_type):
+    role = (user_type or "").strip().lower()
+    # Separate HR and Admin routing here
+    if role in ("hr", "hrpage"):
+        return "hr.hr_dashboard"
+    if role == "admin":
+        return "admin.dashboard"
+    if role == "applicant":
+        return "applicants.dashboard"
+    return None
+
+
+def _current_session_role():
+    """Return the lowercase user_type for the currently logged-in session,
+    or None if there is no session / the user no longer exists."""
+    if "user_id" not in session:
+        return None
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT user_type FROM users WHERE user_id = %s", (session["user_id"],))
+    result = cur.fetchone()
+    cur.close()
+    if not result:
+        return None
+    return (result[0] or "").strip().lower()
+
+
+def _bounce_if_logged_in(allowed_roles):
+    """
+    If the person already has an active session, decide what to do with it
+    for THIS particular login/registration page:
+
+    - If their session role belongs on this page (e.g. an Applicant hitting
+      /login, or HR/Admin hitting /staff-login), send them straight to their
+      dashboard, as before.
+    - If their session role does NOT belong here (e.g. an Applicant session
+      hitting /staff-login, or an HR/Admin session hitting /login), the old
+      code silently redirected them to their OTHER portal's dashboard, which
+      looked like "the wrong portal's page is showing". Instead we clear the
+      stale session so this login page renders normally and the person can
+      log in as the role this page is actually for.
+
+    Returns a redirect response if the person should be bounced away, or
+    None if the caller should continue rendering its own login page.
+
+    NOTE: this is for the /login and /register (Applicant) pages only,
+    which use the plain default session cookie. /staff-login and
+    /register-staff intentionally do NOT use any bounce logic — see the
+    comment at the top of staff_login() for why.
+    """
+    role = _current_session_role()
+    if role is None:
+        return None
+
+    if role in allowed_roles:
+        target = _role_target(role)
+        if target:
+            return redirect(url_for(target))
+        return None
+
+    # Logged in, but under a role that doesn't belong on this page —
+    # log that stale session out so the correct login form shows instead
+    # of the other role's dashboard.
+    session.clear()
+    return None
 
 
 @auth_bp.route("/")
@@ -23,32 +90,21 @@ def index():
     return render_template("index.html")
 
 
+# ---------- 1. APPLICANT LOGIN ----------
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
-    # Add this check at the beginning
-    if "user_id" in session:
-        # Redirect logged-in users based on their usertype
-        cur = mysql.connection.cursor()
-        cur.execute("SELECT usertype FROM users WHERE id = %s",
-                    (session["user_id"],))
-        result = cur.fetchone()
-        cur.close()
-
-        if result:
-            if result[0] == "hrpage":
-                return redirect(url_for("hr.hr_dashboard"))
-            elif result[0] == "applicant":
-                return redirect(url_for("applicants.dashboard"))
+    bounce = _bounce_if_logged_in(allowed_roles={"applicant"})
+    if bounce:
+        return bounce
 
     error = None
     if request.method == "POST":
-        # Verify reCAPTCHA
+        # --- Verify reCAPTCHA ---
         recaptcha_response = request.form.get('g-recaptcha-response')
         if not recaptcha_response:
             error = "Please complete the reCAPTCHA verification."
             return render_template("login.html", error=error)
 
-        # Verify with Google
         secret_key = "6LfLvBEsAAAAACY2WgJ9qMIEjaNDEWMOPH_Xw73w"
         verify_url = "https://www.google.com/recaptcha/api/siteverify"
         data = {
@@ -65,30 +121,28 @@ def login():
             error = "Unable to verify reCAPTCHA. Please try again."
             return render_template("login.html", error=error)
 
-        # Original login logic
+        # --- Login Logic ---
         email = request.form["email"]
         password = request.form["password"]
 
         cur = mysql.connection.cursor()
         cur.execute(
-            "SELECT id, password, usertype FROM users WHERE email = %s", (
-                email,)
+            "SELECT user_id, password_hash, user_type FROM users WHERE email = %s",
+            (email,),
         )
         result = cur.fetchone()
         cur.close()
 
         if result:
             if check_password_hash(result[1], password):
-                session["user_id"] = result[0]
-                session["email"] = email
-                if result[2] == "hrpage":
-                    flash("Login successful! Welcome, HR.", "success")
-                    return redirect(url_for("hr.hr_dashboard"))
-                elif result[2] == "applicant":
+                # STRICT ROLE CHECK: Deny HR/Admin here
+                if result[2] in ('HR', 'Admin'):
+                    error = "Staff members must use the Staff Login portal (/staff-login)."
+                else:
+                    session["user_id"] = result[0]
+                    session["email"] = email
                     flash("Login successful! Welcome, Applicant.", "success")
                     return redirect(url_for("applicants.dashboard"))
-                else:
-                    error = "Usertype not recognized."
             else:
                 error = "Incorrect password."
         else:
@@ -97,24 +151,170 @@ def login():
     return render_template("login.html", error=error)
 
 
-@auth_bp.route("/check_session")
-def check_session():
-    """Check if user is logged in"""
-    if "user_id" in session:
+# ---------- 2. STAFF LOGIN (HR / ADMIN) ----------
+@auth_bp.route("/staff-login", methods=["GET", "POST"])
+def staff_login():
+    # NOTE: We deliberately do NOT auto-redirect GET requests here based on
+    # an existing HR or Admin session. Admin and HR have separate cookies
+    # (see session_utils.py) specifically so both can be logged in at once
+    # in the same browser — if this page bounced you straight to whichever
+    # one is already active, you could never reach the form to log into
+    # the OTHER role while the first stays logged in. So this page always
+    # shows the form; logging in just writes to the correct cookie for the
+    # role you authenticate as, leaving any other active portal untouched.
+
+    error = None
+    if request.method == "POST":
+        email = request.form["email"]
+        password = request.form["password"]
+
         cur = mysql.connection.cursor()
-        cur.execute("SELECT usertype FROM users WHERE id = %s",
-                    (session["user_id"],))
+        cur.execute("SELECT user_id, password_hash, user_type FROM users WHERE email = %s", (email,))
         result = cur.fetchone()
         cur.close()
 
         if result:
-            return {"logged_in": True, "usertype": result[0]}
+            if check_password_hash(result[1], password):
+                # STRICT ROLE CHECK: Deny Applicants here
+                if result[2] == 'Applicant':
+                    error = "Applicants must use the standard login page (/login)."
+                else:
+                    target = _role_target(result[2])
+
+                    # Point this login at the correct portal cookie BEFORE
+                    # writing to `session`, so HR and Admin logins land in
+                    # their own cookie (admin_session / hr_session) instead
+                    # of overwriting each other. This is what lets someone
+                    # stay logged in as HR in one tab and Admin in another.
+                    if target == "hr.hr_dashboard":
+                        use_portal_cookie(HR_COOKIE)
+                    elif target == "admin.dashboard":
+                        use_portal_cookie(ADMIN_COOKIE)
+
+                    session.clear()
+                    session["user_id"] = result[0]
+                    session["email"] = email
+
+                    # Direct them to their specific dashboards
+                    if target == "hr.hr_dashboard":
+                        flash("Login successful! Welcome to the HR Portal.", "success")
+                        return redirect(url_for("hr.hr_dashboard"))
+                    elif target == "admin.dashboard":
+                        flash("Login successful! Welcome, Admin.", "success")
+                        return redirect(url_for("admin.dashboard"))
+                    else:
+                        error = "Role recognized, but dashboard not found."
+            else:
+                error = "Incorrect password."
+        else:
+            error = "Email not found."
+
+    return render_template("staff_log.html", error=error)
+
+
+# ---------- 3. STAFF REGISTRATION ----------
+@auth_bp.route("/register-staff", methods=["GET", "POST"])
+def register_staff():
+
+    if request.method == "POST":
+        # --- Verify reCAPTCHA ---
+        recaptcha_response = request.form.get("g-recaptcha-response")
+        secret_key = "6LfLvBEsAAAAACY2WgJ9qMIEjaNDEWMOPH_Xw73w"
+
+        try:
+            recaptcha_verify = requests.post(
+                "https://www.google.com/recaptcha/api/siteverify",
+                data={"secret": secret_key, "response": recaptcha_response}
+            ).json()
+
+            if not recaptcha_verify.get("success"):
+                return render_template("register_staff.html", error="Recaptcha verification failed.")
+        except:
+            return render_template("register_staff.html", error="Unable to verify reCAPTCHA.")
+
+        # --- Capture Form Data ---
+        email = request.form["email"]
+        username = request.form["username"]
+        password = generate_password_hash(request.form["password"])
+        contact_num = request.form.get("contact_num")
+        
+        # Ensure only HR or Admin can be selected here
+        usertype = request.form.get("user_type")
+        if usertype not in ["Admin", "HR"]:
+            return render_template("register_staff.html", error="Invalid staff role selected.")
+
+        cur = mysql.connection.cursor()
+        
+        # Check if email or username is taken
+        cur.execute("SELECT email, username FROM users WHERE email = %s OR username = %s", (email, username))
+        existing_user = cur.fetchone()
+        
+        if existing_user:
+            cur.close()
+            existing_email, existing_username = existing_user
+            if existing_email == email:
+                return render_template("register_staff.html", error="Email already registered.")
+            else:
+                return render_template("register_staff.html", error="Username is already taken.")
+
+        # Insert new staff member
+        cur.execute("""
+            INSERT INTO users (email, username, password_hash, user_type, contact_num)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (email, username, password, usertype, contact_num))
+
+        mysql.connection.commit()
+        cur.close()
+
+        flash(f"Staff account created successfully for {username}. Please log in.", "success")
+        return redirect(url_for("auth.staff_login"))
+
+    return render_template("register_staff.html")
+
+
+# ---------- 4. SESSION / LOGOUT / APPLICANT REGISTRATION ----------
+@auth_bp.route("/check_session")
+def check_session():
+    """
+    Check if user is logged in. Admin and HR each have their own cookie
+    now (see session_utils.py), and this endpoint is called from the
+    shared staff-login page, so it checks all three portals rather than
+    just the default cookie.
+    """
+    from session_utils import ADMIN_COOKIE, HR_COOKIE, read_portal_session
+
+    # Default cookie (Applicant, or whatever this path resolves to)
+    if "user_id" in session:
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT user_type FROM users WHERE user_id = %s", (session["user_id"],))
+        result = cur.fetchone()
+        cur.close()
+        if result:
+            # NOTE: both "user_type" and "usertype" are included since the
+            # front-end pages read different key spellings.
+            return {"logged_in": True, "user_type": result[0], "usertype": result[0]}
+
+    # Staff cookies
+    for cookie_name in (ADMIN_COOKIE, HR_COOKIE):
+        data = read_portal_session(cookie_name)
+        user_id = data.get("user_id")
+        if user_id:
+            cur = mysql.connection.cursor()
+            cur.execute("SELECT user_type FROM users WHERE user_id = %s", (user_id,))
+            result = cur.fetchone()
+            cur.close()
+            if result:
+                return {"logged_in": True, "user_type": result[0], "usertype": result[0]}
 
     return {"logged_in": False}
 
 
 @auth_bp.route("/logout")
 def logout():
+    # This is the Applicant portal's logout (default session cookie).
+    # Admin and HR now have their own dedicated logout routes
+    # (admin.logout / hr.logout) so logging out of one portal never
+    # touches the other's cookie — see session_utils.py.
     session.clear()
     response = redirect(url_for("auth.login"))
     # Prevent caching
@@ -126,19 +326,9 @@ def logout():
 
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
-    # Add this check at the beginning
-    if "user_id" in session:
-        cur = mysql.connection.cursor()
-        cur.execute("SELECT usertype FROM users WHERE id = %s",
-                    (session["user_id"],))
-        result = cur.fetchone()
-        cur.close()
-
-        if result:
-            if result[0] == "hrpage":
-                return redirect(url_for("hr.hr_dashboard"))
-            elif result[0] == "applicant":
-                return redirect(url_for("applicants.dashboard"))
+    bounce = _bounce_if_logged_in(allowed_roles={"applicant"})
+    if bounce:
+        return bounce
 
     if request.method == "POST":
         # --- Verify reCAPTCHA ---
@@ -157,19 +347,28 @@ def register():
         email = request.form["email"]
         username = request.form["username"]
         password = generate_password_hash(request.form["password"])
-        usertype = "applicant"
-        contact_number = request.form.get("contact_number")
+        usertype = "Applicant" # Hardcoded to Applicant for public registration
+        contact_num = request.form.get("contact_num") or request.form.get("contact_number")
 
         cur = mysql.connection.cursor()
-        cur.execute("SELECT id FROM users WHERE email = %s", (email,))
-        if cur.fetchone():
+        
+        # Check if both email or username are already taken
+        cur.execute("SELECT email, username FROM users WHERE email = %s OR username = %s", (email, username))
+        existing_user = cur.fetchone()
+        
+        if existing_user:
             cur.close()
-            return render_template("register.html", error="Email already registered.")
+            existing_email, existing_username = existing_user
+            if existing_email == email:
+                return render_template("register.html", error="Email already registered.")
+            else:
+                return render_template("register.html", error="Username is already taken. Please choose another.")
 
+        # Insert new user
         cur.execute("""
-            INSERT INTO users (email, username, password, usertype, contact_number)
+            INSERT INTO users (email, username, password_hash, user_type, contact_num)
             VALUES (%s, %s, %s, %s, %s)
-        """, (email, username, password, usertype, contact_number))
+        """, (email, username, password, usertype, contact_num))
 
         mysql.connection.commit()
         cur.close()
@@ -180,33 +379,27 @@ def register():
     return render_template("register.html")
 
 
-# ---------- Support / Privacy ----------
-
-
+# ---------- 5. SUPPORT / PRIVACY ----------
 @auth_bp.route("/support")
 def support():
     return render_template("support.html")
 
-
 @auth_bp.route("/landing")
 def landing():
     return render_template("index.html")
-
 
 @auth_bp.route("/privacy")
 def privacy():
     return render_template("privacy.html")
 
 
-# ---------- Forgot password / OTP ----------
-
-
+# ---------- 6. FORGOT PASSWORD / OTP ----------
 @auth_bp.route("/forgot", methods=["GET", "POST"])
 def forgot_password():
     if request.method == "POST":
         email = request.form["email"]
         cur = mysql.connection.cursor()
-        cur.execute("SELECT id FROM users WHERE email = %s", (email,))
+        cur.execute("SELECT user_id FROM users WHERE email = %s", (email,))
         user = cur.fetchone()
         cur.close()
 
@@ -218,6 +411,7 @@ def forgot_password():
         if send_otp_email(email, otp):
             flash("OTP sent to your email.", "info")
             return redirect(url_for("auth.verify_otp_route", email=email))
+        
         flash("Failed to send OTP.", "error")
         return redirect(url_for("auth.forgot_password"))
 
@@ -249,7 +443,7 @@ def resend_otp():
         return {"success": False, "message": "Email is required."}
 
     cur = mysql.connection.cursor()
-    cur.execute("SELECT id FROM users WHERE email = %s", (email,))
+    cur.execute("SELECT user_id FROM users WHERE email = %s", (email,))
     user = cur.fetchone()
     cur.close()
 
@@ -258,6 +452,7 @@ def resend_otp():
 
     otp = generate_otp(email)
     ok = send_otp_email(email, otp)
+    
     if ok:
         return {"success": True, "message": "OTP resent successfully."}
     return {"success": False, "message": "Failed to send OTP."}
@@ -274,11 +469,12 @@ def reset_password(token):
         new_password = generate_password_hash(request.form["password"])
         cur = mysql.connection.cursor()
         cur.execute(
-            "UPDATE users SET password = %s WHERE email = %s",
+            "UPDATE users SET password_hash = %s WHERE email = %s",
             (new_password, token),
         )
         mysql.connection.commit()
         cur.close()
+        
         session.pop("verified_email", None)
         session.pop("verification_time", None)
         flash("Password has been reset successfully.", "success")
