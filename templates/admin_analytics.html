@@ -1,0 +1,1120 @@
+{% set active_page = 'analytics' %}
+{% extends "admin_base.html" %}
+
+{% block title %}Analytics{% endblock %}
+{% block page_title %}Analytics{% endblock %}
+
+{% block head %}
+<style>
+    /* Specific CSS for Analytics */
+
+    /* Header Card */
+    .analytics-header-card {
+        background-color: #FFFFFF;
+        border: 1px solid #CCCCCC;
+        box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.25);
+        padding: 30px 20px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .analytics-icon {
+        width: 96px;
+        height: 96px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: var(--primary-red);
+        font-size: 80px;
+    }
+
+    .analytics-header-divider {
+        width: 1px;
+        height: 80px;
+        background-color: #A69C9C;
+    }
+
+    .analytics-header-text {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-width: 650px;
+    }
+
+    .analytics-header-title {
+        font-weight: 500;
+        font-size: 15px;
+        color: var(--primary-red);
+    }
+
+    .analytics-header-subtitle {
+        font-weight: 400;
+        font-size: 15px;
+        line-height: 22px;
+        color: var(--text-dark);
+    }
+
+    /* Tabs */
+    .tabs-wrapper {
+        position: relative;
+        border-bottom: 2px solid #A69C9C;
+        margin-bottom: 20px;
+    }
+
+    .tabs-container {
+        display: flex;
+        align-items: flex-end;
+        gap: 5px;
+    }
+
+    .tab {
+        padding: 5px 15px;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 18px;
+        text-align: center;
+        border-radius: 5px 5px 0px 0px;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .tab-active {
+        background: #B3241B;
+        color: #FFFFFF;
+    }
+
+    .tab-inactive {
+        background: #5B5959;
+        color: #CCCCCC;
+    }
+
+    /* Export Button */
+    .export-btn {
+        position: absolute;
+        right: 0;
+        bottom: 5px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 4px 12px;
+        background: #B3241B;
+        border: 1px solid #6C0C41;
+        box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25);
+        border-radius: 3px;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        font-size: 12px;
+        color: #FFFFFF;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    /* Content Grid */
+    .content-grid {
+        display: grid;
+        grid-template-columns: 372px 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    /* Stat Panel Wrapper */
+    .stat-panel-wrapper {
+        display: flex;
+        flex-direction: column;
+        height: 280px;
+    }
+
+    .stat-panel-title {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        font-size: 16px;
+        color: #5B5959;
+        text-align: center;
+        margin-top: 30px;
+    }
+
+    .stat-panel-title #dynamicMonth {
+        font-size: 36px;
+        font-weight: 700;
+        color: #B3241B;
+    }
+
+    /* Stat Panel */
+    .stat-panel {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: transparent;
+        flex: 1;
+        gap: 10px;
+    }
+
+    .stat-box {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        flex: 1;
+        height: 100%;
+        position: relative;
+    }
+
+    .stat-box:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: 25%;
+        height: 50%;
+        width: 1px;
+        background-color: #5B5959;
+    }
+
+    .stat-label {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        font-size: 16px;
+        color: #5B5959;
+        margin-bottom: 10px;
+    }
+
+    .stat-value {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 700;
+        font-size: 28px;
+        color: #B3241B;
+        margin-bottom: 5px;
+    }
+
+    .stat-trend {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        font-size: 14px;
+        color: #48742C;
+    }
+
+    .stat-trend i {
+        font-size: 18px;
+    }
+
+    .stat-subtext {
+        font-family: 'Poppins', sans-serif;
+        font-style: italic;
+        font-weight: 300;
+        font-size: 12px;
+        color: #5B5959;
+        margin-top: 5px;
+    }
+
+    /* Chart Card */
+    .chart-card {
+        background: #FFFFFF;
+        box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25);
+        border-radius: 6px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chart-header {
+        padding: 10px 15px;
+        background: #FFFFFF;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        font-size: 20px;
+        color: #B3241B;
+    }
+
+    .chart-body {
+        border-top: 1px solid #D9D9D9;
+        flex: 1;
+        min-height: 230px;
+        width: 100%;
+        padding: 10px;
+        box-sizing: border-box;
+    }
+
+    /* Bottom Panels */
+    .bottom-panels {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .bottom-panel {
+        background: #FFFFFF;
+        box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25);
+        border-radius: 6px;
+        height: 170px;
+        padding: 15px;
+    }
+
+    .panel-title {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        font-size: 20px;
+        color: #B3241B;
+    }
+
+    /* Tab Content */
+    .tab-content {
+        display: none;
+    }
+
+    .active-tab-content {
+        display: block;
+    }
+
+    /* Applications Grid */
+    .applications-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .flex-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .time-dropdown {
+        border: 1px solid #B3241B;
+        border-radius: 10px;
+        padding: 4px 10px;
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        font-size: 12px;
+        color: #000000;
+        background: #FFFFFF;
+        outline: none;
+        cursor: pointer;
+    }
+</style>
+<script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<!-- Header Card -->
+<div class="analytics-header-card">
+    <div class="analytics-icon"><i class='bx bx-cloud'></i></div>
+    <div class="analytics-header-divider"></div>
+    <div class="analytics-header-text">
+        <div class="analytics-header-title">Track performance with real-time insights.</div>
+        <div class="analytics-header-subtitle">Analyze performance, identify trends, and measure key indicators to make
+            data-driven decisions.</div>
+    </div>
+</div>
+
+<!-- Tabs Container -->
+<div class="tabs-wrapper">
+    <div class="tabs-container">
+        <a href="javascript:void(0)" id="btn-system-usage" class="tab tab-active"
+            onclick="switchTab('system-usage', this)">System Usage</a>
+        <a href="javascript:void(0)" id="btn-applications" class="tab tab-inactive"
+            onclick="switchTab('applications', this)">Applications</a>
+        <a href="javascript:void(0)" id="btn-demographics" class="tab tab-inactive"
+            onclick="switchTab('demographics', this)">Demographics</a>
+        <a href="javascript:void(0)" id="btn-hr-performance" class="tab tab-inactive"
+            onclick="switchTab('hr-performance', this)">HR Performance</a>
+        <a href="javascript:void(0)" id="btn-others" class="tab tab-inactive"
+            onclick="switchTab('others', this)">Others</a>
+    </div>
+    <!-- Export Button -->
+    <a href="javascript:void(0)" class="export-btn" onclick="exportToPDF()">Export PDF Report</a>
+</div>
+
+<!-- Content Grid -->
+<div id="tab-system-usage" class="tab-content active-tab-content">
+    <div class="content-grid">
+        <!-- Stats -->
+        <div class="stat-panel-wrapper">
+            <div class="stat-panel-title">For the month of: <span id="dynamicMonth"></span></div>
+            <div class="stat-panel">
+                <div class="stat-box">
+                    <div class="stat-label">Users</div>
+                    <div class="stat-value">70,290</div>
+                    <div class="stat-trend"><i class='bx bxs-up-arrow'></i> 49.9 %</div>
+                    <div class="stat-subtext">Monthly comparison</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Active HR Users</div>
+                    <div class="stat-value">60,000</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Active Applicants</div>
+                    <div class="stat-value">10,290</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Line Chart -->
+        <div class="chart-card">
+            <div class="chart-header">Login Activity</div>
+            <div class="chart-body">
+                <div id="loginChartContainer" style="height: 100%; width: 100%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Panels -->
+    <div class="bottom-panels">
+        <div class="bottom-panel">
+            <div class="panel-title">Documents Uploaded</div>
+        </div>
+        <div class="bottom-panel">
+            <div class="panel-title">Resume Downloads</div>
+        </div>
+    </div>
+</div>
+
+<div id="tab-applications" class="tab-content">
+    <div class="applications-grid">
+        <!-- Line Chart -->
+        <div class="chart-card">
+            <div class="chart-header flex-header">
+                <span>Applications Over Time</span>
+                <select class="time-dropdown">
+                    <option>Daily</option>
+                    <option>Monthly</option>
+                </select>
+            </div>
+            <div class="chart-body" style="min-height: 316px;">
+                <div id="applicationsChartContainer" style="height: 100%; width: 100%;"></div>
+            </div>
+        </div>
+
+        <!-- Pie Chart -->
+        <div class="chart-card">
+            <div class="chart-header">Applicant Status Distribution</div>
+            <div class="chart-body" style="min-height: 316px;">
+                <div id="statusChartContainer" style="height: 100%; width: 100%;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="tab-demographics" class="tab-content">
+    <!-- Top Locations -->
+    <div class="chart-card" style="margin-bottom: 20px;">
+        <div class="chart-header">Top Locations</div>
+        <div class="chart-body" style="display: flex; min-height: 180px;">
+            <div
+                style="flex: 1; padding: 10px; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; color: #5B5959;">
+                <ol style="margin: 0; padding-left: 20px; line-height: 2.2;">
+                    <li><span
+                            style="border-bottom: 1px solid #CCC; padding-bottom: 2px; display: inline-block; width: 90%;">Pasig
+                            City</span></li>
+                    <li><span
+                            style="border-bottom: 1px solid #CCC; padding-bottom: 2px; display: inline-block; width: 90%;">Makati
+                            City</span></li>
+                    <li><span
+                            style="border-bottom: 1px solid #CCC; padding-bottom: 2px; display: inline-block; width: 90%;">Manila
+                            City</span></li>
+                    <li><span
+                            style="border-bottom: 1px solid #CCC; padding-bottom: 2px; display: inline-block; width: 90%;">Pasay
+                            City</span></li>
+                    <li><span
+                            style="border-bottom: 1px solid #CCC; padding-bottom: 2px; display: inline-block; width: 90%;">Quezon
+                            City</span></li>
+                </ol>
+            </div>
+            <div style="flex: 1;">
+                <div id="locationsChartContainer" style="height: 100%; width: 100%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Graphs -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+        <!-- Education Level -->
+        <div class="chart-card">
+            <div class="chart-header">Education Level</div>
+            <div class="chart-body" style="min-height: 180px; padding: 5px;">
+                <div id="educationChartContainer" style="height: 100%; width: 100%;"></div>
+            </div>
+        </div>
+        <!-- Age Groups -->
+        <div class="chart-card">
+            <div class="chart-header">Age Groups</div>
+            <div class="chart-body" style="min-height: 180px; padding: 5px;">
+                <div id="ageChartContainer" style="height: 100%; width: 100%;"></div>
+            </div>
+        </div>
+        <!-- Experience Level -->
+        <div class="chart-card">
+            <div class="chart-header">Experience Level</div>
+            <div class="chart-body" style="min-height: 180px; padding: 5px;">
+                <div id="experienceChartContainer" style="height: 100%; width: 100%;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="tab-hr-performance" class="tab-content">
+    <div style="display: grid; grid-template-columns: 1.15fr 1fr; gap: 17px; margin-bottom: 35px;">
+        <!-- Interviews Conducted -->
+        <div class="chart-card" style="background: #B3241B; border: none; box-shadow: 0px 2px 4px rgba(0,0,0,0.25);">
+            <div
+                style="padding: 10px 10px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 20px; color: #FFFFFF; border-radius: 6px 6px 0 0;">
+                Interviews Conducted
+            </div>
+            <div
+                style="padding: 10px 20px 20px; display: flex; align-items: flex-end; justify-content: space-between; color: #FFFFFF; font-family: 'Poppins', sans-serif;">
+                <div>
+                    <div style="font-size: 64px; font-weight: 600; line-height: 1;"><span class="animate-number"
+                            data-target="100">0</span></div>
+                    <div style="font-size: 24px; font-weight: 500;">Interviews</div>
+                </div>
+                <div style="font-size: 14px; font-weight: 600; padding-bottom: 8px;">
+                    <i class='bx bx-chevrons-up' style="font-size: 24px; vertical-align: middle;"></i> 49.9 % this month
+                </div>
+            </div>
+        </div>
+
+        <!-- Offers Sent -->
+        <div class="chart-card"
+            style="background: #F5F5F5; border: 1px solid #D9D9D9; box-shadow: 0px 2px 4px rgba(0,0,0,0.25);">
+            <div
+                style="padding: 10px 10px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 20px; color: #B3241B; border-radius: 6px 6px 0 0;">
+                Offers Sent
+            </div>
+            <div
+                style="padding: 10px 20px 20px; display: flex; align-items: flex-end; justify-content: space-between; color: #B3241B; font-family: 'Poppins', sans-serif;">
+                <div>
+                    <div style="font-size: 64px; font-weight: 600; line-height: 1;"><span class="animate-number"
+                            data-target="67">0</span></div>
+                    <div style="font-size: 24px; font-weight: 500;">Job Offers</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Graphs -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 45px;">
+        <!-- Candidates Hired -->
+        <div class="chart-card" style="box-shadow: 0px 2px 4px rgba(0,0,0,0.25);">
+            <div
+                style="padding: 10px 10px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 16px; color: #B3241B; background: #FFFFFF; display: flex; justify-content: center; border-radius: 6px 6px 0 0;">
+                Candidates Hired
+            </div>
+            <div
+                style="padding: 20px; border-top: 2px solid #CCC; display: flex; align-items: flex-end; justify-content: space-between; color: #B3241B; font-family: 'Poppins', sans-serif; min-height: 120px;">
+                <div>
+                    <div style="font-size: 48px; font-weight: 600; line-height: 1;"><span class="animate-number"
+                            data-target="100">0</span></div>
+                    <div style="font-size: 20px; font-weight: 500;">Hired</div>
+                </div>
+                <div style="font-size: 14px; font-weight: 600; color: #48742C; padding-bottom: 6px;">
+                    <i class='bx bxs-up-arrow' style="font-size: 14px; vertical-align: middle;"></i> 49.9 % this month
+                </div>
+            </div>
+        </div>
+
+        <!-- Average Hiring Time -->
+        <div class="chart-card" style="box-shadow: 0px 2px 4px rgba(0,0,0,0.25);">
+            <div
+                style="padding: 10px 10px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 16px; color: #B3241B; background: #FFFFFF; display: flex; justify-content: center; border-radius: 6px 6px 0 0;">
+                Average Hiring Time
+            </div>
+            <div
+                style="padding: 20px; border-top: 2px solid #CCC; display: flex; align-items: center; justify-content: center; flex-direction: column; color: #B3241B; font-family: 'Poppins', sans-serif; min-height: 120px;">
+                <div style="font-size: 48px; font-weight: 600; line-height: 1;"><span class="animate-number"
+                        data-target="3">0</span>-<span class="animate-number" data-target="4">0</span></div>
+                <div style="font-size: 20px; font-weight: 500;">Days</div>
+            </div>
+        </div>
+
+        <!-- Average Interview Time -->
+        <div class="chart-card" style="box-shadow: 0px 2px 4px rgba(0,0,0,0.25);">
+            <div
+                style="padding: 10px 10px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 16px; color: #B3241B; background: #FFFFFF; display: flex; justify-content: center; border-radius: 6px 6px 0 0;">
+                Average Interview Time
+            </div>
+            <div
+                style="padding: 20px; border-top: 2px solid #CCC; display: flex; align-items: center; justify-content: center; flex-direction: column; color: #B3241B; font-family: 'Poppins', sans-serif; min-height: 120px;">
+                <div style="font-size: 48px; font-weight: 600; line-height: 1;"><span class="animate-float"
+                        data-target="1.56">0.00</span></div>
+                <div style="font-size: 20px; font-weight: 500;">Minutes</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="tab-others" class="tab-content">
+    <div style="display: grid; grid-template-columns: 1.15fr 1fr; gap: 17px; margin-bottom: 35px;">
+        <!-- Average Time to Review Application -->
+        <div class="chart-card" style="background: #B3241B; border: none; box-shadow: 0px 2px 4px rgba(0,0,0,0.25);">
+            <div
+                style="padding: 10px 10px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 20px; color: #FFFFFF; border-radius: 6px 6px 0 0;">
+                Average Time to Review Application
+            </div>
+            <div
+                style="padding: 10px 20px 20px; display: flex; align-items: flex-end; justify-content: space-between; color: #FFFFFF; font-family: 'Poppins', sans-serif;">
+                <div>
+                    <div style="font-size: 64px; font-weight: 600; line-height: 1;"><span class="animate-number"
+                            data-target="1">0</span></div>
+                    <div style="font-size: 24px; font-weight: 500;">Minute</div>
+                </div>
+                <div style="font-size: 14px; font-weight: 600; padding-bottom: 8px;">
+                    <i class='bx bx-chevrons-up' style="font-size: 24px; vertical-align: middle;"></i> 49.9 % this month
+                </div>
+            </div>
+        </div>
+
+        <!-- Average Time to Hire -->
+        <div class="chart-card"
+            style="background: #F5F5F5; border: 1px solid #D9D9D9; box-shadow: 0px 2px 4px rgba(0,0,0,0.25);">
+            <div
+                style="padding: 10px 10px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 20px; color: #B3241B; border-radius: 6px 6px 0 0;">
+                Average Time to Hire
+            </div>
+            <div
+                style="padding: 10px 20px 20px; display: flex; align-items: flex-end; justify-content: space-between; color: #B3241B; font-family: 'Poppins', sans-serif;">
+                <div>
+                    <div style="font-size: 64px; font-weight: 600; line-height: 1;"><span class="animate-number"
+                            data-target="5">0</span></div>
+                    <div style="font-size: 24px; font-weight: 500;">Business Days</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1.15fr 1fr; gap: 17px; margin-bottom: 35px;">
+        <!-- Average Interview Delay -->
+        <div class="chart-card" style="background: #B3241B; border: none; box-shadow: 0px 2px 4px rgba(0,0,0,0.25);">
+            <div
+                style="padding: 10px 10px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 20px; color: #FFFFFF; border-radius: 6px 6px 0 0;">
+                Average Interview Delay
+            </div>
+            <div
+                style="padding: 10px 20px 20px; display: flex; align-items: flex-end; justify-content: space-between; color: #FFFFFF; font-family: 'Poppins', sans-serif;">
+                <div>
+                    <div style="font-size: 64px; font-weight: 600; line-height: 1;"><span class="animate-number"
+                            data-target="10">0</span></div>
+                    <div style="font-size: 24px; font-weight: 500;">Seconds</div>
+                </div>
+                <div style="font-size: 14px; font-weight: 600; padding-bottom: 8px;">
+                    <i class='bx bx-chevrons-up' style="font-size: 24px; vertical-align: middle;"></i> 49.9 % this month
+                </div>
+            </div>
+        </div>
+
+        <!-- Average Response Time to Applicants -->
+        <div class="chart-card"
+            style="background: #F5F5F5; border: 1px solid #D9D9D9; box-shadow: 0px 2px 4px rgba(0,0,0,0.25);">
+            <div
+                style="padding: 10px 10px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 20px; color: #B3241B; border-radius: 6px 6px 0 0;">
+                Average Response Time to Applicants
+            </div>
+            <div
+                style="padding: 10px 20px 20px; display: flex; align-items: flex-end; justify-content: space-between; color: #B3241B; font-family: 'Poppins', sans-serif;">
+                <div>
+                    <div style="font-size: 64px; font-weight: 600; line-height: 1;"><span class="animate-float"
+                            data-target="1.01">0.00</span></div>
+                    <div style="font-size: 24px; font-weight: 500;">Milliseconds</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var loginChart, applicationsChart, statusChart;
+    var locationsChart, educationChart, ageChart, experienceChart;
+
+    function switchTab(tabId, element) {
+        // Save selected tab to localStorage
+        localStorage.setItem('activeAnalyticsTab', tabId);
+
+        // Hide all tab contents
+        document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+        // Remove active class from all tabs
+        document.querySelectorAll('.tab').forEach(el => {
+            el.classList.remove('tab-active');
+            el.classList.add('tab-inactive');
+        });
+        // Show selected tab content
+        const tabContent = document.getElementById('tab-' + tabId);
+        if (tabContent) tabContent.style.display = 'block';
+
+        // Set active class to clicked tab
+        if (element) {
+            element.classList.remove('tab-inactive');
+            element.classList.add('tab-active');
+        }
+
+        // Re-render charts to trigger animation
+        if (tabId === 'system-usage') {
+            renderSystemUsageCharts();
+        } else if (tabId === 'applications') {
+            renderApplicationsCharts();
+        } else if (tabId === 'demographics') {
+            renderDemographicsCharts();
+        } else if (tabId === 'hr-performance') {
+            animateNumbers('hr-performance');
+        } else if (tabId === 'others') {
+            animateNumbers('others');
+        }
+    }
+
+    function animateNumbers(tabId = 'hr-performance') {
+        const counters = document.querySelectorAll(`#tab-${tabId} .animate-number`);
+        counters.forEach(counter => {
+            counter.innerText = '0';
+            const target = +counter.getAttribute('data-target');
+            const duration = 1000;
+            const increment = target / (duration / 16);
+
+            const updateCounter = () => {
+                const current = +counter.innerText;
+                if (current < target) {
+                    counter.innerText = Math.ceil(current + increment);
+                    setTimeout(updateCounter, 16);
+                } else {
+                    counter.innerText = target;
+                }
+            };
+            updateCounter();
+        });
+
+        const floatCounters = document.querySelectorAll(`#tab-${tabId} .animate-float`);
+        floatCounters.forEach(counter => {
+            counter.innerText = '0.00';
+            const target = +counter.getAttribute('data-target');
+            const duration = 1000;
+            const increment = target / (duration / 16);
+
+            const updateCounter = () => {
+                const current = parseFloat(counter.innerText);
+                if (current < target) {
+                    counter.innerText = (current + increment).toFixed(2);
+                    setTimeout(updateCounter, 16);
+                } else {
+                    counter.innerText = target.toFixed(2);
+                }
+            };
+            updateCounter();
+        });
+    }
+
+    function renderSystemUsageCharts() {
+        loginChart = new CanvasJS.Chart("loginChartContainer", {
+            animationEnabled: true,
+            theme: "light2",
+            axisX: { interval: 1, minimum: 0, maximum: 11 },
+            axisY: { minimum: 0, maximum: 100, interval: 25, gridThickness: 1, gridColor: "#CCCCCC" },
+            data: [{
+                type: "line",
+                color: "#A23B5F",
+                markerSize: 5,
+                dataPoints: [
+                    { x: 0, y: 10 }, { x: 1, y: 30 }, { x: 2, y: 100 }, { x: 3, y: 80 },
+                    { x: 4, y: 10 }, { x: 5, y: 20 }, { x: 6, y: 40 }, { x: 7, y: 50 },
+                    { x: 8, y: 20 }, { x: 9, y: 60 }, { x: 10, y: 85 }, { x: 11, y: 90 }
+                ]
+            },
+            {
+                type: "line",
+                color: "#4EE2C0",
+                markerSize: 5,
+                dataPoints: [
+                    { x: 0, y: 40 }, { x: 1, y: 38 }, { x: 2, y: 80 }, { x: 3, y: 10 },
+                    { x: 4, y: 12 }, { x: 5, y: 60 }, { x: 6, y: 95 }, { x: 7, y: 100 },
+                    { x: 8, y: 98 }, { x: 9, y: 10 }, { x: 10, y: 65 }, { x: 11, y: 100 }
+                ]
+            }]
+        });
+        loginChart.render();
+    }
+
+    function renderApplicationsCharts() {
+        applicationsChart = new CanvasJS.Chart("applicationsChartContainer", {
+            animationEnabled: true,
+            theme: "light2",
+            axisX: { interval: 1, minimum: 0, maximum: 11 },
+            axisY: { minimum: 0, maximum: 1000, interval: 250, gridThickness: 1, gridColor: "#CCCCCC" },
+            data: [{
+                type: "line",
+                color: "#B3241B",
+                markerSize: 5,
+                dataPoints: [
+                    { x: 0, y: 150 }, { x: 1, y: 300 }, { x: 2, y: 800 }, { x: 3, y: 450 },
+                    { x: 4, y: 600 }, { x: 5, y: 250 }, { x: 6, y: 400 }, { x: 7, y: 900 },
+                    { x: 8, y: 500 }, { x: 9, y: 700 }, { x: 10, y: 850 }, { x: 11, y: 950 }
+                ]
+            }]
+        });
+        applicationsChart.render();
+
+        statusChart = new CanvasJS.Chart("statusChartContainer", {
+            animationEnabled: true,
+            theme: "light2",
+            legend: { verticalAlign: "bottom", horizontalAlign: "center" },
+            data: [{
+                type: "pie",
+                startAngle: 240,
+                showInLegend: true,
+                yValueFormatString: "##0.00'%'",
+                indexLabel: "{label} {y}",
+                dataPoints: [
+                    { y: 15, label: "Pending", legendText: "Pending", color: "#F43F5E" },
+                    { y: 35, label: "Interview Scheduled", legendText: "Interview Scheduled", color: "#F97316" },
+                    { y: 20, label: "Rejected", legendText: "Rejected", color: "#EAB308" },
+                    { y: 30, label: "Hired", legendText: "Hired", color: "#22C55E" }
+                ]
+            }]
+        });
+        statusChart.render();
+    }
+
+    function renderDemographicsCharts() {
+        locationsChart = new CanvasJS.Chart("locationsChartContainer", {
+            animationEnabled: true,
+            theme: "light2",
+            axisX: { interval: 1, labelFontColor: "#808080", labelFontSize: 11 },
+            axisY: { gridThickness: 0, tickLength: 0, lineThickness: 0, labelFormatter: function () { return ""; } },
+            data: [{
+                type: "bar",
+                indexLabel: "{y}",
+                indexLabelPlacement: "outside",
+                indexLabelFontColor: "#4D4D4D",
+                indexLabelFontSize: 11,
+                dataPoints: [
+                    { y: 10, label: "Quezon", color: "#94A3B8" },
+                    { y: 38, label: "Pasay", color: "#64748B" },
+                    { y: 27, label: "Manila", color: "#475569" },
+                    { y: 45, label: "Makati", color: "#334155" },
+                    { y: 16, label: "Pasig", color: "#1E293B" }
+                ]
+            }]
+        });
+        locationsChart.render();
+
+        const pieOptions = {
+            animationEnabled: true,
+            theme: "light2",
+            legend: { verticalAlign: "center", horizontalAlign: "right", fontSize: 10 },
+            data: [{
+                type: "pie",
+                showInLegend: true,
+                indexLabel: "",
+                dataPoints: [
+                    { y: 12.7, label: "Pending", legendText: "Pending 12.7%", color: "#F43F5E" },
+                    { y: 35.7, label: "Interview Scheduled", legendText: "Interview Scheduled 35.7%", color: "#F97316" },
+                    { y: 21.4, label: "Rejected", legendText: "Rejected 21.4%", color: "#EAB308" },
+                    { y: 30.2, label: "Hired", legendText: "Hired 30.2%", color: "#22C55E" }
+                ]
+            }]
+        };
+
+        educationChart = new CanvasJS.Chart("educationChartContainer", pieOptions);
+        educationChart.render();
+
+        experienceChart = new CanvasJS.Chart("experienceChartContainer", pieOptions);
+        experienceChart.render();
+
+        ageChart = new CanvasJS.Chart("ageChartContainer", {
+            animationEnabled: true,
+            theme: "light2",
+            axisX: { interval: 1, labelFontColor: "#808080", labelFontSize: 11 },
+            axisY: { gridThickness: 0, tickLength: 0, lineThickness: 0, labelFormatter: function () { return ""; } },
+            data: [{
+                type: "column",
+                indexLabel: "{y}",
+                indexLabelPlacement: "outside",
+                dataPoints: [
+                    { y: 16, label: "A", color: "#F43F5E", indexLabelFontColor: "#F43F5E" },
+                    { y: 45, label: "B", color: "#F97316", indexLabelFontColor: "#F97316" },
+                    { y: 27, label: "C", color: "#EAB308", indexLabelFontColor: "#EAB308" },
+                    { y: 38, label: "D", color: "#22C55E", indexLabelFontColor: "#22C55E" }
+                ]
+            }]
+        });
+        ageChart.render();
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // Set dynamic month
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        document.getElementById("dynamicMonth").innerText = monthNames[new Date().getMonth()];
+
+        // Restore tab state or default to system-usage
+        const savedTab = localStorage.getItem('activeAnalyticsTab') || 'system-usage';
+        const activeTabElement = document.getElementById('btn-' + savedTab);
+
+        if (activeTabElement) {
+            switchTab(savedTab, activeTabElement);
+        } else {
+            switchTab('system-usage', document.getElementById('btn-system-usage'));
+        }
+    });
+
+    async function exportToPDF() {
+        const btn = document.querySelector('.export-btn');
+        const originalText = btn.innerText;
+        btn.innerText = 'Generating PDF...';
+        btn.style.pointerEvents = 'none';
+
+        // Temporarily render all tabs in background to generate canvas images
+        const tabContents = document.querySelectorAll('.tab-content');
+        const originalStyles = [];
+        tabContents.forEach(el => {
+            originalStyles.push({
+                display: el.style.display,
+                position: el.style.position,
+                visibility: el.style.visibility,
+                opacity: el.style.opacity,
+                zIndex: el.style.zIndex
+            });
+            el.style.display = 'block';
+            el.style.position = 'absolute';
+            el.style.visibility = 'hidden';
+            el.style.opacity = '0';
+            el.style.zIndex = '-1000';
+        });
+
+        renderSystemUsageCharts();
+        renderApplicationsCharts();
+        renderDemographicsCharts();
+        animateNumbers('hr-performance');
+        animateNumbers('others');
+        
+        // Wait for chart animations
+        await new Promise(r => setTimeout(r, 1200));
+
+        // Helper to extract CanvasJS chart image
+        function getChartImg(containerId) {
+            const container = document.getElementById(containerId);
+            if(container) {
+                const canvas = container.querySelector('canvas');
+                if(canvas) return canvas.toDataURL('image/png');
+            }
+            return '';
+        }
+
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const currentMonth = monthNames[new Date().getMonth()];
+        const timestamp = new Date().toLocaleString();
+
+        // Build the Analytical Report HTML
+        const pdfContainer = document.createElement('div');
+        pdfContainer.style.padding = '30px';
+        pdfContainer.style.backgroundColor = '#FFFFFF';
+        pdfContainer.style.color = '#000000';
+        pdfContainer.style.width = '750px'; 
+        pdfContainer.style.fontFamily = "'Poppins', sans-serif";
+
+        pdfContainer.innerHTML = `
+            <style>
+                .report-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #B3241B; padding-bottom: 15px; margin-bottom: 25px; }
+                .report-header-left { display: flex; align-items: center; gap: 15px; }
+                .logo-box { background: #B3241B; color: #FFFFFF; padding: 10px 15px; font-weight: bold; font-size: 24px; border-radius: 4px; }
+                .report-title { margin: 0; color: #B3241B; font-size: 20px; font-weight: 700; }
+                .report-date { font-size: 11px; color: #5B5959; }
+                .section { margin-bottom: 25px; }
+                .section-title { font-size: 16px; color: #B3241B; border-bottom: 1px solid #CCC; padding-bottom: 5px; margin-bottom: 15px; text-transform: uppercase; font-weight: 600; }
+                .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 15px; }
+                .metric-card { border: 1px solid #EAEAEA; background: #FDFDFD; padding: 15px; border-radius: 6px; text-align: center; }
+                .metric-label { font-size: 10px; color: #5B5959; font-weight: 600; margin-bottom: 5px; }
+                .metric-value { font-size: 20px; color: #B3241B; font-weight: 700; }
+                .footer { margin-top: 30px; border-top: 2px solid #B3241B; padding-top: 15px; text-align: center; }
+                .footer-title { font-weight: bold; color: #000; font-size: 14px; margin: 0; }
+                .footer-text { font-size: 10px; color: #5B5959; margin: 5px 0 0; }
+            </style>
+
+            <div class="report-header">
+                <div class="report-header-left">
+                    <div class="logo-box">H2</div>
+                    <div>
+                        <h2 class="report-title">H2 Software ${currentMonth} Analytics</h2>
+                        <div class="report-date">Exported on: ${timestamp}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SYSTEM USAGE -->
+            <div class="section">
+                <div class="section-title">1. System Usage & Applications</div>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">TOTAL USERS</div>
+                        <div class="metric-value">70,290</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">ACTIVE HR USERS</div>
+                        <div class="metric-value">60,000</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">ACTIVE APPLICANTS</div>
+                        <div class="metric-value">10,290</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">AVG. REVIEW TIME</div>
+                        <div class="metric-value">1 Min</div>
+                    </div>
+                </div>
+                <div class="metrics-grid">
+                    <div class="metric-card" style="grid-column: span 2;">
+                        <div class="metric-label">LOGIN ACTIVITY (YTD)</div>
+                        <div class="metric-value">5,530 Total Logins</div>
+                        <div style="font-size: 11px; color: #5B5959; margin-top: 5px;">Peak: December (100 logins) | Low: January (10 logins)</div>
+                    </div>
+                    <div class="metric-card" style="grid-column: span 2;">
+                        <div class="metric-label">APPLICATIONS (YTD)</div>
+                        <div class="metric-value">6,500 Total Applications</div>
+                        <div style="font-size: 11px; color: #5B5959; margin-top: 5px;">Peak: December (950) | Low: January (150)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PERFORMANCE METRICS -->
+            <div class="section">
+                <div class="section-title">2. Recruitment Performance</div>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">INTERVIEWS</div>
+                        <div class="metric-value">100</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">OFFERS SENT</div>
+                        <div class="metric-value">67</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">HIRED</div>
+                        <div class="metric-value">100</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">AVG. HIRING TIME</div>
+                        <div class="metric-value">3-4 Days</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DEMOGRAPHICS -->
+            <div class="section">
+                <div class="section-title">3. Demographics & Distribution</div>
+                
+                <div class="metrics-grid">
+                    <div class="metric-card" style="grid-column: span 2;">
+                        <div class="metric-label">APPLICANT STATUS DISTRIBUTION</div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 12px;">
+                            <span>Interview Scheduled: <b>35%</b></span>
+                            <span>Hired: <b>30%</b></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 12px;">
+                            <span>Rejected: <b>20%</b></span>
+                            <span>Pending: <b>15%</b></span>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-card" style="grid-column: span 2;">
+                        <div class="metric-label">TOP LOCATIONS</div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 12px;">
+                            <span>Makati: <b>45%</b></span>
+                            <span>Pasay: <b>38%</b></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 12px;">
+                            <span>Manila: <b>27%</b></span>
+                            <span>Pasig: <b>16%</b></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">EDUCATION LEVEL</div>
+                        <div style="margin-top: 10px; font-size: 12px; text-align: left;">
+                            <div>Bachelor's: <b>35.7%</b></div>
+                            <div style="margin-top: 5px;">Master's: <b>30.2%</b></div>
+                            <div style="margin-top: 5px;">High School: <b>21.4%</b></div>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">AGE GROUPS</div>
+                        <div style="margin-top: 10px; font-size: 12px; text-align: left;">
+                            <div>26 - 30: <b>45%</b></div>
+                            <div style="margin-top: 5px;">31 - 35: <b>38%</b></div>
+                            <div style="margin-top: 5px;">21 - 25: <b>27%</b></div>
+                        </div>
+                    </div>
+                    <div class="metric-card" style="grid-column: span 2;">
+                        <div class="metric-label">EXPERIENCE LEVEL</div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 12px;">
+                            <span>Mid-Level: <b>35.7%</b></span>
+                            <span>Senior: <b>30.2%</b></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 12px;">
+                            <span>Entry-Level: <b>21.4%</b></span>
+                            <span>Executive: <b>12.7%</b></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer">
+                <p class="footer-title">H2 Software Services</p>
+                <p class="footer-text">Confidential Information. Do not Redistribute.</p>
+            </div>
+        `;
+        
+        // Restore UI
+        tabContents.forEach((el, index) => {
+            el.style.display = originalStyles[index].display;
+            el.style.position = originalStyles[index].position;
+            el.style.visibility = originalStyles[index].visibility;
+            el.style.opacity = originalStyles[index].opacity;
+            el.style.zIndex = originalStyles[index].zIndex;
+        });
+
+        const activeTabId = localStorage.getItem('activeAnalyticsTab') || 'system-usage';
+        const activeTabElement = document.getElementById('btn-' + activeTabId);
+        switchTab(activeTabId, activeTabElement);
+
+        // Append to DOM securely at top left to prevent scroll/offset clipping
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'absolute';
+        wrapper.style.top = '0';
+        wrapper.style.left = '0';
+        wrapper.style.width = '750px';
+        wrapper.style.zIndex = '-9999';
+        wrapper.style.opacity = '0';
+        wrapper.appendChild(pdfContainer);
+        document.body.appendChild(wrapper);
+
+        // Generate PDF
+        const opt = {
+            margin:       10,
+            filename:     `H2_Analytics_${currentMonth}_Report.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true, logging: false, scrollX: 0, scrollY: 0 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        try {
+            await html2pdf().set(opt).from(pdfContainer).save();
+            document.body.removeChild(wrapper);
+            btn.innerText = originalText;
+            btn.style.pointerEvents = 'auto';
+        } catch(err) {
+            console.error('PDF Export Error:', err);
+            if (document.body.contains(wrapper)) {
+                document.body.removeChild(wrapper);
+            }
+            btn.innerText = 'Export Failed';
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.style.pointerEvents = 'auto';
+            }, 3000);
+        }
+    }
+</script>
+{% endblock %}

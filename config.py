@@ -16,8 +16,15 @@ class Config:
     UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER", "uploads")
     PROFILE_UPLOAD_FOLDER = os.environ.get(
         "PROFILE_UPLOAD_FOLDER", "static/uploads")
-    ALLOWED_RESUME_EXTENSIONS = {"pdf"}          # kept for possible future
+    ALLOWED_RESUME_EXTENSIONS = {"pdf", "doc", "docx"}
     ALLOWED_PROFILE_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
+    MAX_RESUME_SIZE = int(os.environ.get(
+        "MAX_RESUME_SIZE", 10 * 1024 * 1024))  # 10 MB
+
+    # resume scanner (prescreen.html -> /submit-resume)
+    # CART labels from services/resume_scanner that are allowed to proceed
+    # to the interview simulation phase. Weak Fit is always rejected.
+    RESUME_ELIGIBLE_LABELS = {"Strong Fit", "Moderate Fit"}
 
     # mail
     MAIL_SERVER = "smtp.gmail.com"
