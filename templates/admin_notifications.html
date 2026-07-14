@@ -341,6 +341,11 @@
                 <i class='bx bx-time-five'></i> 09 July 2026 at 9:30 AM
             </div>
         </div>
+        <!-- Empty State -->
+        <div id="notif-empty-state" style="display: none; text-align: center; padding: 40px; color: #5B5959; font-family: 'Poppins', sans-serif;">
+            <i class='bx bx-search' style="font-size: 40px; color: #CCCCCC; margin-bottom: 10px;"></i>
+            <div>No records available based on your search filters.</div>
+        </div>
     </div>
 </div>
 
@@ -350,8 +355,25 @@
         const typeFilter = document.getElementById('notif-type-filter');
         const sortFilter = document.getElementById('notif-sort-filter');
         const table = document.querySelector('.notif-table');
+        const emptyState = document.getElementById('notif-empty-state');
         let records = Array.from(table.querySelectorAll('.notif-record'));
         const initialOrder = [...records];
+
+        // Routing logic
+        records.forEach(record => {
+            record.addEventListener('click', () => {
+                const statusBtn = record.querySelector('.status-btn');
+                if (statusBtn) {
+                    if (statusBtn.classList.contains('status-complaint')) {
+                        window.location.href = '/admin/troubleshooting';
+                    } else if (statusBtn.classList.contains('status-new-users')) {
+                        window.location.href = '/admin/usermanage';
+                    } else if (statusBtn.classList.contains('status-analytics')) {
+                        window.location.href = '/admin/analytics';
+                    }
+                }
+            });
+        });
 
         function filterAndSort() {
             const query = searchInput.value.toLowerCase();
@@ -383,9 +405,16 @@
             });
 
             if (sortValue !== 'default') {
-                visibleRecords.forEach(rec => table.appendChild(rec));
+                visibleRecords.forEach(rec => table.insertBefore(rec, emptyState));
             } else {
-                initialOrder.forEach(rec => table.appendChild(rec));
+                initialOrder.forEach(rec => table.insertBefore(rec, emptyState));
+            }
+            
+            // Empty State Handling
+            if (visibleRecords.length === 0) {
+                emptyState.style.display = 'block';
+            } else {
+                emptyState.style.display = 'none';
             }
         }
 

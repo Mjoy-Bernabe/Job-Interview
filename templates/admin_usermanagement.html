@@ -384,6 +384,13 @@
                         </div>
                     </td>
                 </tr>
+                <!-- Empty State -->
+                <tr id="um-empty-state" style="display: none;">
+                    <td colspan="4" style="text-align: center; padding: 40px; color: #5B5959; font-family: 'Poppins', sans-serif;">
+                        <i class='bx bx-search' style="font-size: 40px; color: #CCCCCC; margin-bottom: 10px;"></i>
+                        <br>No records available based on your search filters.
+                    </td>
+                </tr>
             </tbody>
         </table>
     </div>
@@ -394,7 +401,8 @@
             const roleFilter = document.getElementById('um-role-filter');
             const sortFilter = document.getElementById('um-sort-filter');
             const tbody = document.querySelector('.user-table tbody');
-            let rows = Array.from(tbody.querySelectorAll('tr'));
+            const emptyState = document.getElementById('um-empty-state');
+            let rows = Array.from(tbody.querySelectorAll('tr')).filter(r => r !== emptyState);
             const initialOrder = [...rows]; // Keep original order for "default"
 
             function filterAndSort() {
@@ -437,6 +445,16 @@
                     visibleRows.forEach(row => tbody.appendChild(row));
                 } else {
                     initialOrder.forEach(row => tbody.appendChild(row));
+                }
+                
+                // Keep empty state at the end
+                tbody.appendChild(emptyState);
+
+                // Handle Empty State
+                if (visibleRows.length === 0) {
+                    emptyState.style.display = '';
+                } else {
+                    emptyState.style.display = 'none';
                 }
             }
 
