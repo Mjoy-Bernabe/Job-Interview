@@ -310,6 +310,11 @@ BULLET_RE = re.compile(
     re.MULTILINE,
 )
 YEAR_RE = re.compile(r"\b(19|20)\d{2}\b")
+DECLARED_EXPERIENCE_RE = re.compile(
+    r"\b(?:over\s+|more\s+than\s+|at\s+least\s+)?(\d+(?:\.\d+)?)\+?\s*"
+    r"(?:years?|yrs?)\s+(?:of\s+)?(?:professional\s+|relevant\s+|work\s+)?experience\b",
+    re.IGNORECASE,
+)
 ADDRESS_RE = re.compile(
     r"\b\d+\s[\w\s]+(?:St(?:reet)?|Ave(?:nue)?|Blvd|Rd|Road|Lane|Dr(?:ive)?|"
     r"Lot|Block|Brgy|Barangay)[\w\s,\.]*"
@@ -961,35 +966,64 @@ DEGREE_LEVEL_ORDER = [
 ]
 
 
-def calculate_total_experience_years(work_experience: list) -> float:
+def extract_declared_experience_years(text: str) -> float | None:
+    """Return the strongest explicit ``X years of experience`` claim, if any.
+
+    The elite ATS dataset uses this common resume wording instead of date
+    ranges, so ignoring it made otherwise valid resumes appear to have zero
+    experience. The value is still shown on the review page for correction.
     """
-    Sums the duration (in years) of every work_experience entry that has a
-    parseable start_date. Entries with no end_date are treated as ongoing
-    (end_date = today). Overlapping roles are simply added together, which
-    is a reasonable approximation for a pre-screening estimate.
-    """
-    total_days = 0
-    today = datetime.today()
-    for entry in work_experience or []:
-        start_raw = entry.get("start_date")
-        if not start_raw:
-            continue
+    values = [float(match.group(1)) for match in DECLARED_EXPERIENCE_RE.finditer(text or "")]
+    return max(values) if values else None
+
+
+def _parse_resume_date(value, *, is_end: bool) -> datetime | None:
+    """Parse ISO, year-only, and common resume month/year date formats."""
+    raw = str(value or "").strip().lower().replace(".", "")
+    if not raw or raw in {"present", "current", "now", "ongoing"}:
+        return datetime.today() if is_end else None
+
+    formats = ("%Y-%m-%d", "%B %Y", "%b %Y", "%m/%Y", "%Y/%m")
+    for fmt in formats:
         try:
-            start = datetime.strptime(str(start_raw)[:10], "%Y-%m-%d")
-        except (ValueError, TypeError):
+            parsed = datetime.strptime(raw.title() if "%b" in fmt or "%B" in fmt else raw, fmt)
+            if fmt == "%Y":
+                return parsed.replace(month=12 if is_end else 1, day=31 if is_end else 1)
+            return parsed
+        except ValueError:
             continue
-        end_raw = entry.get("end_date")
-        if end_raw:
-            try:
-                end = datetime.strptime(str(end_raw)[:10], "%Y-%m-%d")
-            except (ValueError, TypeError):
-                end = today
+    if re.fullmatch(r"\d{4}", raw):
+        return datetime(int(raw), 12 if is_end else 1, 31 if is_end else 1)
+    return None
+
+
+def calculate_total_experience_years(work_experience: list, text: str = "") -> float:
+    """
+    Calculates experience from date ranges and explicit resume claims.
+    Supports dates such as ``January 2024`` and ``Feb 2023`` in addition to
+    ISO dates. Overlapping date ranges are merged so concurrent roles are not
+    double-counted. If no reliable dates exist, use an explicit ``X years of
+    experience`` statement (the convention used by the elite ATS dataset).
+    """
+    intervals = []
+    for entry in work_experience or []:
+        start = _parse_resume_date(entry.get("start_date"), is_end=False)
+        end = _parse_resume_date(entry.get("end_date"), is_end=True)
+        if not start or not end or end < start:
+            continue
+        intervals.append((start, end))
+
+    intervals.sort(key=lambda interval: interval[0])
+    merged = []
+    for start, end in intervals:
+        if merged and start <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], end))
         else:
-            end = today
-        if end < start:
-            continue
-        total_days += (end - start).days
-    return round(total_days / 365.25, 1)
+            merged.append((start, end))
+
+    dated_years = sum((end - start).days for start, end in merged) / 365.25
+    declared_years = extract_declared_experience_years(text)
+    return round(max(dated_years, declared_years or 0.0), 1)
 
 
 def evaluate_education_requirement(education: list, baseline: str | None) -> dict:

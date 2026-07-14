@@ -127,6 +127,7 @@ CREATE TABLE applications (
     application_id INT AUTO_INCREMENT PRIMARY KEY,
     job_id INT NOT NULL,
     applicant_id INT NOT NULL,
+    resume_experience_years DECIMAL(5,1) NULL DEFAULT NULL,
     screening_status VARCHAR(50) NOT NULL DEFAULT 'Pending',
     shortlisted TINYINT(1) NOT NULL DEFAULT 0,
     interview_result VARCHAR(50) NULL,
@@ -230,6 +231,7 @@ CREATE TABLE job_required_skills (
 CREATE TABLE IF NOT EXISTS chatbot (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
+    application_id INT NULL,
     user_name VARCHAR(100) NOT NULL,
     position VARCHAR(100) NOT NULL,
     experience VARCHAR(100) NULL,
@@ -240,7 +242,13 @@ CREATE TABLE IF NOT EXISTS chatbot (
     confidence DOUBLE NOT NULL DEFAULT 0.0,
     average_score DOUBLE NOT NULL DEFAULT 0.0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_chatbot_users FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT fk_chatbot_users FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    -- Every Section 2 (chatbot interview) result belongs to exactly one
+    -- Section 1 application. This is what keeps two applications from the
+    -- same applicant from ever showing each other's interview results.
+    CONSTRAINT fk_chatbot_applications FOREIGN KEY (application_id) REFERENCES applications(application_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    -- An application can only ever have one interview attempt/result.
+    CONSTRAINT uq_chatbot_application UNIQUE (application_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------
@@ -283,3 +291,63 @@ ALTER TABLE job_desc
     ADD COLUMN required_course VARCHAR(100) NULL AFTER required_degree,
     ADD COLUMN required_gender ENUM('Male','Female','Any') NOT NULL DEFAULT 'Any' AFTER minimum_age,
     ADD COLUMN required_civil_status ENUM('Single','Married','Widowed','Separated','Divorced','Any') NOT NULL DEFAULT 'Any' AFTER required_gender;
+
+-- ==========================================
+-- Migration: scope chatbot (Section 2) results to a single application
+-- Safe to run against an existing auth_db without dropping data.
+--
+-- Older rows were only keyed by user_id, so an applicant with more than
+-- one application had no way to tell which interview result belonged to
+-- which application. This adds application_id so every interview result
+-- is tied to exactly one application, and applications never bleed into
+-- each other. Existing rows are left with application_id = NULL (their
+-- application can no longer be determined) and are simply excluded from
+-- the per-application lookups going forward.
+-- ==========================================
+
+ALTER TABLE chatbot
+    ADD COLUMN application_id INT NULL AFTER user_id,
+    ADD CONSTRAINT fk_chatbot_applications
+        FOREIGN KEY (application_id) REFERENCES applications(application_id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    ADD CONSTRAINT uq_chatbot_application UNIQUE (application_id);
+
+-- Store the Section 1 experience value confirmed from the resume review on
+-- the application itself. Work-history date parsing is best-effort and must
+-- not overwrite or hide the applicant's reviewed total in the result screen.
+ALTER TABLE applications
+    ADD COLUMN resume_experience_years DECIMAL(5,1) NULL DEFAULT NULL
+    AFTER applicant_id;
+
+
+ALTER TABLE applications
+CHANGE COLUMN screening_status pre_screen_status VARCHAR(50) NOT NULL DEFAULT 'Pending';
+
+-- Add chatbot_status after pre_screen_status
+ALTER TABLE applications
+ADD COLUMN chatbot_status VARCHAR(50) NOT NULL DEFAULT 'Pending'
+AFTER pre_screen_status;
+
+-- ==========================================
+-- Table: application_overall_status
+-- ==========================================
+-- Section 1 (resume pre-screening, applications.pre_screen_status) and
+-- Section 2 (chatbot interview, chatbot.qualification_status) are recorded
+-- independently and never overwrite each other. This table is the single
+-- place that combines both into one verdict per application — "Passed
+-- Screening" or "Rejected" (or "Pending" while Section 2 hasn't run yet).
+-- It is recomputed (upserted) any time either source status changes, so it
+-- always reflects the latest snapshot of both stages side by side.
+CREATE TABLE IF NOT EXISTS application_overall_status (
+    overall_id INT AUTO_INCREMENT PRIMARY KEY,
+    application_id INT NOT NULL,
+    pre_screen_snapshot VARCHAR(50) NOT NULL,
+    chatbot_snapshot VARCHAR(50) NULL,
+    overall_status VARCHAR(50) NOT NULL DEFAULT 'Pending',
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_overall_status_application
+        FOREIGN KEY (application_id) REFERENCES applications(application_id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    -- One combined verdict per application, same as chatbot's one-attempt rule.
+    CONSTRAINT uq_overall_status_application UNIQUE (application_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -16,6 +16,7 @@ from extensions import mysql, mail
 from flask_mail import Message
 import datetime
 from .schedule import get_progress_data
+from services.overall_status import sync_overall_status
 
 hr_bp = Blueprint("hr", __name__)
 
@@ -51,21 +52,21 @@ def hr_dashboard():
     cur.execute("SELECT COUNT(*) FROM applications")
     total_requests = cur.fetchone()[0] or 0
 
-    cur.execute("SELECT COUNT(*) FROM applications WHERE screening_status = 'Pending'")
+    cur.execute("SELECT COUNT(*) FROM applications WHERE pre_screen_status = 'Pending'")
     pending_applications = cur.fetchone()[0] or 0
 
-    cur.execute("SELECT COUNT(*) FROM applications WHERE screening_status IN ('Approved', 'Eligible', 'Passed Screening')")
+    cur.execute("SELECT COUNT(*) FROM applications WHERE pre_screen_status IN ('Approved', 'Eligible', 'Passed Screening')")
     approved_applications = cur.fetchone()[0] or 0
 
-    cur.execute("SELECT COUNT(*) FROM applications WHERE screening_status IN ('Rejected', 'Denied', 'Not Qualified')")
+    cur.execute("SELECT COUNT(*) FROM applications WHERE pre_screen_status IN ('Rejected', 'Denied', 'Not Qualified')")
     rejected_applicants = cur.fetchone()[0] or 0
 
     avg_interview_score = 0.0
 
     # CART: Eligible vs Not Eligible (pre-screening)
-    cur.execute("SELECT COUNT(*) FROM applications WHERE screening_status IN ('Passed Screening','Approved','Eligible','Shortlisted','Hired','Talent Pool')")
+    cur.execute("SELECT COUNT(*) FROM applications WHERE pre_screen_status IN ('Passed Screening','Approved','Eligible','Shortlisted','Hired','Talent Pool')")
     cart_eligible = cur.fetchone()[0] or 0
-    cur.execute("SELECT COUNT(*) FROM applications WHERE screening_status NOT IN ('Passed Screening','Approved','Eligible','Shortlisted','Hired','Talent Pool')")
+    cur.execute("SELECT COUNT(*) FROM applications WHERE pre_screen_status NOT IN ('Passed Screening','Approved','Eligible','Shortlisted','Hired','Talent Pool')")
     cart_not_eligible = cur.fetchone()[0] or 0
 
     # ANN / chatbot: Qualified vs Not Qualified
@@ -75,13 +76,13 @@ def hr_dashboard():
     ann_not_qualified = cur.fetchone()[0] or 0
 
     # Pipeline counts
-    cur.execute("SELECT COUNT(*) FROM applications WHERE screening_status = 'Hired'")
+    cur.execute("SELECT COUNT(*) FROM applications WHERE pre_screen_status = 'Hired'")
     hired_count = cur.fetchone()[0] or 0
 
-    cur.execute("SELECT COUNT(*) FROM applications WHERE screening_status IN ('Interview Scheduled', 'Interviewed', 'Interview Done', 'Interview Completed')")
+    cur.execute("SELECT COUNT(*) FROM applications WHERE pre_screen_status IN ('Interview Scheduled', 'Interviewed', 'Interview Done', 'Interview Completed')")
     interviewed_count = cur.fetchone()[0] or 0
 
-    cur.execute("SELECT COUNT(*) FROM applications WHERE screening_status IN ('Interview Scheduled', 'Approved')")
+    cur.execute("SELECT COUNT(*) FROM applications WHERE pre_screen_status IN ('Interview Scheduled', 'Approved')")
     interview_scheduled = cur.fetchone()[0] or 0
 
     cur.execute("SELECT COUNT(*) FROM applications WHERE shortlisted = 1")
@@ -90,7 +91,7 @@ def hr_dashboard():
     except Exception:
         shortlisted_count = 0
 
-    cur.execute("SELECT COUNT(*) FROM applications WHERE screening_status = 'Talent Pool'")
+    cur.execute("SELECT COUNT(*) FROM applications WHERE pre_screen_status = 'Talent Pool'")
     talent_pool_count = cur.fetchone()[0] or 0
 
     # Trend data (last 6 months)
@@ -127,7 +128,8 @@ def hr_dashboard():
             u.email,
             u.contact_num,
             j.job_name,
-            a.screening_status,
+            a.pre_screen_status,
+            COALESCE(c.qualification_status, 'Pending') AS chatbot_status,
             a.applied_at,
             COALESCE(c.qualification_status, 'Pending') AS ann_status,
             COALESCE(c.average_score * 100, 0.0) AS ann_score,
@@ -144,7 +146,8 @@ def hr_dashboard():
         JOIN applicants ap ON ap.applicant_id = a.applicant_id
         JOIN users u ON u.user_id = ap.user_id
         JOIN jobs j ON j.job_id = a.job_id
-        LEFT JOIN chatbot c ON c.user_id = u.user_id AND c.position = j.job_name
+        LEFT JOIN chatbot c ON c.application_id = a.application_id
+               
         ORDER BY a.application_id DESC
         LIMIT 15
     """)
@@ -152,12 +155,18 @@ def hr_dashboard():
 
     recent_applicants = []
     for row in applicant_rows:
-        applied_date = row[6]
-        applied_date_val = applied_date if isinstance(applied_date, (datetime.date, datetime.datetime)) else None
-
         db_status = row[5]
-        ann_status = row[7]
-        ann_score = row[8]
+        chatbot_status = row[6]
+
+        applied_date = row[7]
+        applied_date_val = (
+            applied_date
+            if isinstance(applied_date, (datetime.date, datetime.datetime))
+            else None
+        )
+
+        ann_status = row[8]
+        ann_score = row[9]
 
         cart_status = 'Eligible' if db_status in ('Passed Screening', 'Approved', 'Eligible', 'Rejected', 'Talent Pool', 'Hired', 'Shortlisted') else 'Not Eligible'
         hr_status = db_status if db_status in ('Approved', 'Rejected', 'Talent Pool', 'Hired') else 'Pending'
@@ -172,15 +181,16 @@ def hr_dashboard():
             "hr_status": hr_status,
             "score": float(ann_score) if ann_score is not None else 0.0,
             "applied_date": applied_date_val,
-            "resume_url": row[9],
-            "shortlisted": "Yes" if row[10] else "No",
-            "interview_result": row[11] or "Needs Review",
-            "final_status": row[12] or "Pending",
-            "final_date": row[13].strftime("%Y-%m-%d") if isinstance(row[13], (datetime.date, datetime.datetime)) else (str(row[13]) if row[13] else ""),
-            "final_interviewer": row[14] or "",
-            "virtual_interview_status": row[15] or "Pending",
-            "transcript_status": row[16] or "Not Generated",
-            "interview_type": row[17] or "Chat",
+            "chatbot_status": chatbot_status,
+            "resume_url": row[10],
+            "shortlisted": "Yes" if row[11] else "No",
+            "interview_result": row[12] or "Needs Review",
+            "final_status": row[13] or "Pending",
+            "final_date": row[14].strftime("%Y-%m-%d") if isinstance(row[14], (datetime.date, datetime.datetime)) else (str(row[14]) if row[14] else ""),
+            "final_interviewer": row[15] or "",
+            "virtual_interview_status": row[16] or "Pending",
+            "transcript_status": row[17] or "Not Generated",
+            "interview_type": row[18] or "Chat",
         })
 
     # 5) Upcoming Interviews
@@ -190,7 +200,7 @@ def hr_dashboard():
         JOIN applicants ap ON ap.applicant_id = a.applicant_id
         JOIN users u ON u.user_id = ap.user_id
         JOIN jobs j ON j.job_id = a.job_id
-        WHERE a.screening_status IN ('Eligible', 'Approved')
+        WHERE a.pre_screen_status IN ('Eligible', 'Approved')
         LIMIT 3
     """)
     interview_rows = cur.fetchall()
@@ -312,9 +322,11 @@ def get_applicant_details(app_id):
             u.username,
             u.email,
             j.job_name,
-            a.screening_status,
+            a.pre_screen_status,
+            COALESCE(c.qualification_status, 'Pending') AS chatbot_status,
             COALESCE(jd.required_exp_years, 0),
-            GROUP_CONCAT(DISTINCT sk.skill_name ORDER BY sk.skill_name SEPARATOR ', ') AS skills
+            GROUP_CONCAT(DISTINCT sk.skill_name ORDER BY sk.skill_name SEPARATOR ', ') AS skills,
+            COALESCE(o.overall_status, 'Pending') AS overall_status
         FROM applications a
         JOIN applicants ap ON ap.applicant_id = a.applicant_id
         JOIN users u ON u.user_id = ap.user_id
@@ -322,8 +334,23 @@ def get_applicant_details(app_id):
         LEFT JOIN job_desc jd ON jd.job_id = j.job_id
         LEFT JOIN applicant_skills askill ON askill.applicant_id = ap.applicant_id
         LEFT JOIN skills_master sk ON sk.skill_id = askill.skill_id
+                LEFT JOIN chatbot c
+                ON c.application_id = a.application_id
+                LEFT JOIN application_overall_status o
+                ON o.application_id = a.application_id
         WHERE a.application_id = %s
-        GROUP BY u.username, u.email, j.job_name, a.screening_status, jd.required_exp_years
+        -- Grouped by the application's own primary key (application_id is
+        -- unique per row, so every other selected column here is already
+        -- functionally dependent on it) plus the joined single-value
+        -- columns actually used above. Previously this grouped by the
+        -- unused, always-'Pending' applications.chatbot_status column
+        -- instead of the real chatbot.qualification_status value the
+        -- SELECT list computes — that mismatch is what disconnected this
+        -- view from the real pre-screening/chatbot result in the
+        -- candidate pipeline.
+        GROUP BY a.application_id, u.username, u.email, j.job_name,
+                 a.pre_screen_status, c.qualification_status,
+                 jd.required_exp_years, o.overall_status
     """, (app_id,))
     
     row = cur.fetchone()
@@ -337,8 +364,10 @@ def get_applicant_details(app_id):
         "email": row[1],
         "role": row[2],
         "status": row[3],
-        "experience": row[4],
-        "skills": row[5] if row[5] else "None listed",
+        "chatbot_status": row[4],
+        "experience": row[5],
+        "skills": row[6] if row[6] else "None listed",
+        "overall_status": row[7],
         "qa_data": None
     })
 
@@ -404,34 +433,46 @@ def applicant_decision_json():
             return jsonify({"ok": False, "msg": "Applicant not found"}), 404
             
         app_name, app_email = row
-        new_status = "Approved" if decision == "approve" else "Rejected"
-        
-        cur.execute(
-            "UPDATE applications SET screening_status = %s WHERE application_id = %s",
-            (new_status, app_id)
-        )
+       # Resume Screening (Section 1)
+        new_status = "Eligible" if decision == "approve" else "Not Eligible"
+
+        cur.execute("""
+            UPDATE applications
+            SET pre_screen_status = %s
+            WHERE application_id = %s
+        """, (new_status, app_id))
+
+        # Section 1 result just changed — recompute the combined verdict.
+        sync_overall_status(cur, app_id)
+
         mysql.connection.commit()
         cur.close()
 
         # Email Notification Logic
         if decision == "approve":
-            subject = "AceView Application Update - Congratulations!"
+            subject = "AceView Resume Screening Result"
             body = f"""Dear {app_name},
-We are pleased to inform you that your application has been APPROVED for the next stage of our recruitment process.
-Our HR team will contact you soon with the next steps and schedule details.
+
+Congratulations!
+
+Your resume has successfully passed our pre-screening process and has been marked as ELIGIBLE.
+
+You may now proceed to the AI Chatbot Interview, which is the next stage of our recruitment process.
 
 Best regards,
 AceView Recruitment Team"""
         else:
-            subject = "AceView Application Update"
+            subject = "AceView Resume Screening Result"
             body = f"""Dear {app_name},
-Thank you for taking the time to apply and interview with us.
-After careful consideration, we regret to inform you that you have not been selected at this time.
-We encourage you to apply again in the future for other opportunities.
+
+Thank you for applying to AceView.
+
+After reviewing your resume, we regret to inform you that your application did not meet the current requirements for this position and has been marked as NOT ELIGIBLE.
+
+We appreciate your interest and encourage you to apply again for future opportunities.
 
 Best regards,
 AceView Recruitment Team"""
-
         try:
             default_sender = current_app.config.get("MAIL_DEFAULT_SENDER") or current_app.config.get("MAIL_USERNAME")
             msg = Message(subject=subject, recipients=[app_email], sender=default_sender)
@@ -467,7 +508,7 @@ def export_all_data():
     cur = mysql.connection.cursor()
     # Fetching core candidate data based on your existing database structure
     cur.execute("""
-        SELECT u.username, u.email, j.job_name, a.screening_status, a.applied_at
+        SELECT u.username, u.email, j.job_name, a.pre_screen_status, a.applied_at
         FROM applications a
         JOIN applicants ap ON ap.applicant_id = a.applicant_id
         JOIN users u ON u.user_id = ap.user_id

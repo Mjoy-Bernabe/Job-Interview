@@ -1651,12 +1651,12 @@
                                     </td>
                                     <td>{{ app.role }}</td>
                                     <td>
-                                        {% if app.cart_status == 'Qualified' %}
-                                        <span class="badge badge-eligible">Qualified</span>
+                                        {% if app.cart_status == 'Eligible' %}
+                                        <span class="badge badge-eligible">Eligible</span>
                                         {% elif app.cart_status == 'Possible Match' %}
                                         <span class="badge badge-pending">Possible Match</span>
                                         {% else %}
-                                        <span class="badge badge-not-eligible">Not Qualified</span>
+                                        <span class="badge badge-not-eligible">Not Eligible</span>
                                         {% endif %}
                                     </td>
                                     <td>
@@ -2729,8 +2729,10 @@
                     document.getElementById('modalPosition').textContent = data.role;
 
                     const recEl = document.getElementById('modalResumeRec');
-                    recEl.textContent = data.cart_status;
-                    recEl.className = 'badge ' + (data.cart_status === 'Qualified' ? 'badge-eligible' : (data.cart_status === 'Possible Match' ? 'badge-pending' : 'badge-not-eligible'));
+                    const eligibleStatuses = ['Passed Screening', 'Approved', 'Eligible', 'Talent Pool', 'Hired', 'Shortlisted'];
+                    const preScreenLabel = eligibleStatuses.includes(data.status) ? 'Eligible' : 'Not Eligible';
+                    recEl.textContent = preScreenLabel;
+                    recEl.className = 'badge ' + (preScreenLabel === 'Eligible' ? 'badge-eligible' : 'badge-not-eligible');
 
                     // Mock matching values for high-fidelity report demo
                     const matchScore = data.ann_score > 0 ? Math.round(data.ann_score * 100 + 4) : 0;

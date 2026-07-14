@@ -41,16 +41,22 @@ def chat_app():
         return redirect(url_for("auth.login"))
     email, username, contact = user
 
+    application_id = request.args.get("application_id", type=int)
+    if not application_id:
+        cur.close()
+        flash("Choose an application before viewing its interview.", "error")
+        return redirect(url_for("applicants.dashboard"))
+
     cur.execute(
         """
-        SELECT user_name, position, experience, qualification_status,
-               confidence, average_score, created_at
-        FROM chatbot
-        WHERE user_id = %s
-        ORDER BY created_at DESC
-        LIMIT 1
+        SELECT c.user_name, c.position, c.experience, c.qualification_status,
+               c.confidence, c.average_score, c.created_at
+        FROM chatbot c
+        JOIN applications a ON a.application_id = c.application_id
+        JOIN applicants ap ON ap.applicant_id = a.applicant_id
+        WHERE c.application_id = %s AND ap.user_id = %s
         """,
-        (user_id,),
+        (application_id, user_id),
     )
     result = cur.fetchone()
     cur.close()
@@ -88,23 +94,49 @@ def chatbot_page():
         return redirect(url_for("applicants.dashboard"))
 
     user_id = session["user_id"]
-    name = session.get("name")
-    experience = session.get("experience", 0)
-    position = session.get("position", "Business Analyst")
+    application_id = request.args.get("application_id", type=int)
+    if not application_id:
+        flash("Choose an eligible application before starting an interview.", "error")
+        return redirect(url_for("applicants.dashboard"))
 
-    # 🔒 Check if this user already has a chatbot record
+    # The application, not the user, is the interview boundary.
     cur = mysql.connection.cursor()
     cur.execute(
-        "SELECT id FROM chatbot WHERE user_id = %s ORDER BY id DESC LIMIT 1",
-        (user_id,),
+        """
+        SELECT u.username, j.job_name,
+               COALESCE(a.resume_experience_years,
+                   (SELECT SUM(TIMESTAMPDIFF(YEAR, we.start_date,
+                   COALESCE(we.end_date, CURDATE()))) FROM work_experience we
+                   WHERE we.applicant_id = ap.applicant_id), 0)
+        FROM applications a
+        JOIN applicants ap ON ap.applicant_id = a.applicant_id
+        JOIN users u ON u.user_id = ap.user_id
+        JOIN jobs j ON j.job_id = a.job_id
+        WHERE a.application_id = %s AND ap.user_id = %s
+          AND a.pre_screen_status IN ('Passed Screening', 'Approved', 'Eligible', 'Shortlisted')
+        """,
+        (application_id, user_id),
     )
+    application = cur.fetchone()
+    if not application:
+        cur.close()
+        flash("Section 2 is only available for your eligible application.", "error")
+        return redirect(url_for("applicants.dashboard"))
+
+    cur.execute("SELECT id FROM chatbot WHERE application_id = %s", (application_id,))
     existing = cur.fetchone()
     cur.close()
 
     if existing:
         # Already finished interview – send them to summary or overview instead
         flash("You have already completed the chat interview.", "info")
-        return redirect(url_for("summary.summary_report"))
+        return redirect(url_for("summary.summary_report", application_id=application_id))
+
+    name, position, experience = application
+    session["active_application_id"] = application_id
+    session["name"] = name
+    session["position"] = position
+    session["experience"] = float(experience or 0)
 
     return render_template(
         "chatbot.html",
@@ -112,6 +144,7 @@ def chatbot_page():
         experience=experience,
         position=position,
         user_id=user_id,
+        application_id=application_id,
     )
 
 
@@ -209,7 +242,10 @@ def score_answer_route():
     if not question or not answer:
         return jsonify({"error": "Missing question or answer."}), 400
 
-    result = score_answer_single(question, answer)
+    # The live chatbot must use the documented hybrid ANN scorer, not the
+    # legacy cosine-only helper. This returns semantic, KeyBERT, and final
+    # 70/30 ANN score data for the browser and final interview average.
+    result = score_answer_combined(question, answer)
     return jsonify(result)
 
 

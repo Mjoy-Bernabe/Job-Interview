@@ -696,6 +696,33 @@
                 align-items: flex-start;
             }
         }
+
+     .job-row{
+    border-left:6px solid transparent;
+}
+
+.job-row.qualified{
+    border-left-color:#0d6efd;      /* Blue */
+}
+
+.job-row.not-qualified{
+    border-left-color:#fd7e14;      /* Orange */
+}
+
+.job-row.eligible{
+    border-left-color:#28a745;      /* Green */
+}
+
+.job-row.not-eligible{
+    border-left-color:#dc3545;      /* Red */
+}
+
+.job-row.pending{
+    border-left-color:#6c757d;      /* Gray */
+}
+.job-row .job-meta {
+    color:black;
+}
     </style>
 </head>
 
@@ -785,7 +812,7 @@
                         </label>
                     </div>
 
-                    <div class="filter-row">
+                    <!-- <div class="filter-row">
                         <button type="button" class="filter-pill active" data-filter="all">All</button>
                         <button type="button" class="filter-pill" data-filter="resume">Resume View</button>
                         <button type="button" class="filter-pill" data-filter="chatbot">Chatbot Interview</button>
@@ -793,42 +820,71 @@
                             <i class='bx bx-sort-alt-2'></i>
                             Sort By
                         </button>
-                    </div>
+                    </div> -->
 
-                    <h1 class="page-title">Applications</h1>
+                   <h1 class="page-title">Applications</h1>
 
-                    {% if available_jobs %}
-                    <div id="jobCategories">
-                        {% for job in available_jobs %}
-                        {% set category_label = job.category or 'General' %}
-                        {% if loop.first or job.category != available_jobs[loop.index0 - 1].category %}
-                        {% if not loop.first %}</div></div>{% endif %}
-                        <div class="job-category" data-category="{{ category_label }}">
-                            <div class="category-heading">
-                                <h2>{{ category_label }}</h2>
-                                <hr>
-                            </div>
-                            <div class="job-list">
-                        {% endif %}
+{% if available_jobs %}
+<div id="jobCategories">
 
-                                <button type="button"
-                                        class="job-row {% if job.has_applied %}applied{% endif %}"
-                                        data-job-id="{{ job.id }}"
-                                        data-position="{{ job.position }}"
-                                        data-applied="{{ 'true' if job.has_applied else 'false' }}">
-                                    <div class="job-info">
-                                        <strong>{{ job.position }}</strong>
-                                        <div class="job-meta">
-                                            {{ job.form_access }}
-                                            {% if job.deadline_date %} | Deadline {{ job.deadline_date }}{% endif %}
-                                            {% if job.max_allowed %} | Slots {{ job.max_allowed }}{% endif %}
-                                        </div>
-                                    </div>
-                                    <span class="job-cta">
-                                        {% if job.has_applied %}View Application{% else %}Apply Now!!{% endif %}
-                                        <i class='bx bxs-right-arrow'></i>
-                                    </span>
-                                </button>
+    {% for job in available_jobs %}
+    {% set category_label = job.category or 'General' %}
+
+    {% if loop.first or job.category != available_jobs[loop.index0 - 1].category %}
+
+        {% if not loop.first %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="job-category" data-category="{{ category_label }}">
+            <div class="category-heading">
+                <h2>{{ category_label }}</h2>
+                <hr>
+            </div>
+
+            <div class="job-list">
+
+    {% endif %}
+
+        <button
+            type="button"
+            class="job-row {{ job.card_class }}"
+            data-job-id="{{ job.id }}"
+            data-position="{{ job.position }}"
+            data-applied="{{ 'true' if job.has_applied else 'false' }}">
+
+            <div class="job-info">
+                <strong>{{ job.position }}</strong>
+
+                <div class="job-meta">
+                    {{ job.form_access }}
+
+                    {% if job.deadline_date %}
+                        | Deadline {{ job.deadline_date }}
+                    {% endif %}
+
+                    {% if job.max_allowed %}
+                        | Slots {{ job.max_allowed }}
+                    {% endif %}
+                </div>
+            </div>
+
+            <span class="job-cta">
+
+                {% if job.card_status %}
+                    <span class="status {{ job.card_class }}">
+                        {{ job.card_status }}
+                    </span>
+                {% else %}
+                    Apply Now!!
+                {% endif %}
+
+                <i class='bx bxs-right-arrow'></i>
+
+            </span>
+
+        </button>
 
                         {% if loop.last %}</div></div>{% endif %}
                         {% endfor %}
@@ -1034,13 +1090,13 @@
                     <div class="detail-list">
                         <div class="detail-row"><span>Job Position</span><span>${escapeHtml(titleCase(chatbot.position))}</span></div>
                         <div class="detail-row"><span>Total Score</span><span>${escapeHtml(chatbot.average_score)}%</span></div>
-                        <div class="detail-row"><span>Summary</span><span><a href="${URLS.summaryReport}">Open Report</a></span></div>
+                        <div class="detail-row"><span>Summary</span><span><a href="${URLS.summaryReport}?application_id=${encodeURIComponent(appData.id)}">Open Report</a></span></div>
                     </div>
                 `;
             } else if (appData && appData.eligibility === 'Eligible') {
                 container.innerHTML = `
                     <p class="empty-note">You are eligible to proceed to the chatbot interview.</p>
-                    <a class="small-action" href="${URLS.chatbotPage}" style="margin-top:14px;">Start Interview</a>
+                    <a class="small-action" href="${URLS.chatbotPage}?application_id=${encodeURIComponent(appData.id)}" style="margin-top:14px;">Start Interview</a>
                 `;
             } else if (appData) {
                 container.innerHTML = `<p class="empty-note">Chatbot interview is not available until your resume screening is eligible.</p>`;

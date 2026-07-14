@@ -377,21 +377,20 @@
           <span class="readonly-value">{{ job_name }}</span>
         </div>
         <div class="field-row">
-          <label for="current_location">Location</label>
-          <input type="text" id="current_location" name="current_location" value="{{ scan.current_location }}">
+    <label for="current_location">Location</label>
+    <input type="text" id="current_location" name="current_location" value="{{ scan.current_location }}">
         </div>
-
-        <div class="score-block">
+        <!-- <div class="score-block">
           <span class="score-num">{{ scan.match_score }}%</span>
           <span class="score-label">Resume Match Score</span>
           <span class="fit-tag">{{ scan.fit_label }}</span>
-        </div>
+        </div> -->
 
         <div class="section-label">Required Skills Found</div>
         <div class="skill-grid">
           {% for kw in scan.required_skills_found %}
           <div class="skill-check">
-            <input type="checkbox" id="skill_{{ loop.index }}_f" name="skill" value="{{ kw }}" checked>
+            <!-- <input type="checkbox" id="skill_{{ loop.index }}_f" name="skill" value="{{ kw }}" checked> -->
             <label for="skill_{{ loop.index }}_f">✓ {{ kw }}</label>
           </div>
           {% else %}
@@ -405,7 +404,7 @@
         <div class="skill-grid">
           {% for kw in scan.required_skills_missing %}
           <div class="skill-check">
-            <input type="checkbox" id="skill_{{ loop.index }}_m" name="skill" value="{{ kw }}">
+            <!-- <input type="checkbox" id="skill_{{ loop.index }}_m" name="skill" value="{{ kw }}"> -->
             <label for="skill_{{ loop.index }}_m">✗ {{ kw }}</label>
           </div>
           {% endfor %}
@@ -413,7 +412,7 @@
         {% endif %}
 
         {% if scan.other_skills %}
-        <div class="section-label">Other Skills Detected</div>
+        <!-- <div class="section-label">Other Skills Detected</div>
         <span class="hint">Uncheck anything that isn't actually yours.</span>
         <div class="skill-grid">
           {% for kw in scan.other_skills %}
@@ -422,7 +421,7 @@
             <label for="skill_{{ loop.index }}_o">{{ kw }}</label>
           </div>
           {% endfor %}
-        </div>
+        </div> -->
         {% endif %}
 
         <div class="exp-edu-grid">
@@ -446,16 +445,16 @@
           </div>
         </div>
 
-        <div class="status-block">
+        <!-- <div class="status-block">
           <div class="section-label">Overall Status</div>
           <span class="status-pill {{ 'eligible' if scan.is_eligible else 'not-eligible' }}">
             {{ 'Eligible for Interview' if scan.is_eligible else 'Not Eligible' }}
           </span>
-        </div>
+        </div> -->
 
-        <div class="recommendation">
+        <!-- <div class="recommendation">
           <b>Recommendation:</b> {{ scan.fit_message }}
-        </div>
+        </div> -->
 
         <div class="edit-note">
           This match score and status come from our automatic screening and won't change here — but the

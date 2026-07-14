@@ -28,6 +28,7 @@ from sklearn.tree import DecisionTreeClassifier
 # Resume-scanning engine (ported from scanner_updated) — text extraction,
 # ATS feature scoring, and the "Strong/Moderate/Weak Fit" CART classifier.
 from services import resume_scanner
+from services.overall_status import sync_overall_status
 
 applicants_bp = Blueprint("applicants", __name__)
 
@@ -237,11 +238,13 @@ def dashboard():
             u.email,
             u.contact_num,
             j.job_name,
-            app.screening_status,
+            app.pre_screen_status,
             COALESCE(
-                (SELECT SUM(TIMESTAMPDIFF(YEAR, start_date, COALESCE(end_date, CURDATE()))) 
-                 FROM work_experience 
-                 WHERE applicant_id = a.applicant_id), 0
+                app.resume_experience_years,
+                (SELECT SUM(TIMESTAMPDIFF(YEAR, start_date, COALESCE(end_date, CURDATE())))
+                 FROM work_experience
+                 WHERE applicant_id = a.applicant_id),
+                0
             ) AS years_experience,
             (SELECT degree_level FROM educations WHERE applicant_id = a.applicant_id ORDER BY graduation_year DESC LIMIT 1) AS education_level,
             (SELECT GROUP_CONCAT(sm.skill_name SEPARATOR ', ') 
@@ -275,7 +278,7 @@ def dashboard():
             "contact": r[4],
             "position": r[5],
             "eligibility": "Eligible" if r[6] == "Passed Screening" else "Not Eligible",
-            "yearexperience": int(r[7]) if r[7] is not None else 0,
+            "yearexperience": float(r[7]) if r[7] is not None else 0,
             "level": "N/A",
             "status": r[6],  # screening_status string
             "confidence": 75,  # static fallback when not using live prediction state
@@ -348,8 +351,26 @@ def dashboard():
         """,
         (user_id,),
     )
-    available_jobs = [
-        {
+    rows = cur.fetchall()
+
+    available_jobs = []
+
+    for p in rows:
+
+        app = applications_by_job.get(p[0])   # p[0] = job_id
+
+        phase1 = None
+        phase2 = None
+
+        if app:
+            # Section 1
+            phase1 = app["eligibility"]
+
+            # Section 2
+            if app.get("chatbot"):
+                phase2 = app["chatbot"]["qualification_status"]
+
+        available_jobs.append({
             "id": p[0],
             "position": p[1],
             "application_status": p[2],
@@ -362,30 +383,29 @@ def dashboard():
             "experience_years": p[8],
             "min_age": p[9],
             "has_applied": bool(p[10]),
-        }
-        for p in cur.fetchall()
-    ]
 
-    # Fetch assessment scores dynamically, per position, so the chatbot
-    # section shown for one job never bleeds into another job's detail view.
+            # NEW
+            "phase1_status": phase1,
+            "phase2_status": phase2,
+        })
+
+    # Fetch Section 2 results by application ID. A job title is not a safe
+    # boundary for independent applications.
     cur.execute(
         """
-        SELECT position, qualification_status, average_score, created_at
+        SELECT application_id, position, qualification_status, average_score
         FROM chatbot
-        WHERE user_id = %s
-        ORDER BY created_at DESC
+        WHERE user_id = %s AND application_id IS NOT NULL
         """,
         (user_id,),
     )
-    chatbot_by_position = {}
-    for pos, qual_status, avg_score, created_at in cur.fetchall():
-        key = (pos or "").strip().lower()
-        # Newest-first ordering, keep only the first (latest) row per position
-        chatbot_by_position.setdefault(key, {
+    chatbot_by_application = {}
+    for application_id, pos, qual_status, avg_score in cur.fetchall():
+        chatbot_by_application[application_id] = {
             "position": pos,
             "qualification_status": qual_status,
             "average_score": float(avg_score) if avg_score is not None else 0,
-        })
+        }
 
     chatbot_data = None
     name = session.get("name", username)
@@ -397,20 +417,77 @@ def dashboard():
     applied_role = position or "Business Analyst"
 
     if position:
-        chatbot_data = chatbot_by_position.get(position.strip().lower())
+        chatbot_data = chatbot_by_application.get(session.get("active_application_id"))
 
     # Attach each job's own chatbot result (if any) to its application entry,
     # keyed by job_id, so the frontend can render Section 1 + Section 2 for
     # the exact job the applicant clicked on rather than whichever job was
     # applied to most recently.
     for job_id, entry in applications_by_job.items():
-        entry_position_key = (entry.get("position") or "").strip().lower()
-        entry["chatbot"] = chatbot_by_position.get(entry_position_key)
+        entry["chatbot"] = chatbot_by_application.get(entry["id"])
 
     # JSON-safe dict (job_id as string keys) for embedding into the page.
     applications_by_job_json = {str(k): v for k, v in applications_by_job.items()}
+    for job in available_jobs:
+        app = applications_by_job.get(job["id"])
 
-    cur.close()
+        job["card_class"] = ""
+
+        if app:
+            chatbot = app.get("chatbot")
+
+            # Phase 2 has highest priority
+            if chatbot:
+                if chatbot.get("qualification_status") == "Qualified":
+                    job["card_class"] = "qualified"
+
+                elif chatbot.get("qualification_status") == "Not Qualified":
+                    job["card_class"] = "not-qualified"
+
+            # Otherwise use Phase 1
+            elif app["eligibility"] == "Eligible":
+                job["card_class"] = "eligible"
+
+            else:
+                job["card_class"] = "not-eligible"
+
+        elif job["has_applied"]:
+            job["card_class"] = "pending"
+    
+    for job in available_jobs:
+        job["card_class"] = ""
+        job["card_status"] = ""
+
+        app = applications_by_job.get(job["id"])
+
+        if app:
+            chatbot = app.get("chatbot")
+
+            # Section 2 (Highest Priority)
+            if chatbot:
+                status = (chatbot.get("qualification_status") or "").strip()
+
+                if status == "Qualified":
+                    job["card_class"] = "qualified"
+                    job["card_status"] = "Qualified"
+
+                elif status == "Not Qualified":
+                    job["card_class"] = "not-qualified"
+                    job["card_status"] = "Not Qualified"
+
+            # Section 1
+            if job["card_class"] == "":
+                if app["eligibility"] == "Eligible":
+                    job["card_class"] = "eligible"
+                    job["card_status"] = "Eligible"
+                else:
+                    job["card_class"] = "not-eligible"
+                    job["card_status"] = "Not Eligible"
+
+        elif job["has_applied"]:
+            job["card_class"] = "pending"
+            job["card_status"] = "Application Submitted"
+        cur.close()
 
     return render_template(
         "dashboard.html",
@@ -616,21 +693,26 @@ def submit_application():
         # Set final eligibility evaluation
         if not rejection_reasons:
             eligibility = "Eligible"
-            screening_status = "Passed Screening"
+            pre_screen_status = "Passed Screening"
             final_reason = "You meet all requirements for this position."
         else:
             eligibility = "Not Eligible"
-            screening_status = "Failed Screening"
+            pre_screen_status = "Failed Screening"
             final_reason = "Not Eligible: " + "; ".join(rejection_reasons)
 
         # --- 8. SUBMIT APPLICATION JUNCTION RECORD ---
         cur.execute(
             """
-            INSERT INTO applications (job_id, applicant_id, screening_status, applied_at)
-            VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+            INSERT INTO applications
+                (job_id, applicant_id, resume_experience_years, pre_screen_status, applied_at)
+            VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP)
             """,
-            (job_id, applicant_id, screening_status)
+            (job_id, applicant_id, experience, pre_screen_status)
         )
+        session["active_application_id"] = cur.lastrowid
+        # Section 1 result just landed — recompute the combined verdict
+        # (chatbot hasn't run yet, so this will settle as Pending/Rejected).
+        sync_overall_status(cur, cur.lastrowid)
         mysql.connection.commit()
         cur.close()
 
@@ -683,7 +765,7 @@ def applicant_view():
     
     cur.execute(
         """
-        SELECT app.screening_status, j.job_name 
+        SELECT app.pre_screen_status, j.job_name 
         FROM applications app 
         JOIN applicants a ON a.applicant_id = app.applicant_id
         JOIN jobs j ON j.job_id = app.job_id
@@ -976,20 +1058,28 @@ def submit_resume_application():
         features = extracted["ats_features"]
         contact_info = extracted["contact_info"]
 
-        # ── 6. CART fit prediction ───────────────────────────────────────────
-        model = resume_scanner.get_cart_model()
-        fit_result = resume_scanner.predict_fit(features, model=model)
-        eligible_labels = current_app.config.get(
-            "RESUME_ELIGIBLE_LABELS", {"Strong Fit", "Moderate Fit"}
-        )
-        is_eligible = fit_result["label"] in eligible_labels
-
         applicant_years = resume_scanner.calculate_total_experience_years(
-            extracted["work_experience"]
+            extracted["work_experience"], text=text
         )
         education_check = resume_scanner.evaluate_education_requirement(
             extracted["education"], education_baseline
         )
+
+        # ── 6. Dataset-calibrated fit prediction ─────────────────────────────
+        # The elite ATS dataset labels shortlisting from skill, experience,
+        # and education match. Supply the real applicant-vs-job comparisons,
+        # rather than proxies such as "a date range was found".
+        model = resume_scanner.get_cart_model()
+        fit_result = resume_scanner.predict_fit(
+            features,
+            model=model,
+            experience_match=applicant_years >= float(required_exp_years or 0),
+            education_match=education_check.get("meets", True),
+        )
+        eligible_labels = current_app.config.get(
+            "RESUME_ELIGIBLE_LABELS", {"Strong Fit", "Moderate Fit"}
+        )
+        is_eligible = fit_result["label"] in eligible_labels
 
         full_name = (
             contact_info.get("full_name")
@@ -1276,14 +1366,19 @@ def confirm_resume_application():
                 )
 
         # ── Record the application/screening result ─────────────────────────
-        screening_status = "Passed Screening" if is_eligible else "Failed Screening"
+        pre_screen_status = "Passed Screening" if is_eligible else "Failed Screening"
         cur.execute(
             """
-            INSERT INTO applications (job_id, applicant_id, screening_status, applied_at)
-            VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+            INSERT INTO applications
+                (job_id, applicant_id, resume_experience_years, pre_screen_status, applied_at)
+            VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP)
             """,
-            (job_id, applicant_id, screening_status),
+            (job_id, applicant_id, experience_years, pre_screen_status),
         )
+        session["active_application_id"] = cur.lastrowid
+
+        # Section 1 result just landed — recompute the combined verdict.
+        sync_overall_status(cur, cur.lastrowid)
 
         mysql.connection.commit()
 
@@ -1409,7 +1504,7 @@ def preapp():
             job_id = job_row[0]
             cur.execute(
                 """
-                INSERT INTO applications (job_id, applicant_id, screening_status)
+                INSERT INTO applications (job_id, applicant_id, pre_screen_status)
                 VALUES (%s, %s, 'Pending')
                 """,
                 (job_id, applicant_id)
@@ -1433,7 +1528,7 @@ def preapp():
         """
         SELECT a.full_name, u.email, u.contact_num, j.job_name, 
                COALESCE((SELECT SUM(TIMESTAMPDIFF(YEAR, start_date, COALESCE(end_date, CURDATE()))) FROM work_experience WHERE applicant_id = a.applicant_id), 0) AS years_experience,
-               app.screening_status
+               app.pre_screen_status
         FROM applications app
         JOIN applicants a ON a.applicant_id = app.applicant_id
         JOIN users u ON u.user_id = a.user_id
@@ -1529,7 +1624,7 @@ def profile():
 
     cur.execute(
         """
-        SELECT j.job_name, app.screening_status, app.applied_at 
+        SELECT j.job_name, app.pre_screen_status, app.applied_at 
         FROM applications app 
         JOIN applicants a ON a.applicant_id = app.applicant_id
         JOIN jobs j ON j.job_id = app.job_id
@@ -1588,7 +1683,7 @@ def job_applicants(position):
             u.contact_num,
             COALESCE((SELECT SUM(TIMESTAMPDIFF(YEAR, start_date, COALESCE(end_date, CURDATE()))) FROM work_experience WHERE applicant_id = a.applicant_id), 0) AS years_experience,
             COALESCE((SELECT degree_level FROM educations WHERE applicant_id = a.applicant_id ORDER BY graduation_year DESC LIMIT 1), 'N/A') AS education_level,
-            app.screening_status
+            app.pre_screen_status
         FROM applications app
         JOIN applicants a ON a.applicant_id = app.applicant_id
         JOIN users u ON u.user_id = a.user_id
@@ -1648,9 +1743,12 @@ def applicant_decision_json():
 
         # Update applications status directly inside the junction records
         cur.execute(
-            "UPDATE applications SET screening_status = %s WHERE application_id = %s",
+            "UPDATE applications SET pre_screen_status = %s WHERE application_id = %s",
             (new_status, application_id),
         )
+
+        # Section 1 result just changed — recompute the combined verdict.
+        sync_overall_status(cur, application_id)
 
         cur.execute(
             """
@@ -1760,7 +1858,7 @@ def show_progress():
             FROM applications app
             JOIN applicants a ON a.applicant_id = app.applicant_id
             JOIN jobs j ON j.job_id = app.job_id
-            LEFT JOIN chatbot c ON c.user_id = a.user_id
+            LEFT JOIN chatbot c ON c.application_id = app.application_id
             GROUP BY j.job_name
             """
         )

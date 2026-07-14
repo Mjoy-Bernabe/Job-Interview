@@ -504,7 +504,7 @@
         <li>Don't open any other tabs, as it may disqualify you.</li>
         <li>Copy and pasting is not allowed.</li>
         <li>There's a time limit located on the right side of the screen.</li>
-        <li>You only have <strong id="warningLimit">3</strong> warnings before the interview gets closed.</li>
+        <!-- <li>You only have <strong id="warningLimit">3</strong> warnings before the interview gets closed.</li> -->
       </ul>
     </div>
 
@@ -581,6 +581,7 @@
     <input type="hidden" id="candidate-name" value="{{ name }}">
     <input type="hidden" id="candidate-position" value="{{ position }}">
     <input type="hidden" id="candidate-experience" value="{{ experience }}">
+    <input type="hidden" id="application-id" value="{{ application_id }}">
   </div>
 
   <!-- Result modal (no X close) -->
@@ -654,7 +655,7 @@
       let remainingSeconds = INTERVIEW_SECONDS;
       let timerInterval = null;
 
-      document.getElementById('warningLimit').textContent = MAX_WARNINGS;
+      // document.getElementById('warningLimit').textContent = MAX_WARNINGS;
 
       function formatTime(totalSeconds) {
         const h = Math.floor(totalSeconds / 3600);
@@ -712,25 +713,25 @@
         startBtn.addEventListener('click', startInterviewUI);
       }
 
-      // Tab-switch / window-blur warning tracking
-      document.addEventListener('visibilitychange', function () {
-        if (!interviewActive) return;
-        if (document.hidden) {
-          warningCount++;
-          if (warningCount >= MAX_WARNINGS) {
-            endInterview('You exceeded the allowed number of tab-switch warnings. The interview has been closed.');
-          } else if (inputHint) {
-            inputHint.textContent = `Warning ${warningCount}/${MAX_WARNINGS}: switching tabs may disqualify you.`;
-          }
-        }
-      });
+      // // Tab-switch / window-blur warning tracking
+      // document.addEventListener('visibilitychange', function () {
+      //   if (!interviewActive) return;
+      //   if (document.hidden) {
+      //     warningCount++;
+      //     if (warningCount >= MAX_WARNINGS) {
+      //       endInterview('You exceeded the allowed number of tab-switch warnings. The interview has been closed.');
+      //     } else if (inputHint) {
+      //       inputHint.textContent = `Warning ${warningCount}/${MAX_WARNINGS}: switching tabs may disqualify you.`;
+      //     }
+      //   }
+      // });
 
-      // Disable copy/paste in the answer field
-      if (answerInput) {
-        ['paste', 'copy', 'cut'].forEach(evt => {
-          answerInput.addEventListener(evt, e => e.preventDefault());
-        });
-      }
+      // // Disable copy/paste in the answer field
+      // if (answerInput) {
+      //   ['paste', 'copy', 'cut'].forEach(evt => {
+      //     answerInput.addEventListener(evt, e => e.preventDefault());
+      //   });
+      // }
 
       // Redirect buttons
       document.querySelectorAll('[data-redirect-url]').forEach(btn => {

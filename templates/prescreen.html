@@ -63,6 +63,17 @@
       font-size: 0.95rem;
       color: var(--text-main);
       margin-bottom: 16px;
+      font-weight: 600;
+    }
+
+    .job-description-text {
+      font-size: 0.92rem;
+      line-height: 1.7;
+      color: var(--text-main);
+      white-space: pre-line;
+      margin-bottom: 20px;
+      padding-bottom: 18px;
+      border-bottom: 1px dashed var(--card-border);
     }
 
     .job-meta {
@@ -211,6 +222,10 @@
 
     <div class="job-card">
       <div class="label">Description of job</div>
+
+      {% if job and job.description %}
+      <div class="job-description-text">{{ job.description }}</div>
+      {% endif %}
 
       <div class="job-meta">
         <div><b>Department:</b> {{ job.department if job else "—" }}</div>

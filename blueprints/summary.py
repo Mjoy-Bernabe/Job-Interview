@@ -17,6 +17,7 @@ from flask import (
 from extensions import mysql, logger, limiter
 from services.scoring import score_many
 from services.pdf_utils import generate_pdf_summary
+from services.overall_status import sync_overall_status
 
 summary_bp = Blueprint("summary", __name__)
 
@@ -36,10 +37,19 @@ def summary_report():
     if not user_id:
         return "User session not found.", 400
 
+    application_id = request.args.get("application_id", type=int)
+    if not application_id:
+        return "Application not specified.", 400
+
     cur = mysql.connection.cursor()
     cur.execute(
-        "SELECT * FROM chatbot WHERE user_id = %s ORDER BY id DESC LIMIT 1",
-        (user_id,),
+        """
+        SELECT c.* FROM chatbot c
+        JOIN applications a ON a.application_id = c.application_id
+        JOIN applicants ap ON ap.applicant_id = a.applicant_id
+        WHERE c.application_id = %s AND ap.user_id = %s
+        """,
+        (application_id, user_id),
     )
     row = cur.fetchone()
     if not row:
@@ -47,6 +57,13 @@ def summary_report():
 
     keys = [desc[0] for desc in cur.description]
     data = dict(zip(keys, row))
+
+    cur.execute(
+        "SELECT overall_status FROM application_overall_status WHERE application_id = %s",
+        (application_id,),
+    )
+    overall_row = cur.fetchone()
+    overall_status = overall_row[0] if overall_row else "Pending"
     cur.close()
 
     assessment_data = json.loads(data.get("assessment_data") or "[]")
@@ -58,6 +75,7 @@ def summary_report():
         position=data.get("position"),
         skills=data.get("skills"),
         qualification_status=data.get("qualification_status"),
+        overall_status=overall_status,
         confidence=data.get("confidence"),
         average_score=data.get("average_score") or 0,  # <-- add this
         assessment_data=assessment_data,
@@ -74,6 +92,11 @@ def save_summary_report():
         if not user_id:
             return jsonify({"error": "User not logged in or session expired."}), 403
 
+        try:
+            application_id = int(data.get("application_id"))
+        except (TypeError, ValueError):
+            return jsonify({"error": "A valid application_id is required."}), 400
+
         user_name = data.get("user_name")
         position = data.get("position")
         experience = data.get("experience", "")
@@ -82,21 +105,31 @@ def save_summary_report():
         advice = data.get("advice", [])
         assessment_data = data.get("assessment_data", [])
 
-        # safely cast numeric fields
-        raw_confidence = data.get("confidence")
-        raw_avg_score = data.get("average_score")
+        # Scores and the final qualification must come from the server-side
+        # ANN + SentenceTransformer + KeyBERT implementation. The browser may
+        # display provisional per-answer feedback, but it must not be able to
+        # submit a fabricated average or status.
+        qa_pairs = [
+            {"question": item.get("question", ""), "answer": item.get("answer", "")}
+            for item in assessment_data
+            if isinstance(item, dict) and item.get("question") and item.get("answer")
+        ]
+        if not qa_pairs:
+            return jsonify({"error": "At least one scored interview answer is required."}), 400
 
-        try:
-            confidence = float(raw_confidence) if raw_confidence not in (
-                None, "", "NaN") else 0.0
-        except (TypeError, ValueError):
-            confidence = 0.0
-
-        try:
-            average_score = float(raw_avg_score) if raw_avg_score not in (
-                None, "", "NaN") else 0.0
-        except (TypeError, ValueError):
-            average_score = 0.0
+        scored_summary = score_many(qa_pairs)
+        scored_answers = [
+            {**pair, **result}
+            for pair, result in zip(qa_pairs, scored_summary["answers"])
+        ]
+        qualification_status = scored_summary["qualification_status"]
+        average_score = scored_summary["average_score"]
+        qualified_count = sum(
+            1 for result in scored_summary["answers"]
+            if result.get("qualification_status") == "Qualified"
+        )
+        confidence = round((qualified_count / len(scored_answers)) * 100, 2)
+        assessment_data = scored_answers
 
         if not user_name or not position:
             return jsonify({"error": "Missing user_name or position"}), 400
@@ -104,14 +137,27 @@ def save_summary_report():
         cur = mysql.connection.cursor()
         cur.execute(
             """
+            SELECT a.application_id FROM applications a
+            JOIN applicants ap ON ap.applicant_id = a.applicant_id
+            WHERE a.application_id = %s AND ap.user_id = %s
+              AND a.pre_screen_status IN ('Passed Screening', 'Approved', 'Eligible', 'Shortlisted')
+            """,
+            (application_id, user_id),
+        )
+        if not cur.fetchone():
+            cur.close()
+            return jsonify({"error": "Interview is not available for this application."}), 403
+        cur.execute(
+            """
             INSERT INTO chatbot
-            (user_id, user_name, position, experience, skills,
+            (user_id, application_id, user_name, position, experience, skills,
              qualification_status, advice, assessment_data,
              confidence, average_score, created_at)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,NOW())
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,NOW())
             """,
             (
                 user_id,
+                application_id,
                 user_name,
                 position,
                 experience,
@@ -123,6 +169,12 @@ def save_summary_report():
                 average_score,
             ),
         )
+
+        # Section 2 result just landed — recompute the combined verdict so
+        # the summary report can show "Passed Screening" / "Rejected"
+        # alongside the raw chatbot qualification_status.
+        overall_status = sync_overall_status(cur, application_id)
+
         mysql.connection.commit()
         cur.close()
 
@@ -134,6 +186,7 @@ def save_summary_report():
             {
                 "message": "Summary report saved.",
                 "redirect": url_for("summary.summary_page"),
+                "overall_status": overall_status,
             }
         ), 201
     except Exception as e:

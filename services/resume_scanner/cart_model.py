@@ -27,6 +27,7 @@ import pickle
 
 MODEL_PATH         = os.path.join(os.path.dirname(__file__), "cart_model.pkl")
 DATASET_MODEL_PATH = os.path.join(os.path.dirname(__file__), "dataset_fit_model.pkl")
+DATASET_PATH       = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "ats_resume_dataset_elite_v3.csv")
 LABELS = ["Strong Fit", "Moderate Fit", "Weak Fit"]
 
 
@@ -45,6 +46,24 @@ def _load_dataset_model():
     global _dataset_model
     if _dataset_model is not None:
         return _dataset_model
+    # Train from the supplied labelled dataset when it is present. This avoids
+    # relying on a version-sensitive pickle and guarantees the live scorer is
+    # calibrated from ats_resume_dataset_elite_v3.csv.
+    try:
+        import pandas as pd
+        from sklearn.linear_model import LogisticRegression
+
+        dataset = pd.read_csv(DATASET_PATH)
+        columns = ["skill_match_score", "experience_match", "education_match"]
+        dataset = dataset.dropna(subset=columns + ["shortlisted"])
+        _dataset_model = LogisticRegression(max_iter=1000, class_weight="balanced")
+        _dataset_model.fit(dataset[columns], dataset["shortlisted"].astype(int))
+        return _dataset_model
+    except Exception:
+        pass
+
+    # A packaged model remains a fallback for deployments that do not include
+    # the source CSV.
     try:
         with open(DATASET_MODEL_PATH, "rb") as f:
             _dataset_model = pickle.load(f)
@@ -53,7 +72,11 @@ def _load_dataset_model():
     return _dataset_model
 
 
-def _dataset_fit_probability(features: dict) -> float | None:
+def _dataset_fit_probability(
+    features: dict,
+    experience_match: bool | None = None,
+    education_match: bool | None = None,
+) -> float | None:
     """
     Map our resume ats_features onto the dataset's 3-feature schema and
     return the trained model's P(shortlisted). Returns None if the model
@@ -63,8 +86,10 @@ def _dataset_fit_probability(features: dict) -> float | None:
     if not model:
         return None
     skill_match_score = features.get("keyword_match_ratio", 0.0)
-    experience_match   = 1 if features.get("date_range_count", 0) >= 1 else 0
-    education_match     = 1 if features.get("has_education_section") else 0
+    # These must describe the applicant against this job, not merely whether
+    # the resume contains a date or an Education heading.
+    experience_match = int(bool(experience_match)) if experience_match is not None else 0
+    education_match = int(bool(education_match)) if education_match is not None else 0
     try:
         import pandas as pd
         row = pd.DataFrame(
@@ -469,7 +494,13 @@ _MESSAGES = {
 # predict_fit  ── hybrid rule-based + CART
 # ─────────────────────────────────────────────────────────────────────────────
 
-def predict_fit(features: dict, model: CARTClassifier) -> dict:
+def predict_fit(
+    features: dict,
+    model: CARTClassifier,
+    *,
+    experience_match: bool | None = None,
+    education_match: bool | None = None,
+) -> dict:
     """
     Two-stage prediction:
       Stage 1: rule-based weighted score (0-100) → primary label
@@ -497,7 +528,7 @@ def predict_fit(features: dict, model: CARTClassifier) -> dict:
     # ±6-point nudge (not a replacement) so a clean, well-formatted resume
     # can't be torpedoed by a model that only sees 3 coarse signals, and a
     # poorly-formatted resume can't be rescued purely on skill match.
-    dataset_p = _dataset_fit_probability(features)
+    dataset_p = _dataset_fit_probability(features, experience_match, education_match)
     if dataset_p is not None:
         rule_score = max(0.0, min(100.0, rule_score + (dataset_p - 0.5) * 12))
 

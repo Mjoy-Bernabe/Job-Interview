@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const candidateName = document.getElementById("candidate-name");
   const candidatePosition = document.getElementById("candidate-position");
   const candidateExperience = document.getElementById("candidate-experience");
+  const applicationId = document.getElementById("application-id");
 
   // result modal elements
   const resultModal = document.getElementById("resultModal");
@@ -37,11 +38,13 @@ document.addEventListener("DOMContentLoaded", () => {
   let finalScore = 0;
   let finalResult = "";
   let confidence = "";
+  let activeApplicationId = "";
 
   // init user data from hidden fields
   if (candidateName) userName = candidateName.value || "";
   if (candidatePosition) userPosition = candidatePosition.value || "";
   if (candidateExperience) userExperience = candidateExperience.value || "";
+  if (applicationId) activeApplicationId = applicationId.value || "";
 
   function scrollToBottom() {
     if (!chatContent) return;
@@ -259,10 +262,18 @@ document.addEventListener("DOMContentLoaded", () => {
       const status = data.qualification_status || "Pending";
       const feedback = data.feedback || "No feedback provided.";
 
-      scores.push({ question: currentQuestion, answer, qualificationStatus: status });
+      const numericScore = Number(data.score);
+      scores.push({
+        question: currentQuestion,
+        answer,
+        score: Number.isFinite(numericScore) ? numericScore : 0,
+        cosine_score: Number(data.cosine_score) || 0,
+        keyword_score: Number(data.keyword_score) || 0,
+        qualificationStatus: status,
+      });
       questionAnswerPairs.push({ question: currentQuestion, answer });
 
-      if (status === "Qualified") finalScore++;
+      finalScore += Number.isFinite(numericScore) ? numericScore : 0;
 
       addBotMessageWithSuggestion(
         `<strong>Status:</strong> ${status}<br><em>${feedback}</em><hr>`,
@@ -324,13 +335,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const qualifiedCount = scores.filter(
       (s) => s.qualificationStatus === "Qualified"
     ).length;
-    const passThreshold = Math.ceil(scores.length * 0.7);
-    finalResult = qualifiedCount >= passThreshold ? "Qualified" : "Not Qualified";
-    const percent =
+    // Average score is the documented mean of all hybrid ANN answer scores.
+    // Confidence is deliberately separate: it shows how consistently the
+    // applicant produced fully-qualified (>= 0.70) answers.
+    const averageScore =
       scores.length > 0
-        ? Math.round((qualifiedCount / scores.length) * 100)
+        ? finalScore / scores.length
         : 0;
-    confidence = scores.length > 0 ? `${percent}%` : "N/A";
+    finalResult = averageScore > 0.60 ? "Qualified" : "Not Qualified";
+    const averagePercent = Math.round(averageScore * 100);
+    const confidencePercent = scores.length > 0
+      ? Math.round((qualifiedCount / scores.length) * 100)
+      : 0;
+    confidence = confidencePercent;
 
     const finalDiv = document.getElementById("final-result");
     if (finalDiv) {
@@ -354,7 +371,7 @@ document.addEventListener("DOMContentLoaded", () => {
         resultStatusText.innerHTML = `<strong>Status:</strong> ${finalResult}`;
       }
       if (resultPercentageText) {
-        resultPercentageText.innerHTML = `<strong>Match score:</strong> ${percent}% (${qualifiedCount} of ${scores.length} answers qualified)`;
+        resultPercentageText.innerHTML = `<strong>Average ANN score:</strong> ${averagePercent}% &nbsp;|&nbsp; <strong>Confidence:</strong> ${confidencePercent}% (${qualifiedCount} of ${scores.length} answers fully qualified)`;
       }
       if (resultSuggestionText) {
         if (finalResult === "Qualified") {
@@ -386,14 +403,14 @@ document.addEventListener("DOMContentLoaded", () => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        application_id: activeApplicationId,
         user_name: userName,
         position: userPosition,
         experience: userExperience,
         skills: userSkills,
         qualification_status: finalResult,
         confidence: parseFloat(numericConfidence),
-        average_score:
-          scores.length > 0 ? (finalScore / scores.length).toFixed(2) : 0,
+        average_score: scores.length > 0 ? finalScore / scores.length : 0,
         assessment_data: scores,
         advice: scores.map((s) => ({
           question: s.question,
@@ -431,13 +448,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const viewSummaryBtn = document.getElementById("view-summary");
   if (viewSummaryBtn) {
     viewSummaryBtn.addEventListener("click", function () {
-      fetch("/summary_report", {
+      fetch(`/summary_report?application_id=${encodeURIComponent(activeApplicationId)}`, {
         method: "GET",
         credentials: "include",
       })
         .then((response) => {
           if (!response.ok) throw new Error("Failed to load summary");
-          window.location.href = "/summary_report";
+          window.location.href = `/summary_report?application_id=${encodeURIComponent(activeApplicationId)}`;
         })
         .catch((error) => {
           console.error("Failed to fetch summary:", error);
@@ -449,7 +466,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // result modal buttons (no X, no backdrop close)
   if (resultViewSummaryBtn) {
     resultViewSummaryBtn.addEventListener("click", () => {
-      window.location.href = "/summary_report";
+      window.location.href = `/summary_report?application_id=${encodeURIComponent(activeApplicationId)}`;
     });
   }
 

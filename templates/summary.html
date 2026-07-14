@@ -426,6 +426,11 @@
                         {% endif %}
                         {{ qualification_status or "Not available" }}
                     </div>
+                    {% if overall_status %}
+                    <div class="candidate-meta" style="margin-top:4px;">
+                        Overall pipeline result: <strong>{{ overall_status }}</strong>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
 
