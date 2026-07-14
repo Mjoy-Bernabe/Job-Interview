@@ -184,3 +184,23 @@ def notifications():
         active_page="notifications"
     )
 
+@admin_bp.route("/admin/audit-logs")
+def audit_logs():
+    if "user_id" not in session:
+        return redirect(url_for("auth.login"))
+
+    user_id = session["user_id"]
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT username, user_type FROM users WHERE user_id = %s", (user_id,))
+    user = cur.fetchone()
+    cur.close()
+
+    if not user or user[1] != 'Admin':
+        return redirect(url_for("auth.login"))
+
+    return render_template(
+        "admin_logs.html",
+        username=user[0],
+        active_page="audit_logs"
+    )
+

@@ -453,7 +453,7 @@
 
             <div class="menu-section">
                 <div class="menu-title">System Logs</div>
-                <a href="#" class="menu-link {% if active_page == 'audit_logs' %}active{% endif %}"><i
+                <a href="{{ url_for('admin.audit_logs') }}" class="menu-link {% if active_page == 'audit_logs' %}active{% endif %}"><i
                         class='bx bx-list-ul'></i> Audit Logs</a>
             </div>
 
