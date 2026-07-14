@@ -276,19 +276,19 @@
     <div class="action-bar">
         <div class="action-search">
             <i class='bx bx-menu'></i>
-            <input type="text" placeholder="Search applicants or staff">
+            <input type="text" id="um-search-input" placeholder="Search applicants or staff">
             <i class='bx bx-search'></i>
         </div>
         <div class="action-filter">
-            <select class="action-select">
-                <option>Select user type</option>
-                <option>Applicant</option>
-                <option>HR Staff</option>
+            <select class="action-select" id="um-role-filter">
+                <option value="all">Select user type</option>
+                <option value="applicant">Applicant</option>
+                <option value="hr staff">HR Staff</option>
             </select>
-            <select class="action-select">
-                <option>Date Joined</option>
-                <option>Newest</option>
-                <option>Oldest</option>
+            <select class="action-select" id="um-sort-filter">
+                <option value="default">Date Joined</option>
+                <option value="newest">Newest</option>
+                <option value="oldest">Oldest</option>
             </select>
         </div>
     </div>
@@ -388,4 +388,61 @@
         </table>
     </div>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('um-search-input');
+            const roleFilter = document.getElementById('um-role-filter');
+            const sortFilter = document.getElementById('um-sort-filter');
+            const tbody = document.querySelector('.user-table tbody');
+            let rows = Array.from(tbody.querySelectorAll('tr'));
+            const initialOrder = [...rows]; // Keep original order for "default"
+
+            function filterAndSort() {
+                const query = searchInput.value.toLowerCase();
+                const roleValue = roleFilter.value.toLowerCase();
+                const sortValue = sortFilter.value;
+
+                // 1. Filter
+                let visibleRows = rows.filter(row => {
+                    const name = row.querySelector('.user-name').innerText.toLowerCase();
+                    const email = row.querySelector('.user-email').innerText.toLowerCase();
+                    const role = row.querySelector('.badge-role').innerText.toLowerCase();
+
+                    const matchesSearch = name.includes(query) || email.includes(query);
+                    const matchesRole = roleValue === 'all' || role.includes(roleValue) || roleValue === 'select user type';
+
+                    return matchesSearch && matchesRole;
+                });
+
+                // 2. Sort
+                if (sortValue === 'newest') {
+                    // Assuming rows are chronologically ordered top-to-bottom by default, newest might mean reversed
+                    visibleRows.reverse(); 
+                } else if (sortValue === 'oldest') {
+                    // Already in oldest-first if default is oldest-first
+                }
+
+                // 3. Render
+                tbody.innerHTML = '';
+                // First, append all rows but hidden if not in visibleRows
+                // Actually, just append visibleRows for simplicity, or toggle display
+                
+                // Let's just toggle display to keep DOM intact
+                initialOrder.forEach(row => {
+                    row.style.display = visibleRows.includes(row) ? '' : 'none';
+                });
+
+                // If sorting changes order, re-append
+                if (sortValue !== 'default') {
+                    visibleRows.forEach(row => tbody.appendChild(row));
+                } else {
+                    initialOrder.forEach(row => tbody.appendChild(row));
+                }
+            }
+
+            searchInput.addEventListener('input', filterAndSort);
+            roleFilter.addEventListener('change', filterAndSort);
+            sortFilter.addEventListener('change', filterAndSort);
+        });
+    </script>
 {% endblock %}

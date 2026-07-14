@@ -231,30 +231,28 @@
     <div class="action-bar">
         <div class="action-search">
             <i class='bx bx-menu'></i>
-            <input type="text" placeholder="Search User ID...">
+            <input type="text" id="log-search-input" placeholder="Search User ID or Role...">
             <i class='bx bx-search'></i>
         </div>
         
         <div class="filters-container">
             <div class="filter-group">
                 <div class="filter-label">From Date</div>
-                <div class="action-date">
-                    dd/mm/yy <i class='bx bx-calendar'></i>
-                </div>
+                <input type="date" class="action-date" id="log-from-date" style="background: transparent; outline: none;">
             </div>
             
             <div class="filter-group">
                 <div class="filter-label">To Date</div>
-                <div class="action-date">
-                    dd/mm/yy <i class='bx bx-calendar'></i>
-                </div>
+                <input type="date" class="action-date" id="log-to-date" style="background: transparent; outline: none;">
             </div>
             
             <div class="filter-group">
                 <div class="filter-label">Actions</div>
-                <div class="action-select">
-                    All Actions <i class='bx bx-chevron-down'></i>
-                </div>
+                <select class="action-select" id="log-action-filter" style="background: transparent; outline: none;">
+                    <option value="all">All Actions</option>
+                    <option value="log-in">Log-In</option>
+                    <option value="log-out">Log-Out</option>
+                </select>
             </div>
         </div>
     </div>
@@ -311,4 +309,51 @@
         </table>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('log-search-input');
+        const fromDate = document.getElementById('log-from-date');
+        const toDate = document.getElementById('log-to-date');
+        const actionFilter = document.getElementById('log-action-filter');
+        const tbody = document.querySelector('.logs-table tbody');
+        let rows = Array.from(tbody.querySelectorAll('tr'));
+
+        function filterLogs() {
+            const query = searchInput.value.toLowerCase();
+            const actionValue = actionFilter.value.toLowerCase();
+            const from = fromDate.value ? new Date(fromDate.value) : null;
+            const to = toDate.value ? new Date(toDate.value) : null;
+            
+            if (from) from.setHours(0,0,0,0);
+            if (to) to.setHours(23,59,59,999);
+
+            rows.forEach(row => {
+                const userId = row.cells[0].innerText.toLowerCase();
+                const role = row.cells[1].innerText.toLowerCase();
+                const timestampStr = row.cells[2].innerText;
+                const action = row.cells[3].innerText.toLowerCase();
+                
+                // Parse timestamp "06/08/2024, 12:33:47 AM"
+                const datePart = timestampStr.split(',')[0].trim();
+                const [month, day, year] = datePart.split('/');
+                const rowDate = new Date(year, month - 1, day);
+
+                const matchesSearch = userId.includes(query) || role.includes(query);
+                const matchesAction = actionValue === 'all' || action.includes(actionValue);
+                
+                let matchesDate = true;
+                if (from && rowDate < from) matchesDate = false;
+                if (to && rowDate > to) matchesDate = false;
+
+                row.style.display = (matchesSearch && matchesAction && matchesDate) ? '' : 'none';
+            });
+        }
+
+        searchInput.addEventListener('input', filterLogs);
+        fromDate.addEventListener('change', filterLogs);
+        toDate.addEventListener('change', filterLogs);
+        actionFilter.addEventListener('change', filterLogs);
+    });
+</script>
 {% endblock %}

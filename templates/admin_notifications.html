@@ -248,16 +248,21 @@
     <div class="notif-filter">
         <div class="filter-search">
             <i class='bx bx-menu' style="margin-right: 5px; color: #5B5959;"></i>
-            <input type="text" placeholder="Search complaints or notifications">
+            <input type="text" id="notif-search-input" placeholder="Search complaints or notifications">
             <i class='bx bx-search'></i>
         </div>
         <div class="filter-dropdowns">
-            <div class="filter-dropdown">
-                Notification Type <i class='bx bx-chevron-down'></i>
-            </div>
-            <div class="filter-dropdown">
-                Newest - Oldest <i class='bx bx-chevron-down'></i>
-            </div>
+            <select class="filter-dropdown" id="notif-type-filter" style="background: transparent; outline: none;">
+                <option value="all">Notification Type</option>
+                <option value="complaint">Complaint</option>
+                <option value="analytics">Analytics</option>
+                <option value="new users">New Users</option>
+            </select>
+            <select class="filter-dropdown" id="notif-sort-filter" style="background: transparent; outline: none;">
+                <option value="default">Sort by Date</option>
+                <option value="newest">Newest</option>
+                <option value="oldest">Oldest</option>
+            </select>
         </div>
     </div>
 
@@ -338,4 +343,55 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('notif-search-input');
+        const typeFilter = document.getElementById('notif-type-filter');
+        const sortFilter = document.getElementById('notif-sort-filter');
+        const table = document.querySelector('.notif-table');
+        let records = Array.from(table.querySelectorAll('.notif-record'));
+        const initialOrder = [...records];
+
+        function filterAndSort() {
+            const query = searchInput.value.toLowerCase();
+            const typeValue = typeFilter.value.toLowerCase();
+            const sortValue = sortFilter.value;
+
+            // 1. Filter
+            let visibleRecords = records.filter(record => {
+                const type = record.querySelector('.status-btn').innerText.toLowerCase();
+                const text = record.querySelector('.record-text').innerText.toLowerCase();
+                const time = record.querySelector('.record-time').innerText.toLowerCase();
+
+                const matchesSearch = type.includes(query) || text.includes(query) || time.includes(query);
+                const matchesType = typeValue === 'all' || type.includes(typeValue) || typeValue === 'notification type';
+
+                return matchesSearch && matchesType;
+            });
+
+            // 2. Sort
+            if (sortValue === 'newest') {
+                visibleRecords.reverse(); 
+            } else if (sortValue === 'oldest') {
+                // assume oldest
+            }
+
+            // 3. Render
+            initialOrder.forEach(rec => {
+                rec.style.display = visibleRecords.includes(rec) ? '' : 'none';
+            });
+
+            if (sortValue !== 'default') {
+                visibleRecords.forEach(rec => table.appendChild(rec));
+            } else {
+                initialOrder.forEach(rec => table.appendChild(rec));
+            }
+        }
+
+        searchInput.addEventListener('input', filterAndSort);
+        typeFilter.addEventListener('change', filterAndSort);
+        sortFilter.addEventListener('change', filterAndSort);
+    });
+</script>
 {% endblock %}
