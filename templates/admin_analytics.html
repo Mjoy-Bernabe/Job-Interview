@@ -299,6 +299,7 @@
     }
 </style>
 <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -328,7 +329,7 @@
             onclick="switchTab('others', this)">Others</a>
     </div>
     <!-- Export Button -->
-    <a href="#" class="export-btn">Export PDF Report</a>
+    <a href="javascript:void(0)" class="export-btn" onclick="exportToPDF()">Export PDF Report</a>
 </div>
 
 <!-- Content Grid -->
@@ -856,5 +857,264 @@
             switchTab('system-usage', document.getElementById('btn-system-usage'));
         }
     });
+
+    async function exportToPDF() {
+        const btn = document.querySelector('.export-btn');
+        const originalText = btn.innerText;
+        btn.innerText = 'Generating PDF...';
+        btn.style.pointerEvents = 'none';
+
+        // Temporarily render all tabs in background to generate canvas images
+        const tabContents = document.querySelectorAll('.tab-content');
+        const originalStyles = [];
+        tabContents.forEach(el => {
+            originalStyles.push({
+                display: el.style.display,
+                position: el.style.position,
+                visibility: el.style.visibility,
+                opacity: el.style.opacity,
+                zIndex: el.style.zIndex
+            });
+            el.style.display = 'block';
+            el.style.position = 'absolute';
+            el.style.visibility = 'hidden';
+            el.style.opacity = '0';
+            el.style.zIndex = '-1000';
+        });
+
+        renderSystemUsageCharts();
+        renderApplicationsCharts();
+        renderDemographicsCharts();
+        animateNumbers('hr-performance');
+        animateNumbers('others');
+        
+        // Wait for chart animations
+        await new Promise(r => setTimeout(r, 1200));
+
+        // Helper to extract CanvasJS chart image
+        function getChartImg(containerId) {
+            const container = document.getElementById(containerId);
+            if(container) {
+                const canvas = container.querySelector('canvas');
+                if(canvas) return canvas.toDataURL('image/png');
+            }
+            return '';
+        }
+
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const currentMonth = monthNames[new Date().getMonth()];
+        const timestamp = new Date().toLocaleString();
+
+        // Build the Analytical Report HTML
+        const pdfContainer = document.createElement('div');
+        pdfContainer.style.padding = '30px';
+        pdfContainer.style.backgroundColor = '#FFFFFF';
+        pdfContainer.style.color = '#000000';
+        pdfContainer.style.width = '750px'; 
+        pdfContainer.style.fontFamily = "'Poppins', sans-serif";
+
+        pdfContainer.innerHTML = `
+            <style>
+                .report-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #B3241B; padding-bottom: 15px; margin-bottom: 25px; }
+                .report-header-left { display: flex; align-items: center; gap: 15px; }
+                .logo-box { background: #B3241B; color: #FFFFFF; padding: 10px 15px; font-weight: bold; font-size: 24px; border-radius: 4px; }
+                .report-title { margin: 0; color: #B3241B; font-size: 20px; font-weight: 700; }
+                .report-date { font-size: 11px; color: #5B5959; }
+                .section { margin-bottom: 25px; }
+                .section-title { font-size: 16px; color: #B3241B; border-bottom: 1px solid #CCC; padding-bottom: 5px; margin-bottom: 15px; text-transform: uppercase; font-weight: 600; }
+                .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 15px; }
+                .metric-card { border: 1px solid #EAEAEA; background: #FDFDFD; padding: 15px; border-radius: 6px; text-align: center; }
+                .metric-label { font-size: 10px; color: #5B5959; font-weight: 600; margin-bottom: 5px; }
+                .metric-value { font-size: 20px; color: #B3241B; font-weight: 700; }
+                .footer { margin-top: 30px; border-top: 2px solid #B3241B; padding-top: 15px; text-align: center; }
+                .footer-title { font-weight: bold; color: #000; font-size: 14px; margin: 0; }
+                .footer-text { font-size: 10px; color: #5B5959; margin: 5px 0 0; }
+            </style>
+
+            <div class="report-header">
+                <div class="report-header-left">
+                    <div class="logo-box">H2</div>
+                    <div>
+                        <h2 class="report-title">H2 Software ${currentMonth} Analytics</h2>
+                        <div class="report-date">Exported on: ${timestamp}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SYSTEM USAGE -->
+            <div class="section">
+                <div class="section-title">1. System Usage & Applications</div>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">TOTAL USERS</div>
+                        <div class="metric-value">70,290</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">ACTIVE HR USERS</div>
+                        <div class="metric-value">60,000</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">ACTIVE APPLICANTS</div>
+                        <div class="metric-value">10,290</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">AVG. REVIEW TIME</div>
+                        <div class="metric-value">1 Min</div>
+                    </div>
+                </div>
+                <div class="metrics-grid">
+                    <div class="metric-card" style="grid-column: span 2;">
+                        <div class="metric-label">LOGIN ACTIVITY (YTD)</div>
+                        <div class="metric-value">5,530 Total Logins</div>
+                        <div style="font-size: 11px; color: #5B5959; margin-top: 5px;">Peak: December (100 logins) | Low: January (10 logins)</div>
+                    </div>
+                    <div class="metric-card" style="grid-column: span 2;">
+                        <div class="metric-label">APPLICATIONS (YTD)</div>
+                        <div class="metric-value">6,500 Total Applications</div>
+                        <div style="font-size: 11px; color: #5B5959; margin-top: 5px;">Peak: December (950) | Low: January (150)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PERFORMANCE METRICS -->
+            <div class="section">
+                <div class="section-title">2. Recruitment Performance</div>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">INTERVIEWS</div>
+                        <div class="metric-value">100</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">OFFERS SENT</div>
+                        <div class="metric-value">67</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">HIRED</div>
+                        <div class="metric-value">100</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">AVG. HIRING TIME</div>
+                        <div class="metric-value">3-4 Days</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DEMOGRAPHICS -->
+            <div class="section">
+                <div class="section-title">3. Demographics & Distribution</div>
+                
+                <div class="metrics-grid">
+                    <div class="metric-card" style="grid-column: span 2;">
+                        <div class="metric-label">APPLICANT STATUS DISTRIBUTION</div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 12px;">
+                            <span>Interview Scheduled: <b>35%</b></span>
+                            <span>Hired: <b>30%</b></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 12px;">
+                            <span>Rejected: <b>20%</b></span>
+                            <span>Pending: <b>15%</b></span>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-card" style="grid-column: span 2;">
+                        <div class="metric-label">TOP LOCATIONS</div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 12px;">
+                            <span>Makati: <b>45%</b></span>
+                            <span>Pasay: <b>38%</b></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 12px;">
+                            <span>Manila: <b>27%</b></span>
+                            <span>Pasig: <b>16%</b></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">EDUCATION LEVEL</div>
+                        <div style="margin-top: 10px; font-size: 12px; text-align: left;">
+                            <div>Bachelor's: <b>35.7%</b></div>
+                            <div style="margin-top: 5px;">Master's: <b>30.2%</b></div>
+                            <div style="margin-top: 5px;">High School: <b>21.4%</b></div>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">AGE GROUPS</div>
+                        <div style="margin-top: 10px; font-size: 12px; text-align: left;">
+                            <div>26 - 30: <b>45%</b></div>
+                            <div style="margin-top: 5px;">31 - 35: <b>38%</b></div>
+                            <div style="margin-top: 5px;">21 - 25: <b>27%</b></div>
+                        </div>
+                    </div>
+                    <div class="metric-card" style="grid-column: span 2;">
+                        <div class="metric-label">EXPERIENCE LEVEL</div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 12px;">
+                            <span>Mid-Level: <b>35.7%</b></span>
+                            <span>Senior: <b>30.2%</b></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 12px;">
+                            <span>Entry-Level: <b>21.4%</b></span>
+                            <span>Executive: <b>12.7%</b></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer">
+                <p class="footer-title">H2 Software Services</p>
+                <p class="footer-text">Confidential Information. Do not Redistribute.</p>
+            </div>
+        `;
+        
+        // Restore UI
+        tabContents.forEach((el, index) => {
+            el.style.display = originalStyles[index].display;
+            el.style.position = originalStyles[index].position;
+            el.style.visibility = originalStyles[index].visibility;
+            el.style.opacity = originalStyles[index].opacity;
+            el.style.zIndex = originalStyles[index].zIndex;
+        });
+
+        const activeTabId = localStorage.getItem('activeAnalyticsTab') || 'system-usage';
+        const activeTabElement = document.getElementById('btn-' + activeTabId);
+        switchTab(activeTabId, activeTabElement);
+
+        // Append to DOM securely at top left to prevent scroll/offset clipping
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'absolute';
+        wrapper.style.top = '0';
+        wrapper.style.left = '0';
+        wrapper.style.width = '750px';
+        wrapper.style.zIndex = '-9999';
+        wrapper.style.opacity = '0';
+        wrapper.appendChild(pdfContainer);
+        document.body.appendChild(wrapper);
+
+        // Generate PDF
+        const opt = {
+            margin:       10,
+            filename:     `H2_Analytics_${currentMonth}_Report.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true, logging: false, scrollX: 0, scrollY: 0 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        try {
+            await html2pdf().set(opt).from(pdfContainer).save();
+            document.body.removeChild(wrapper);
+            btn.innerText = originalText;
+            btn.style.pointerEvents = 'auto';
+        } catch(err) {
+            console.error('PDF Export Error:', err);
+            if (document.body.contains(wrapper)) {
+                document.body.removeChild(wrapper);
+            }
+            btn.innerText = 'Export Failed';
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.style.pointerEvents = 'auto';
+            }, 3000);
+        }
+    }
 </script>
 {% endblock %}
