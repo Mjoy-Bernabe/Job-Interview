@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>H2 Software Consulting Services Inc. : Resume Screening Result</title>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
+
+  <style>
+    :root {
+      --primary-red: #B2271B;
+      --primary-red-dark: #921E15;
+      --text-main: #1f1f1f;
+      --text-muted: #6b7280;
+      --card-border: #e5e5e5;
+      --green: #15803d;
+      --green-bg: #ecfdf3;
+      --green-border: #bbf7d0;
+      --red-bg: #fef2f2;
+      --red-border: #fecaca;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 40px 16px 60px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      color: var(--text-main);
+      background:
+        radial-gradient(circle at 8% 90%, rgba(229, 90, 60, 0.18), transparent 40%),
+        radial-gradient(circle at 95% 15%, rgba(229, 90, 60, 0.12), transparent 35%),
+        radial-gradient(circle at 90% 75%, rgba(229, 90, 60, 0.10), transparent 35%),
+        #ffffff;
+    }
+
+    .page-wrapper {
+      max-width: 760px;
+      width: 100%;
+    }
+
+    .eyebrow {
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.7rem;
+      font-weight: 700;
+      margin: 0 0 12px;
+      color: var(--text-main);
+      border-bottom: 2px solid var(--primary-red);
+      padding-bottom: 16px;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin: -4px 0 20px;
+      line-height: 1.6;
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 30px 32px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    }
+
+    .alert {
+      padding: 10px 14px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      font-size: 0.88rem;
+      font-weight: 500;
+    }
+
+    .alert-success { background-color: var(--green-bg); color: #166534; border: 1px solid var(--green-border); }
+    .alert-error { background-color: var(--red-bg); color: #b91c1c; border: 1px solid var(--red-border); }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .field-row label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .field-row input[type="text"],
+    .field-row input[type="email"],
+    .field-row input[type="number"],
+    .field-row select {
+      width: 100%;
+      padding: 9px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--card-border);
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--text-main);
+      background: #fafafa;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .field-row input:focus,
+    .field-row select:focus {
+      outline: none;
+      border-color: var(--primary-red);
+      background: #fff;
+    }
+
+    .readonly-value {
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+
+    .score-block {
+      margin: 24px 0 6px;
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .score-block .score-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.1rem;
+      font-weight: 700;
+      color: var(--primary-red);
+    }
+
+    .score-block .score-label {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .fit-tag {
+      display: inline-block;
+      padding: 3px 12px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      background: #f3f4f6;
+      color: var(--text-main);
+      border: 1px solid var(--card-border);
+    }
+
+    .section-label {
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin: 22px 0 10px;
+    }
+
+    .hint {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: normal;
+      display: block;
+      margin-top: -6px;
+      margin-bottom: 10px;
+    }
+
+    .skill-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .skill-check {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 10px;
+      border-radius: 8px;
+      background: #fafafa;
+      border: 1px solid transparent;
+    }
+
+    .skill-check:has(input:checked) {
+      background: var(--green-bg);
+      border-color: var(--green-border);
+    }
+
+    .skill-check input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--green);
+      cursor: pointer;
+    }
+
+    .skill-check label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .skill-check.other:has(input:checked) {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+
+    .skill-check.other input[type="checkbox"] {
+      accent-color: #2563eb;
+    }
+
+    .exp-edu-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 6px;
+    }
+
+    .status-block {
+      margin-top: 26px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .status-block .section-label { margin: 0; }
+
+    .status-pill {
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .status-pill.eligible {
+      background: var(--green-bg);
+      color: var(--green);
+      border: 1px solid var(--green-border);
+    }
+
+    .status-pill.not-eligible {
+      background: var(--red-bg);
+      color: #b91c1c;
+      border: 1px solid var(--red-border);
+    }
+
+    .recommendation {
+      margin-top: 22px;
+      border-left: 4px solid var(--primary-red);
+      background: #f9fafb;
+      padding: 14px 18px;
+      border-radius: 0 10px 10px 0;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      color: #374151;
+    }
+
+    .edit-note {
+      margin-top: 22px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 10px;
+      padding: 10px 14px;
+      line-height: 1.5;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-top: 28px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 999px;
+      padding: 13px 28px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+    }
+
+    .btn-secondary {
+      background: #fff;
+      color: var(--text-muted);
+      border: 1px solid var(--card-border);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--primary-red);
+      color: var(--primary-red);
+    }
+
+    .btn-primary {
+      background: var(--green);
+      color: #fff;
+      box-shadow: 0 8px 18px rgba(21, 128, 61, 0.3);
+    }
+
+    .btn-primary:hover {
+      background: #12692f;
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(18, 105, 47, 0.4);
+    }
+
+    @media (max-width: 600px) {
+      .field-row { grid-template-columns: 1fr; }
+      .exp-edu-grid { grid-template-columns: 1fr; }
+      .actions { flex-direction: column-reverse; align-items: stretch; }
+      .btn { width: 100%; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page-wrapper">
+    <div class="eyebrow">Step 1 of 2 — Review before saving</div>
+    <h1>Resume Screening Result</h1>
+    <p class="subtitle">
+      Here's what we picked up from <b>{{ scan.resume_path.split('/')[-1].split('\\')[-1] if scan.resume_path else "your resume" }}</b>.
+      Double-check the fields below — fix anything the scanner got wrong — then confirm to save your application.
+    </p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="card">
+      <form id="confirmForm" method="POST" action="{{ url_for('applicants.confirm_resume_application') }}">
+        <input type="hidden" name="token" value="{{ token }}">
+        <input type="hidden" name="job_id" value="{{ job_id }}">
+
+        <div class="field-row" style="grid-template-columns: 140px 1fr 1fr 70px;">
+          <label>Applicant</label>
+          <input type="text" id="last_name" name="last_name" placeholder="Last name"
+                 value="{{ scan.last_name }}" required>
+          <input type="text" id="first_name" name="first_name" placeholder="First name"
+                 value="{{ scan.first_name }}" required>
+          <input type="text" id="middle_initial" name="middle_initial" placeholder="M.I."
+                 value="{{ scan.middle_initial }}" maxlength="10">
+        </div>
+        <div class="field-row">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" value="{{ scan.email }}">
+        </div>
+        <div class="field-row">
+          <label>Position</label>
+          <span class="readonly-value">{{ job_name }}</span>
+        </div>
+        <div class="field-row">
+          <label for="current_location">Location</label>
+          <input type="text" id="current_location" name="current_location" value="{{ scan.current_location }}">
+        </div>
+
+        <div class="score-block">
+          <span class="score-num">{{ scan.match_score }}%</span>
+          <span class="score-label">Resume Match Score</span>
+          <span class="fit-tag">{{ scan.fit_label }}</span>
+        </div>
+
+        <div class="section-label">Required Skills Found</div>
+        <div class="skill-grid">
+          {% for kw in scan.required_skills_found %}
+          <div class="skill-check">
+            <input type="checkbox" id="skill_{{ loop.index }}_f" name="skill" value="{{ kw }}" checked>
+            <label for="skill_{{ loop.index }}_f">✓ {{ kw }}</label>
+          </div>
+          {% else %}
+          <p class="hint" style="margin:0;">No required skills were confirmed from the resume text.</p>
+          {% endfor %}
+        </div>
+
+        {% if scan.required_skills_missing %}
+        <div class="section-label">Missing Skills</div>
+        <span class="hint">Tick any of these if the scanner missed them on your resume.</span>
+        <div class="skill-grid">
+          {% for kw in scan.required_skills_missing %}
+          <div class="skill-check">
+            <input type="checkbox" id="skill_{{ loop.index }}_m" name="skill" value="{{ kw }}">
+            <label for="skill_{{ loop.index }}_m">✗ {{ kw }}</label>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if scan.other_skills %}
+        <div class="section-label">Other Skills Detected</div>
+        <span class="hint">Uncheck anything that isn't actually yours.</span>
+        <div class="skill-grid">
+          {% for kw in scan.other_skills %}
+          <div class="skill-check other">
+            <input type="checkbox" id="skill_{{ loop.index }}_o" name="skill" value="{{ kw }}" checked>
+            <label for="skill_{{ loop.index }}_o">{{ kw }}</label>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="exp-edu-grid">
+          <div>
+            <div class="section-label">Experience</div>
+            <div class="field-row" style="grid-template-columns: 1fr;">
+              <input type="number" min="0" step="0.5" id="experience_years" name="experience_years" value="{{ scan.experience_years }}">
+            </div>
+            <span class="hint">years found (requirement: {{ scan.required_exp_years }} years)</span>
+          </div>
+          <div>
+            <div class="section-label">Education</div>
+            <div class="field-row" style="grid-template-columns: 1fr;">
+              <select id="degree_level" name="degree_level">
+                {% for level in degree_levels %}
+                <option value="{{ level }}" {% if level == scan.degree_level %}selected{% endif %}>{{ level }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <span class="hint">highest degree detected</span>
+          </div>
+        </div>
+
+        <div class="status-block">
+          <div class="section-label">Overall Status</div>
+          <span class="status-pill {{ 'eligible' if scan.is_eligible else 'not-eligible' }}">
+            {{ 'Eligible for Interview' if scan.is_eligible else 'Not Eligible' }}
+          </span>
+        </div>
+
+        <div class="recommendation">
+          <b>Recommendation:</b> {{ scan.fit_message }}
+        </div>
+
+        <div class="edit-note">
+          This match score and status come from our automatic screening and won't change here — but the
+          fields above (name, email, skills, experience, education) are what gets saved to your application,
+          so please correct anything the scanner misread before confirming.
+        </div>
+
+        <div class="actions">
+          <button type="submit" formaction="{{ url_for('applicants.cancel_resume_review') }}" formnovalidate class="btn btn-secondary">
+            ↺ Upload a Different Resume
+          </button>
+          <button type="submit" class="btn btn-primary">
+            {{ 'Confirm & Proceed to Interview →' if scan.is_eligible else 'Confirm & Submit Application' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+
+</html>

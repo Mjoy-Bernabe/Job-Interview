@@ -1,0 +1,212 @@
+{% set active_page = 'dashboard' %}
+{% extends "admin_base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block head %}
+<style>
+    /* Specific CSS for Dashboard */
+    /* Header Card */
+    .header-card { background-color: #FFFFFF; border: 1px solid #CCCCCC; box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.25); border-radius: 8px; padding: 20px 30px; display: flex; align-items: center; gap: 30px; margin-bottom: 25px; }
+    .header-card i.bx-data { font-size: 96px; color: var(--primary-red); }
+    .header-divider { width: 1px; height: 80px; background-color: #A69C9C; }
+    .header-text { display: flex; flex-direction: column; gap: 15px; max-width: 650px; }
+    .header-title { font-weight: 600; font-size: 16px; color: var(--primary-red); }
+    .header-subtitle { font-weight: 400; font-size: 15px; line-height: 22px; color: var(--text-dark); }
+    /* Middle Cards Row */
+    .stats-row { display: flex; gap: 30px; margin-bottom: 25px; }
+    .stat-card { background: #FFFFFF; border: 1px solid #D9D9D9; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25); border-radius: 6px; padding: 15px; flex: 1; display: flex; flex-direction: column; }
+    .stat-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+    .stat-header i { font-size: 20px; color: var(--primary-red); }
+    .stat-title { font-weight: 600; font-size: 20px; color: var(--primary-red); }
+    .stat-value { font-weight: 700; font-size: 40px; color: var(--primary-red); margin-bottom: 5px; padding-left: 5px; }
+    .stat-feedback { display: flex; align-items: center; gap: 5px; font-weight: 400; font-size: 14px; padding-left: 5px; }
+    .feedback-positive { color: var(--text-green); }
+    .feedback-neutral { color: #837C75; }
+    /* Bottom Row */
+    .bottom-row { display: flex; gap: 30px; }
+    .chart-card { background: #FFFFFF; border: 1px solid #D9D9D9; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25); border-radius: 6px; padding: 20px; }
+    .system-reports { flex: 1; max-width: 272px; display: flex; flex-direction: column; align-items: center; }
+    .system-reports .chart-title { font-weight: 600; font-size: 20px; color: var(--primary-red); align-self: flex-start; margin-bottom: 40px; }
+    .pie-container { width: 176px; height: 176px; position: relative; margin-bottom: 20px; }
+    .legend-row { display: flex; gap: 15px; align-items: center; width: 100%; justify-content: center; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 10px; }
+    .legend-color { width: 18px; height: 17px; border-radius: 50%; }
+    .user-traffic { flex: 2; display: flex; flex-direction: column; }
+    .traffic-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+    .traffic-header .chart-title { font-weight: 600; font-size: 20px; color: var(--primary-red); }
+    .year-select { display: flex; align-items: center; gap: 10px; border: 1px solid var(--primary-red); border-radius: 10px; padding: 5px 10px; font-family: 'Inter', sans-serif; font-weight: 500; font-size: 16px; cursor: pointer; }
+    .year-select i { color: var(--primary-red); }
+    #trafficChartContainer { width: 100%; height: 213px; flex-grow: 1; }
+    /* Hide CanvasJS watermark credits */
+    .canvasjs-chart-credit { display: none !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+    <!-- Header Card -->
+    <div class="header-card">
+        <i class='bx bx-data'></i>
+        <div class="header-divider"></div>
+        <div class="header-text">
+            <div class="header-title">Server is Up and Running!</div>
+            <div class="header-subtitle">Monitor system uptime, track applicant and HR activity pipelines, and manage background infrastructure performance.</div>
+        </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-header">
+                <i class='bx bx-group'></i>
+                <span class="stat-title">Applicants</span>
+            </div>
+            <div class="stat-value">128</div>
+            <div class="stat-feedback feedback-positive">
+                <i class='bx bx-chevrons-up'></i> 20% last month
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <i class='bx bx-time-five'></i>
+                <span class="stat-title">Daily Active Users</span>
+            </div>
+            <div class="stat-value">25</div>
+            <div class="stat-feedback feedback-neutral">
+                <i class='bx bx-chevrons-down'></i> 20% last month
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <i class='bx bx-desktop'></i>
+                <span class="stat-title">System Status</span>
+            </div>
+            <div class="stat-value">OK</div>
+            <div class="stat-feedback feedback-positive">
+                <i class='bx bx-check-square'></i> Good maintenance!
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Row -->
+    <div class="bottom-row">
+        <!-- Pie Chart Card -->
+        <div class="chart-card system-reports">
+            <div class="chart-title">System Reports</div>
+            <div class="pie-container" id="pieChartContainer"></div>
+            <div class="legend-row">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #66B3FF;"></div>
+                    <span>Unopened</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #99CCFF;"></div>
+                    <span>Resolved</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Line Chart Card -->
+        <div class="chart-card user-traffic">
+            <div class="traffic-header">
+                <div class="chart-title">User Traffic — Overview</div>
+                <div class="year-select">
+                    <span>2026</span>
+                    <i class='bx bx-chevron-down'></i>
+                </div>
+            </div>
+            <div id="trafficChartContainer"></div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Render Doughnut Chart for System Reports
+        var pieChart = new CanvasJS.Chart("pieChartContainer", {
+            animationEnabled: true,
+            backgroundColor: "transparent",
+            data: [{
+                type: "doughnut",
+                innerRadius: "60%",
+                startAngle: -90,
+                dataPoints: [
+                    { y: 35, color: "#99CCFF" }, // Resolved
+                    { y: 65, color: "#66B3FF" }  // Unopened
+                ]
+            }]
+        });
+        pieChart.render();
+
+        // Render Line Chart for User Traffic
+        var trafficChart = new CanvasJS.Chart("trafficChartContainer", {
+            animationEnabled: true,
+            theme: "light2",
+            axisX: {
+                interval: 1,
+                gridThickness: 1,
+                gridColor: "#E0E0E0",
+                lineColor: "#CCCCCC",
+                labelFontFamily: "Inter"
+            },
+            axisY: {
+                gridThickness: 1,
+                gridColor: "#E0E0E0",
+                lineColor: "#CCCCCC",
+                labelFontFamily: "Inter"
+            },
+            data: [
+            {
+                type: "line",
+                color: "#1AE7AB",
+                markerType: "circle",
+                markerColor: "#FFFFFF",
+                markerBorderColor: "#1AE7AB",
+                markerBorderThickness: 2,
+                dataPoints: [
+                    { x: 0, y: 20 },
+                    { x: 1, y: 20 },
+                    { x: 2, y: 75 },
+                    { x: 3, y: 5 },
+                    { x: 4, y: 10 },
+                    { x: 5, y: 60 },
+                    { x: 6, y: 95 },
+                    { x: 7, y: 100 },
+                    { x: 8, y: 95 },
+                    { x: 9, y: 5 },
+                    { x: 10, y: 60 },
+                    { x: 11, y: 100 }
+                ]
+            },
+            {
+                type: "line",
+                color: "#6C0C41",
+                markerType: "circle",
+                markerColor: "#FFFFFF",
+                markerBorderColor: "#6C0C41",
+                markerBorderThickness: 2,
+                dataPoints: [
+                    { x: 0, y: 5 },
+                    { x: 1, y: 25 },
+                    { x: 2, y: 95 },
+                    { x: 3, y: 75 },
+                    { x: 4, y: 5 },
+                    { x: 5, y: 20 },
+                    { x: 6, y: 35 },
+                    { x: 7, y: 50 },
+                    { x: 8, y: 15 },
+                    { x: 9, y: 50 },
+                    { x: 10, y: 80 },
+                    { x: 11, y: 85 }
+                ]
+            }
+            ]
+        });
+        trafficChart.render();
+    });
+</script>
+{% endblock %}

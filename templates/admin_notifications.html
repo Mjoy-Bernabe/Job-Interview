@@ -1,0 +1,397 @@
+{% extends 'admin_base.html' %}
+{% block title %}Admin Notifications{% endblock %}
+{% block page_title %}Notifications{% endblock %}
+
+{% block content %}
+<style>
+    .header-card {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        padding: 20px 30px;
+        gap: 30px;
+        background: #FFFFFF;
+        border: 1px solid #CCCCCC;
+        box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.25);
+        border-radius: 8px;
+        margin-bottom: 25px;
+    }
+
+    .header-text {
+        max-width: 650px;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 500;
+        font-size: 15px;
+        line-height: 22px;
+        color: #B3241B;
+    }
+
+    .header-text .subtext {
+        font-weight: 400;
+        color: #000000;
+        display: block;
+        margin-top: 15px;
+    }
+
+    .header-icon {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .header-icon i {
+        font-size: 80px;
+        color: #B3241B;
+    }
+
+    .header-divider {
+        width: 1px;
+        height: 80px;
+        background-color: #A69C9C;
+    }
+
+    .notif-filter {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #FFFFFF;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: 6px;
+        padding: 15px 20px;
+        margin-bottom: 30px;
+        box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .filter-search {
+        display: flex;
+        align-items: center;
+        background: #E9E9E9;
+        width: 428px;
+        height: 34px;
+        padding: 0 10px;
+        border-radius: 4px;
+    }
+
+    .filter-search input {
+        border: none;
+        background: transparent;
+        outline: none;
+        flex-grow: 1;
+        font-family: 'Roboto', sans-serif;
+        font-size: 14px;
+        color: #79747E;
+        padding-left: 10px;
+    }
+
+    .filter-search i {
+        font-size: 20px;
+        color: #000;
+    }
+
+    .filter-dropdowns {
+        display: flex;
+        gap: 20px;
+    }
+
+    .filter-dropdown {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 145px;
+        height: 25px;
+        border: 1px solid rgba(91, 89, 89, 0.3);
+        border-radius: 5px;
+        padding: 0 5px 0 10px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 12px;
+        color: #5B5959;
+        cursor: pointer;
+    }
+
+    .notif-table {
+        display: flex;
+        flex-direction: column;
+        border-radius: 6px;
+        overflow: hidden;
+        box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .notif-record {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        padding: 20px 30px;
+        gap: 40px;
+        background: #FFFFFF;
+        border-width: 1px 1px 0px 1px;
+        border-style: solid;
+        border-color: #CCCCCC;
+        transition: background-color 0.2s;
+        cursor: pointer;
+    }
+
+    /* Task 2: Hover effect */
+    .notif-record:hover {
+        background-color: rgba(240, 118, 118, 0.15);
+        /* F07676 with 15% opacity */
+    }
+
+    .notif-record:last-child {
+        border-bottom-width: 1px;
+    }
+
+    .record-logo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 50px;
+        height: 50px;
+        background: #E4C5C5;
+        border-radius: 6px;
+        flex-shrink: 0;
+    }
+
+    .record-logo i {
+        font-size: 30px;
+        color: #B3241B;
+    }
+
+    .record-content {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 10px;
+        flex-grow: 1;
+    }
+
+    .status-btn {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 0px 10px;
+        height: 17px;
+        border-radius: 3px;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        font-size: 12px;
+        width: fit-content;
+    }
+
+    .status-complaint {
+        background: #66B3FF;
+        border: 1px solid #1256D4;
+        color: #1256D4;
+    }
+
+    .status-analytics {
+        background: #EAB308;
+        border: 1px solid #A67F06;
+        color: #A57F06;
+    }
+
+    .status-new-users {
+        background: #22C55E;
+        border: 1px solid #0D9120;
+        color: #0D9120;
+    }
+
+    .record-text {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 700;
+        font-size: 14px;
+        line-height: 21px;
+        color: #000000;
+    }
+
+    .record-text .subtext {
+        font-weight: 400;
+        display: block;
+    }
+
+    .see-more {
+        color: #B3241B;
+        font-size: 10px;
+        display: block;
+        margin-top: 8px;
+        font-weight: 600;
+    }
+
+    .record-time {
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 5px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 10px;
+        color: #5B5959;
+    }
+
+    .record-time i {
+        font-size: 16px;
+    }
+</style>
+<div>
+    <div class="header-card">
+        <div class="header-icon">
+            <i class='bx bxs-cog'></i>
+        </div>
+        <div class="header-divider"></div>
+        <div class="header-text">
+            Keep up with what's happening.
+            <span class="subtext">View important alerts, system updates, and activity notifications to stay up to date
+                and never miss important information.</span>
+        </div>
+    </div>
+
+    <div class="notif-filter">
+        <div class="filter-search">
+            <i class='bx bx-menu' style="margin-right: 5px; color: #5B5959;"></i>
+            <input type="text" id="notif-search-input" placeholder="Search complaints or notifications">
+            <i class='bx bx-search'></i>
+        </div>
+        <div class="filter-dropdowns">
+            <select class="filter-dropdown" id="notif-type-filter" style="background: transparent; outline: none;">
+                <option value="all">Notification Type</option>
+                <option value="complaint">Complaint</option>
+                <option value="analytics">Analytics</option>
+                <option value="new users">New Users</option>
+            </select>
+            <select class="filter-dropdown" id="notif-sort-filter" style="background: transparent; outline: none;">
+                <option value="default">Sort by Date</option>
+                <option value="newest">Newest</option>
+                <option value="oldest">Oldest</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="notif-table">
+        <!-- Row 1 -->
+        <div class="notif-record">
+            <div class="record-logo">
+                <i class='bx bxs-user-voice'></i>
+            </div>
+            <div class="record-content">
+                <div class="status-btn status-complaint">Complaint</div>
+                <div class="record-text">
+                    Reported Complaint
+                    <span class="subtext">I clicked the big blue button like I do every morning, but today the whole
+                        screen just went completely blank and nothing is working......</span>
+                    <span class="see-more">See More</span>
+                </div>
+            </div>
+            <div class="record-time">
+                <i class='bx bx-time-five'></i> 09 July 2026 at 9:30 AM
+            </div>
+        </div>
+
+        <!-- Row 2 -->
+        <div class="notif-record">
+            <div class="record-logo">
+                <i class='bx bxs-bar-chart-alt-2'></i>
+            </div>
+            <div class="record-content">
+                <div class="status-btn status-analytics">Analytics</div>
+                <div class="record-text">
+                    Monthly Statistics
+                    <span class="subtext">Here are the latest numbers and data stuff for the month. Click through the
+                        tabs below to see how many people visited the site and what they clicked on.</span>
+                    <span class="see-more">See More</span>
+                </div>
+            </div>
+            <div class="record-time">
+                <i class='bx bx-time-five'></i> 09 July 2026 at 6:18 AM
+            </div>
+        </div>
+
+        <!-- Row 3 -->
+        <div class="notif-record">
+            <div class="record-logo">
+                <i class='bx bxs-user-plus'></i>
+            </div>
+            <div class="record-content">
+                <div class="status-btn status-new-users">New Users</div>
+                <div class="record-text">
+                    New Users
+                    <span class="subtext">Wow, we've got a whole bunch of new faces who just signed up this
+                        month!</span>
+                    <span class="see-more">See More</span>
+                </div>
+            </div>
+            <div class="record-time">
+                <i class='bx bx-time-five'></i> 07 July 2026 at 1:00 PM
+            </div>
+        </div>
+
+        <!-- Row 4 -->
+        <div class="notif-record">
+            <div class="record-logo">
+                <i class='bx bxs-user-voice'></i>
+            </div>
+            <div class="record-content">
+                <div class="status-btn status-complaint">Complaint</div>
+                <div class="record-text">
+                    Reported Complaint
+                    <span class="subtext">Complaint description will go here. Complaint description will go here.</span>
+                    <span class="see-more">See More</span>
+                </div>
+            </div>
+            <div class="record-time">
+                <i class='bx bx-time-five'></i> 09 July 2026 at 9:30 AM
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('notif-search-input');
+        const typeFilter = document.getElementById('notif-type-filter');
+        const sortFilter = document.getElementById('notif-sort-filter');
+        const table = document.querySelector('.notif-table');
+        let records = Array.from(table.querySelectorAll('.notif-record'));
+        const initialOrder = [...records];
+
+        function filterAndSort() {
+            const query = searchInput.value.toLowerCase();
+            const typeValue = typeFilter.value.toLowerCase();
+            const sortValue = sortFilter.value;
+
+            // 1. Filter
+            let visibleRecords = records.filter(record => {
+                const type = record.querySelector('.status-btn').innerText.toLowerCase();
+                const text = record.querySelector('.record-text').innerText.toLowerCase();
+                const time = record.querySelector('.record-time').innerText.toLowerCase();
+
+                const matchesSearch = type.includes(query) || text.includes(query) || time.includes(query);
+                const matchesType = typeValue === 'all' || type.includes(typeValue) || typeValue === 'notification type';
+
+                return matchesSearch && matchesType;
+            });
+
+            // 2. Sort
+            if (sortValue === 'newest') {
+                visibleRecords.reverse(); 
+            } else if (sortValue === 'oldest') {
+                // assume oldest
+            }
+
+            // 3. Render
+            initialOrder.forEach(rec => {
+                rec.style.display = visibleRecords.includes(rec) ? '' : 'none';
+            });
+
+            if (sortValue !== 'default') {
+                visibleRecords.forEach(rec => table.appendChild(rec));
+            } else {
+                initialOrder.forEach(rec => table.appendChild(rec));
+            }
+        }
+
+        searchInput.addEventListener('input', filterAndSort);
+        typeFilter.addEventListener('change', filterAndSort);
+        sortFilter.addEventListener('change', filterAndSort);
+    });
+</script>
+{% endblock %}
