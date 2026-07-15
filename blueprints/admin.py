@@ -106,11 +106,29 @@ def analytics():
         return redirect(url_for("auth.login"))
 
     username = user[0]
+
+    # Analytics queries
+    cur.execute("SELECT COUNT(*) FROM users")
+    total_users = cur.fetchone()[0]
+
+    cur.execute("SELECT COUNT(*) FROM users WHERE user_type = 'HR'")
+    active_hr = cur.fetchone()[0]
+
+    cur.execute("SELECT COUNT(*) FROM users WHERE user_type = 'Applicant'")
+    active_applicants = cur.fetchone()[0]
+
+    cur.execute("SELECT COUNT(*) FROM applications")
+    total_apps = cur.fetchone()[0]
+
     cur.close()
 
     return render_template(
         "admin_analytics.html",
-        username=username
+        username=username,
+        total_users=total_users,
+        active_hr=active_hr,
+        active_applicants=active_applicants,
+        total_apps=total_apps
     )
 
 @admin_bp.route("/admin/users")
@@ -131,11 +149,34 @@ def user_management():
         return redirect(url_for("auth.login"))
 
     username = user[0]
+
+    # Query all users
+    cur.execute('''
+        SELECT u.user_id, u.username, a.full_name, u.email, u.user_type
+        FROM users u
+        LEFT JOIN applicants a ON u.user_id = a.user_id
+        ORDER BY u.user_id DESC
+    ''')
+    db_users = cur.fetchall()
+    
+    users_data = []
+    for row in db_users:
+        name = row[2] if row[2] else row[1]
+        users_data.append({
+            'id': row[0],
+            'name': name,
+            'email': row[3],
+            'role': row[4],
+            'status': 'Active'
+        })
+    total_users = len(users_data)
     cur.close()
 
     return render_template(
         "admin_usermanagement.html",
-        username=username
+        username=username,
+        users=users_data,
+        total_users=total_users
     )
 
 @admin_bp.route("/admin/troubleshooting")
@@ -182,5 +223,25 @@ def notifications():
         "admin_notifications.html",
         username=user[0],
         active_page="notifications"
+    )
+
+@admin_bp.route("/admin/audit-logs")
+def audit_logs():
+    if "user_id" not in session:
+        return redirect(url_for("auth.login"))
+
+    user_id = session["user_id"]
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT username, user_type FROM users WHERE user_id = %s", (user_id,))
+    user = cur.fetchone()
+    cur.close()
+
+    if not user or user[1] != 'Admin':
+        return redirect(url_for("auth.login"))
+
+    return render_template(
+        "admin_logs.html",
+        username=user[0],
+        active_page="audit_logs"
     )
 

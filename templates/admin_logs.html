@@ -1,0 +1,378 @@
+{% extends 'admin_base.html' %}
+{% block title %}Audit Logs{% endblock %}
+{% block page_title %}Audit Logs{% endblock %}
+
+{% block content %}
+<style>
+    .header-card {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        padding: 20px 30px;
+        gap: 30px;
+        background: #FFFFFF;
+        border: 1px solid #CCCCCC;
+        box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.25);
+        border-radius: 8px;
+        margin-bottom: 25px;
+    }
+
+    .header-text {
+        max-width: 650px;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 500;
+        font-size: 15px;
+        line-height: 22px;
+        color: #B3241B;
+    }
+
+    .header-text .subtext {
+        font-weight: 400;
+        color: #000000;
+        display: block;
+        margin-top: 15px;
+    }
+
+    .header-icon {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .header-icon i {
+        font-size: 80px;
+        color: #B3241B;
+    }
+
+    .header-divider {
+        width: 1px;
+        height: 80px;
+        background-color: #A69C9C;
+    }
+
+    .action-bar {
+        background-color: #FAFAFA;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: 6px;
+        padding: 15px 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 30px;
+        box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    .action-search {
+        display: flex;
+        align-items: center;
+        background-color: #E9E9E9;
+        border-radius: 4px;
+        padding: 8px 15px;
+        gap: 10px;
+        width: 260px;
+        height: 35px;
+    }
+
+    .action-search input {
+        border: none;
+        background: transparent;
+        outline: none;
+        width: 100%;
+        font-family: 'Poppins', sans-serif;
+        font-size: 14px;
+        color: #79747E;
+    }
+
+    .action-search i {
+        font-size: 20px;
+        color: #000;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .filter-label {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 500;
+        font-size: 10px;
+        color: #000000;
+    }
+
+    .action-select {
+        border: 1px solid rgba(91, 89, 89, 0.3);
+        border-radius: 5px;
+        padding: 5px 10px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 12px;
+        color: #5B5959;
+        background-color: transparent;
+        outline: none;
+        cursor: pointer;
+        width: 145px;
+        height: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .action-date {
+        border: 1px solid rgba(91, 89, 89, 0.3);
+        border-radius: 5px;
+        padding: 5px 10px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 12px;
+        color: #5B5959;
+        background-color: transparent;
+        outline: none;
+        width: 159px;
+        height: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .filters-container {
+        display: flex;
+        gap: 20px;
+        align-items: flex-end;
+    }
+
+    .logs-table-container {
+        width: 100%;
+        filter: drop-shadow(-2px 0px 4px rgba(0, 0, 0, 0.25)) drop-shadow(2px 0px 4px rgba(0, 0, 0, 0.25));
+    }
+
+    .logs-table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: #FFFFFF;
+    }
+
+    .logs-table th {
+        background-color: #B3241B;
+        color: #FFFFFF;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        font-size: 15px;
+        padding: 15px 20px;
+        text-align: left;
+    }
+
+    .logs-table td {
+        padding: 20px;
+        border-bottom: 1px solid #CCCCCC;
+        border-left: 1px solid #CCCCCC;
+        border-right: 1px solid #CCCCCC;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 500;
+        font-size: 12px;
+        color: #5B5959;
+    }
+
+    .logs-table tr:hover {
+        background-color: #F9F9F9;
+    }
+
+    .badge-applicant {
+        background-color: #99CCFF;
+        border: 1px solid #1256D4;
+        color: #1256D4;
+        padding: 2px 10px;
+        border-radius: 3px;
+        font-weight: 500;
+        font-size: 12px;
+        display: inline-block;
+        text-align: center;
+        width: 83px;
+    }
+
+    .badge-hr {
+        background-color: #F38A84;
+        border: 1px solid #762621;
+        color: #762621;
+        padding: 2px 10px;
+        border-radius: 3px;
+        font-weight: 500;
+        font-size: 12px;
+        display: inline-block;
+        text-align: center;
+        width: 83px;
+    }
+
+    .action-text {
+        font-weight: 600;
+        color: #5B5959;
+        font-size: 15px;
+    }
+    
+    .details-text {
+        font-weight: 400;
+        color: #5B5959;
+    }
+</style>
+
+<div>
+    <!-- Header Card -->
+    <div class="header-card">
+        <div class="header-icon">
+            <i class='bx bx-history'></i>
+        </div>
+        <div class="header-divider"></div>
+        <div class="header-text">
+            Monitor your system's history.
+            <span class="subtext">Track user actions, configuration changes, and security events to ensure accountability and stay on top of platform activity.</span>
+        </div>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="action-bar">
+        <div class="action-search">
+            <i class='bx bx-menu'></i>
+            <input type="text" id="log-search-input" placeholder="Search User ID or Role...">
+            <i class='bx bx-search'></i>
+        </div>
+        
+        <div class="filters-container">
+            <div class="filter-group">
+                <div class="filter-label">From Date</div>
+                <input type="date" class="action-date" id="log-from-date" style="background: transparent; outline: none;">
+            </div>
+            
+            <div class="filter-group">
+                <div class="filter-label">To Date</div>
+                <input type="date" class="action-date" id="log-to-date" style="background: transparent; outline: none;">
+            </div>
+            
+            <div class="filter-group">
+                <div class="filter-label">Actions</div>
+                <select class="action-select" id="log-action-filter" style="background: transparent; outline: none;">
+                    <option value="all">All Actions</option>
+                    <option value="log-in">Log-In</option>
+                    <option value="log-out">Log-Out</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logs Table -->
+    <div class="logs-table-container">
+        <table class="logs-table">
+            <thead>
+                <tr>
+                    <th>User ID</th>
+                    <th>Role</th>
+                    <th>Timestamp</th>
+                    <th>Action</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>10002</td>
+                    <td><span class="badge-applicant">Applicant</span></td>
+                    <td>06/08/2024, 12:33:47 AM</td>
+                    <td class="action-text">Log-Out</td>
+                    <td class="details-text">No details...</td>
+                </tr>
+                <tr>
+                    <td>10003</td>
+                    <td><span class="badge-hr">HR Staff</span></td>
+                    <td>06/07/2024, 11:01:29 PM</td>
+                    <td class="action-text">Log-In</td>
+                    <td class="details-text">No details...</td>
+                </tr>
+                <tr>
+                    <td>10004</td>
+                    <td><span class="badge-hr">HR Staff</span></td>
+                    <td>06/07/2024, 10:05:00 PM</td>
+                    <td class="action-text">Log-In</td>
+                    <td class="details-text">No details...</td>
+                </tr>
+                <tr>
+                    <td>10005</td>
+                    <td><span class="badge-applicant">Applicant</span></td>
+                    <td>06/07/2024, 08:01:22 PM</td>
+                    <td class="action-text">Log-Out</td>
+                    <td class="details-text">No details...</td>
+                </tr>
+                <tr>
+                    <td>10001</td>
+                    <td><span class="badge-applicant">Applicant</span></td>
+                    <td>06/07/2024, 05:05:05 PM</td>
+                    <td class="action-text">Log-In</td>
+                    <td class="details-text">No details...</td>
+                </tr>
+                <!-- Empty State -->
+                <tr id="log-empty-state" style="display: none;">
+                    <td colspan="5" style="text-align: center; padding: 40px; color: #5B5959; font-family: 'Poppins', sans-serif;">
+                        <i class='bx bx-search' style="font-size: 40px; color: #CCCCCC; margin-bottom: 10px;"></i>
+                        <br>No records available based on your search filters.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('log-search-input');
+        const fromDate = document.getElementById('log-from-date');
+        const toDate = document.getElementById('log-to-date');
+        const actionFilter = document.getElementById('log-action-filter');
+        const tbody = document.querySelector('.logs-table tbody');
+        const emptyState = document.getElementById('log-empty-state');
+        let rows = Array.from(tbody.querySelectorAll('tr')).filter(r => r !== emptyState);
+
+        function filterLogs() {
+            const query = searchInput.value.toLowerCase();
+            const actionValue = actionFilter.value.toLowerCase();
+            const from = fromDate.value ? new Date(fromDate.value) : null;
+            const to = toDate.value ? new Date(toDate.value) : null;
+            
+            if (from) from.setHours(0,0,0,0);
+            if (to) to.setHours(23,59,59,999);
+
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const userId = row.cells[0].innerText.toLowerCase();
+                const role = row.cells[1].innerText.toLowerCase();
+                const timestampStr = row.cells[2].innerText;
+                const action = row.cells[3].innerText.toLowerCase();
+                
+                // Parse timestamp "06/08/2024, 12:33:47 AM"
+                const datePart = timestampStr.split(',')[0].trim();
+                const [month, day, year] = datePart.split('/');
+                const rowDate = new Date(year, month - 1, day);
+
+                const matchesSearch = userId.includes(query) || role.includes(query);
+                const matchesAction = actionValue === 'all' || action.includes(actionValue);
+                
+                let matchesDate = true;
+                if (from && rowDate < from) matchesDate = false;
+                if (to && rowDate > to) matchesDate = false;
+
+                const isVisible = matchesSearch && matchesAction && matchesDate;
+                row.style.display = isVisible ? '' : 'none';
+                if (isVisible) visibleCount++;
+            });
+            
+            // Handle empty state
+            if (visibleCount === 0) {
+                emptyState.style.display = '';
+            } else {
+                emptyState.style.display = 'none';
+            }
+        }
+
+        searchInput.addEventListener('input', filterLogs);
+        fromDate.addEventListener('change', filterLogs);
+        toDate.addEventListener('change', filterLogs);
+        actionFilter.addEventListener('change', filterLogs);
+    });
+</script>
+{% endblock %}

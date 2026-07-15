@@ -343,9 +343,20 @@
             display: flex;
             flex-direction: row;
             align-items: center;
-            padding: 10px 0px;
+            padding: 10px;
             gap: 10px;
-            border-bottom: 1px solid #5B5959;
+            border-bottom: 1px solid rgba(91, 89, 89, 0.3);
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border-radius: 4px;
+        }
+
+        .notif-row:hover {
+            background-color: rgba(179, 36, 27, 0.1);
+        }
+
+        .notif-row:active {
+            background-color: rgba(179, 36, 27, 0.2);
         }
 
         .notif-logo {
@@ -453,7 +464,7 @@
 
             <div class="menu-section">
                 <div class="menu-title">System Logs</div>
-                <a href="#" class="menu-link {% if active_page == 'audit_logs' %}active{% endif %}"><i
+                <a href="{{ url_for('admin.audit_logs') }}" class="menu-link {% if active_page == 'audit_logs' %}active{% endif %}"><i
                         class='bx bx-list-ul'></i> Audit Logs</a>
             </div>
 
@@ -493,7 +504,7 @@
                             title="Click to clear notifications (Test Task 1)">Notifications</span>
                         <i class='bx bx-x notif-close' onclick="closeNotifications(event)"></i>
                     </div>
-                    <div class="notif-row">
+                    <div class="notif-row" onclick="window.location.href='{{ url_for('admin.troubleshooting') }}'">
                         <div class="notif-logo"><i class='bx bxs-user-voice'></i></div>
                         <div class="notif-content">
                             <div class="notif-title-row">
@@ -503,7 +514,7 @@
                             <span class="notif-desc">See the recent complaint submitted</span>
                         </div>
                     </div>
-                    <div class="notif-row">
+                    <div class="notif-row" onclick="window.location.href='{{ url_for('admin.analytics') }}'">
                         <div class="notif-logo"><i class='bx bxs-bar-chart-alt-2'></i></div>
                         <div class="notif-content">
                             <div class="notif-title-row">
@@ -513,7 +524,7 @@
                             <span class="notif-desc">Analyze the newest system reports</span>
                         </div>
                     </div>
-                    <div class="notif-row">
+                    <div class="notif-row" onclick="window.location.href='{{ url_for('admin.user_management') }}'">
                         <div class="notif-logo"><i class='bx bxs-user-plus'></i></div>
                         <div class="notif-content">
                             <div class="notif-title-row">
@@ -523,7 +534,7 @@
                             <span class="notif-desc">Overlook newest accounts created</span>
                         </div>
                     </div>
-                    <div class="notif-row">
+                    <div class="notif-row" onclick="window.location.href='{{ url_for('admin.troubleshooting') }}'">
                         <div class="notif-logo"><i class='bx bxs-user-voice'></i></div>
                         <div class="notif-content">
                             <div class="notif-title-row">

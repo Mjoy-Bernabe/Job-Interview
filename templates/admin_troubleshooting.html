@@ -270,19 +270,26 @@
     <div class="action-bar">
         <div class="action-search">
             <i class='bx bx-menu'></i>
-            <input type="text" placeholder="Search applicants or staff">
+            <input type="text" id="ts-search-input" placeholder="Search case ID, contact, category, or summary">
             <i class='bx bx-search'></i>
         </div>
         <div class="action-filter">
-            <select class="action-select">
-                <option>Select user type</option>
-                <option>Applicant</option>
-                <option>HR Staff</option>
+            <select class="action-select" id="ts-category-filter">
+                <option value="all">Category</option>
+                <option value="internet">Internet</option>
+                <option value="maintenance">Maintenance</option>
+                <option value="software">Software</option>
             </select>
-            <select class="action-select">
-                <option>Date Joined</option>
-                <option>Newest</option>
-                <option>Oldest</option>
+            <select class="action-select" id="ts-status-filter">
+                <option value="all">Status</option>
+                <option value="active">Active</option>
+                <option value="resolved">Resolved</option>
+                <option value="in-progress">In-Progress</option>
+            </select>
+            <select class="action-select" id="ts-sort-filter">
+                <option value="default">Date Submitted</option>
+                <option value="newest">Newest</option>
+                <option value="oldest">Oldest</option>
             </select>
         </div>
     </div>
@@ -349,6 +356,13 @@
                     <td style="color: #333;">Internet</td>
                     <td>Complaints...</td>
                     <td><span class="status-badge status-active">Active</span></td>
+                </tr>
+                <!-- Empty State -->
+                <tr id="ts-empty-state" style="display: none;">
+                    <td colspan="6" style="text-align: center; padding: 40px; color: #5B5959; font-family: 'Poppins', sans-serif;">
+                        <i class='bx bx-search' style="font-size: 40px; color: #CCCCCC; margin-bottom: 10px;"></i>
+                        <br>No records available based on your search filters.
+                    </td>
                 </tr>
             </tbody>
         </table>
@@ -424,6 +438,74 @@ document.addEventListener("DOMContentLoaded", function() {
             this.classList.add('row-active');
         });
     });
+
+    // Filtering and Searching Logic
+    const searchInput = document.getElementById('ts-search-input');
+    const categoryFilter = document.getElementById('ts-category-filter');
+    const statusFilter = document.getElementById('ts-status-filter');
+    const sortFilter = document.getElementById('ts-sort-filter');
+    const tbody = document.querySelector('.ts-table tbody');
+    const emptyState = document.getElementById('ts-empty-state');
+    let rows = Array.from(tbody.querySelectorAll('tr')).filter(r => r !== emptyState);
+    const initialOrder = [...rows];
+
+    function filterAndSort() {
+        const query = searchInput.value.toLowerCase();
+        const catValue = categoryFilter.value.toLowerCase();
+        const statValue = statusFilter.value.toLowerCase();
+        const sortValue = sortFilter.value;
+
+        // 1. Filter
+        let visibleRows = rows.filter(row => {
+            const caseId = row.cells[0].innerText.toLowerCase();
+            const contact = row.cells[1].innerText.toLowerCase();
+            const category = row.cells[3].innerText.toLowerCase();
+            const summary = row.cells[4].innerText.toLowerCase();
+            
+            // Note: The status is inside a span with text. We can grab the text inside the first child (the wrapper) or directly from badge.
+            // But since the dropdown DOM manipulation changes the innerHTML to include the chevron, it's safer to get textContent of the cell.
+            const status = row.cells[5].textContent.toLowerCase();
+
+            const matchesSearch = caseId.includes(query) || contact.includes(query) || category.includes(query) || summary.includes(query);
+            const matchesCategory = catValue === 'all' || category.includes(catValue);
+            const matchesStatus = statValue === 'all' || status.includes(statValue);
+
+            return matchesSearch && matchesCategory && matchesStatus;
+        });
+
+        // 2. Sort
+        if (sortValue === 'newest') {
+            visibleRows.reverse(); 
+        } else if (sortValue === 'oldest') {
+            // keep as oldest if default is oldest
+        }
+
+        // 3. Render
+        initialOrder.forEach(row => {
+            row.style.display = visibleRows.includes(row) ? '' : 'none';
+        });
+
+        if (sortValue !== 'default') {
+            visibleRows.forEach(row => tbody.appendChild(row));
+        } else {
+            initialOrder.forEach(row => tbody.appendChild(row));
+        }
+        
+        // Keep empty state at the end
+        tbody.appendChild(emptyState);
+
+        // Handle Empty State
+        if (visibleRows.length === 0) {
+            emptyState.style.display = '';
+        } else {
+            emptyState.style.display = 'none';
+        }
+    }
+
+    searchInput.addEventListener('input', filterAndSort);
+    categoryFilter.addEventListener('change', filterAndSort);
+    statusFilter.addEventListener('change', filterAndSort);
+    sortFilter.addEventListener('change', filterAndSort);
 });
 </script>
 {% endblock %}
