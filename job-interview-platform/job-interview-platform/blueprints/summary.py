@@ -52,16 +52,41 @@ def summary_report():
     assessment_data = json.loads(data.get("assessment_data") or "[]")
     advice_list = json.loads(data.get("advice") or "[]")
 
+    # Handle average_score — if stored as decimal (0.25), convert to percentage (25)
+    raw_avg = float(data.get("average_score") or 0)
+    average_score = raw_avg if raw_avg > 1 else round(raw_avg * 100)
+
+    # Build a human-readable label for the score
+    if average_score >= 75:
+        avg_label = "Excellent"
+    elif average_score >= 50:
+        avg_label = "Good"
+    else:
+        avg_label = "Needs improvement"
+
+    # Build general advice string from the advice list
+    if advice_list:
+        general_advice = " ".join(
+            a.get("suggestion", "") for a in advice_list if isinstance(a, dict)
+        )
+    else:
+        general_advice = "No detailed advice available."
+
     return render_template(
         "summary.html",
         name=data.get("user_name"),
         position=data.get("position"),
+        experience=data.get("experience"),
         skills=data.get("skills"),
         qualification_status=data.get("qualification_status"),
         confidence=data.get("confidence"),
-        average_score=data.get("average_score") or 0,  # <-- add this
+        average_score=average_score,
+        average_score_label=avg_label,
         assessment_data=assessment_data,
         advice_list=advice_list,
+        general_advice=general_advice,
+        role=data.get("position"),
+        user_id=user_id,
     )
 
 

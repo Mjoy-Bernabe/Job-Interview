@@ -173,40 +173,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // =========================
-  // suggestion helpers
-  // =========================
-  function shouldShowPdfSuggestion(position) {
-    const allowedRoles = ["Business Analyst", "Project Manager", "Java Developer"];
-    return allowedRoles.includes(position);
-  }
 
-  function addBotMessageWithSuggestion(html, status) {
-    addBotMessage(html);
-
-    if (status === "Not Qualified" && shouldShowPdfSuggestion(userPosition)) {
-      addBotMessage(
-        `<div style="margin-top:10px; font-style: italic; color:#777;">
-          Your answer seems off. Here's a suggested answer you can study:<br>
-          <button id="showSuggestionBtn" style="margin-top:5px;">Show Suggested Answer</button>
-          <div id="suggestionText" style="display:none; margin-top:5px; padding:10px; background:#f0f0f0; border-radius:5px;"></div>
-        </div>`
-      );
-
-      const btn = document.getElementById("showSuggestionBtn");
-      if (btn) {
-        btn.addEventListener("click", () => {
-          const suggestionText =
-            "This is a sample suggested answer for your study.";
-          const suggestionDiv = document.getElementById("suggestionText");
-          if (suggestionDiv) {
-            suggestionDiv.textContent = suggestionText;
-            suggestionDiv.style.display = "block";
-          }
-        });
-      }
-    }
-  }
 
   // =========================
   // show next question
@@ -240,13 +207,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const currentQuestion = questions[currentQuestionIndex - 1];
     appendUserMessage(answer);
+    responseBox.value = "";
 
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.textContent = "Submitting...";
-    }
+    if (submitBtn) submitBtn.disabled = true;
 
     try {
+      // Score the answer silently on the backend (no status/feedback shown)
       const res = await fetch("/score_answer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -256,33 +222,22 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Scoring failed");
 
+      // Track score silently for the final result modal
       const status = data.qualification_status || "Pending";
-      const feedback = data.feedback || "No feedback provided.";
-
       scores.push({ question: currentQuestion, answer, qualificationStatus: status });
       questionAnswerPairs.push({ question: currentQuestion, answer });
-
       if (status === "Qualified") finalScore++;
-
-      addBotMessageWithSuggestion(
-        `<strong>Status:</strong> ${status}<br><em>${feedback}</em><hr>`,
-        status
-      );
-
-      responseBox.value = "";
       answeredQuestions++;
 
+      // Move directly to the next question (continuous conversation)
       showNextQuestion();
     } catch (err) {
       console.error("Error scoring answer:", err);
       addBotMessage(
-        '<div class="error-message">An error occurred while scoring the answer. Please try again.</div><hr>'
+        '<div class="error-message">An error occurred. Please try again.</div>'
       );
     } finally {
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Send";
-      }
+      if (submitBtn) submitBtn.disabled = false;
     }
   }
 
@@ -324,7 +279,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const qualifiedCount = scores.filter(
       (s) => s.qualificationStatus === "Qualified"
     ).length;
-    const passThreshold = Math.ceil(scores.length * 0.7);
+    const passThreshold = Math.ceil(scores.length * 0.5);
     finalResult = qualifiedCount >= passThreshold ? "Qualified" : "Not Qualified";
     const percent =
       scores.length > 0
@@ -382,10 +337,8 @@ document.addEventListener("DOMContentLoaded", () => {
         ? parseFloat(confidence.replace("%", ""))
         : confidence;
 
-    fetch("/save_summary_report", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    // Debug: log the exact values being sent to the backend
+    const summaryPayload = {
         user_name: userName,
         position: userPosition,
         experience: userExperience,
@@ -393,8 +346,13 @@ document.addEventListener("DOMContentLoaded", () => {
         qualification_status: finalResult,
         confidence: parseFloat(numericConfidence),
         average_score:
-          scores.length > 0 ? (finalScore / scores.length).toFixed(2) : 0,
-        assessment_data: scores,
+          scores.length > 0 ? Math.round((finalScore / scores.length) * 100) : 0,
+        assessment_data: scores.map((s) => ({
+          question: s.question,
+          answer: s.answer,
+          status: s.qualificationStatus,
+          score: s.qualificationStatus === "Qualified" ? 100 : 0,
+        })),
         advice: scores.map((s) => ({
           question: s.question,
           suggestion:
@@ -402,7 +360,15 @@ document.addEventListener("DOMContentLoaded", () => {
               ? "Well answered, keep it up."
               : "Review this topic to improve your knowledge.",
         })),
-      }),
+    };
+    console.log("📊 [DEBUG] Summary payload being sent to /save_summary_report:", JSON.stringify(summaryPayload, null, 2));
+    console.log("📊 [DEBUG] Raw scores array:", scores);
+    console.log("📊 [DEBUG] finalScore:", finalScore, "total:", scores.length, "average:", scores.length > 0 ? (finalScore / scores.length) : 0);
+
+    fetch("/save_summary_report", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(summaryPayload),
     })
       .then(async (res) => {
         if (!res.ok) {

@@ -117,52 +117,56 @@ def chatbot_page():
 
 @interview_bp.route("/get_questions")
 def get_questions_route():
-    position = request.args.get("position") or session.get(
-        "position", "Business Analyst")
+    position = request.args.get("position") or session.get("position", "Business Analyst")
     exp = int(request.args.get("experience") or session.get("experience", 0))
     questions = get_questions_for(position, exp)
     if not questions:
         return jsonify({"error": "No questions available"}), 404
-    return jsonify({"questions": questions})
+    
+    # FIX: Send only the question strings to the frontend
+    question_strings = [q["question"] for q in questions]
+    return jsonify({"questions": question_strings})
 
 
 @interview_bp.route("/start-interview", methods=["POST"])
 def start_interview():
     data = request.get_json()
-    position = data.get("position") or session.get(
-        "position", "Business Analyst")
-    years = int(data.get("years_of_experience")
-                or session.get("experience", 0))
+    position = data.get("position") or session.get("position", "Business Analyst")
+    years = int(data.get("years_of_experience") or session.get("experience", 0))
 
     questions = get_questions_for(position, years)
     session_id = str(uuid.uuid4())
     session["session_id"] = session_id
-    session["questions"] = questions
+    session["questions"] = questions # Stores the full dictionary (question + ideal_answer) in the background
     session["question_index"] = 0
     session["answers_history"] = []
 
-    first_question = questions[0] if questions else "No questions found for this role."
-    return jsonify({"session_id": session_id, "question": first_question})
+    # FIX: Extract just the question text for the frontend chat bubble
+    first_question_text = questions[0]["question"] if questions else "No questions found for this role."
+    return jsonify({"session_id": session_id, "question": first_question_text})
 
 
 @interview_bp.route("/next_question", methods=["POST"])
 def next_question():
     data = request.get_json()
     answer = data.get("answer", "")
-    current_question = data.get("question", "")
-
-    position = session.get("position", "Business Analyst")
-    years = int(session.get("experience", 0))
-    questions = get_questions_for(position, years)
+    current_question_text = data.get("question", "")
 
     idx = session.get("question_index", 0)
+    questions = session.get("questions", [])
+
+    # FIX: Grab the ideal answer securely from the backend session
+    ideal_answer = ""
+    if idx < len(questions):
+        ideal_answer = questions[idx].get("ideal_answer", "")
 
     # save answer
-    if answer and current_question:
-        results = score_answer_combined(current_question, answer)
+    if answer and current_question_text:
+        # FIX: Pass BOTH the question and the ideal_answer to your new ANN scorer!
+        results = score_answer_combined(current_question_text, ideal_answer, answer)
         history = session.get("answers_history", [])
         history.append(
-            {"question": current_question, "answer": answer, **results}
+            {"question": current_question_text, "ideal_answer": ideal_answer, "answer": answer, **results}
         )
         session["answers_history"] = history
         idx += 1
@@ -170,14 +174,15 @@ def next_question():
 
     if idx >= len(questions):
         answers_history = session.get("answers_history", [])
+        
+        # FIX: Ensure score_many receives the ideal_answers too
         summary = score_many(
             [
-                {"question": h["question"], "answer": h["answer"]}
+                {"question": h["question"], "ideal_answer": h.get("ideal_answer", ""), "answer": h["answer"]}
                 for h in answers_history
             ]
         )
-        advice = generate_detailed_advice(
-            summary["answers"], summary["average_score"])
+        advice = generate_detailed_advice(summary["answers"], summary["average_score"])
         session["qualification_status"] = summary["qualification_status"]
         return jsonify(
             {
@@ -188,11 +193,12 @@ def next_question():
             }
         )
 
-    next_q = questions[idx]
+    # FIX: Send only the text for the next question
+    next_q_text = questions[idx]["question"]
     return jsonify(
         {
             "finished": False,
-            "next_question": next_q,
+            "next_question": next_q_text,
             "feedback": "Thank you for your answer!",
             "qualification_status": "In Progress",
         }
