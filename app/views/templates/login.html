@@ -435,7 +435,7 @@
       const inputs = form.querySelectorAll('input[required]');
       const passwordInput = document.querySelector('input[name="password"]');
       const passwordToggle = document.getElementById('passwordToggle');
-      const recaptchaWrapper = document.getElementById('recaptchaWrapper');
+     // const recaptchaWrapper = document.getElementById('recaptchaWrapper');
       const defaultPlaceholders = {};
 
       inputs.forEach(input => {
@@ -471,11 +471,11 @@
       });
 
       // Show reCAPTCHA when user focuses password field
-      if (passwordInput && recaptchaWrapper) {
-        passwordInput.addEventListener('focus', () => {
-          recaptchaWrapper.style.display = 'flex';
-        });
-      }
+      // if (passwordInput && recaptchaWrapper) {
+      //   passwordInput.addEventListener('focus', () => {
+      //     recaptchaWrapper.style.display = 'flex';
+      //   });
+      // }
 
       inputs.forEach(input => {
         input.addEventListener('blur', () => {
