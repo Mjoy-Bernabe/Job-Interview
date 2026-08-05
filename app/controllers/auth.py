@@ -99,27 +99,27 @@ def login():
 
     error = None
     if request.method == "POST":
-        # --- Verify reCAPTCHA ---
-        recaptcha_response = request.form.get('g-recaptcha-response')
-        if not recaptcha_response:
-            error = "Please complete the reCAPTCHA verification."
-            return render_template("login.html", error=error)
+        # # --- Verify reCAPTCHA ---
+        # recaptcha_response = request.form.get('g-recaptcha-response')
+        # if not recaptcha_response:
+        #     error = "Please complete the reCAPTCHA verification."
+        #     return render_template("login.html", error=error)
 
-        secret_key = "6LfLvBEsAAAAACY2WgJ9qMIEjaNDEWMOPH_Xw73w"
-        verify_url = "https://www.google.com/recaptcha/api/siteverify"
-        data = {
-            'secret': secret_key,
-            'response': recaptcha_response
-        }
+        # secret_key = "6LfLvBEsAAAAACY2WgJ9qMIEjaNDEWMOPH_Xw73w"
+        # verify_url = "https://www.google.com/recaptcha/api/siteverify"
+        # data = {
+        #     'secret': secret_key,
+        #     'response': recaptcha_response
+        # }
 
-        try:
-            verify_response = requests.post(verify_url, data=data).json()
-            if not verify_response.get('success'):
-                error = "reCAPTCHA verification failed. Please try again."
-                return render_template("login.html", error=error)
-        except:
-            error = "Unable to verify reCAPTCHA. Please try again."
-            return render_template("login.html", error=error)
+        # try:
+        #     verify_response = requests.post(verify_url, data=data).json()
+        #     if not verify_response.get('success'):
+        #         error = "reCAPTCHA verification failed. Please try again."
+        #         return render_template("login.html", error=error)
+        # except:
+        #     error = "Unable to verify reCAPTCHA. Please try again."
+        #     return render_template("login.html", error=error)
 
         # --- Login Logic ---
         email = request.form["email"]
