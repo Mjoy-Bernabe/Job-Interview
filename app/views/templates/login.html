@@ -11,8 +11,8 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
     rel="stylesheet">
-
-  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+<!-- 
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script> -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
@@ -352,15 +352,15 @@
       flex-shrink: 0;
     }
 
-    /* RECAPTCHA: wrapper is hidden at first */
+    /* RECAPTCHA: wrapper is hidden at first
     .g-recaptcha-wrapper {
       margin: 16px 0 6px;
       display: none;
       justify-content: center;
     }
 
-    /* Optional notice block if you want, otherwise you can remove this whole class */
-    .recaptcha-notice {
+    Optional notice block if you want, otherwise you can remove this whole class */
+    /* .recaptcha-notice {
       background: #fef3c7;
       border: 1px solid #fde68a;
       color: #92400e;
@@ -376,7 +376,7 @@
     .recaptcha-notice i {
       font-size: 16px;
       flex-shrink: 0;
-    }
+    } */
 
     .terms-group {
       display: flex;
@@ -558,9 +558,9 @@
           </div>
 
           <!-- Google Recaptcha: hidden until password field is focused -->
-          <div class="g-recaptcha-wrapper" id="recaptchaWrapper">
+          <!-- <div class="g-recaptcha-wrapper" id="recaptchaWrapper">
             <div class="g-recaptcha" data-sitekey="6LfLvBEsAAAAAD3LBG4FWmxbsEPn1068Nv6IO3Fm"></div>
-          </div>
+          </div> -->
 
           <button class="btn-login" type="submit">Login</button>
 
