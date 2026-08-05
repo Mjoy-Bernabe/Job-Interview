@@ -10,9 +10,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
     rel="stylesheet">
-
-  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 
@@ -279,12 +277,6 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .g-recaptcha-wrapper {
-      margin: 16px 0 6px;
-      display: none;
-      justify-content: center;
-    }
-
     @media (max-width: 900px) {
       .container { flex-direction: column; height: auto; }
       .left-side { order: 1; height: 220px; }
@@ -301,7 +293,6 @@
       const inputs = form.querySelectorAll('input[required]');
       const passwordInput = document.querySelector('input[name="password"]');
       const passwordToggle = document.getElementById('passwordToggle');
-      const recaptchaWrapper = document.getElementById('recaptchaWrapper');
       const defaultPlaceholders = {};
 
       inputs.forEach(input => {
@@ -330,11 +321,6 @@
         passwordToggle.innerHTML = type === 'text' ? '<i class="bx bx-hide"></i>' : '<i class="bx bx-show"></i>';
       });
 
-      if (passwordInput && recaptchaWrapper) {
-        passwordInput.addEventListener('focus', () => {
-          recaptchaWrapper.style.display = 'flex';
-        });
-      }
 
       inputs.forEach(input => {
         input.addEventListener('blur', () => {
@@ -396,10 +382,6 @@
 
           <div class="form-footer">
             <a href="/forgot">Forgot Password?</a>
-          </div>
-
-          <div class="g-recaptcha-wrapper" id="recaptchaWrapper">
-            <div class="g-recaptcha" data-sitekey="6LfLvBEsAAAAAD3LBG4FWmxbsEPn1068Nv6IO3Fm"></div>
           </div>
 
           <button class="btn-login" type="submit">Sign In</button>
