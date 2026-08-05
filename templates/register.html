@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Register</title>
+  <title>H2 - Register</title>
 
   <!-- ICONS & FONTS -->
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
@@ -19,6 +19,7 @@
     :root {
       --primary-red: #B2271B;
       --primary-red-dark: #921E15;
+      --input-border: #e5e7eb;
       --text-muted: #6b7280;
     }
 
@@ -29,223 +30,234 @@
     }
 
     body {
-      font-family: "Poppins", sans-serif;
+      background: #eae7e1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       padding: 20px;
-
-      /* BASE GRADIENT USING YOUR RED PALETTE */
-      background: radial-gradient(circle at 70% 50%, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 50X %),
-        radial-gradient(circle at 80% 60%, #B2271B 0%, rgba(178, 39, 27, 0.6) 50%, rgba(178, 39, 27, 0) 90%),
-        radial-gradient(circle at 30% 70%, #921E15 0%, rgba(146, 30, 21, 0.5) 60%, rgba(146, 30, 21, 0) 90%),
-        radial-gradient(circle at 20% 30%, #4B0E0A 0%, rgba(75, 14, 10, 0.6) 60%, rgba(75, 14, 10, 0) 90%),
-        linear-gradient(135deg, #4B0E0A, #921E15, #B2271B);
-
-      background-blend-mode: screen, overlay, soft-light, normal;
-      overflow: hidden;
-      position: relative;
+      font-family: 'Poppins', system-ui, -apple-system, sans-serif;
     }
 
-    /* GLASS OVERLAY */
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      background: rgba(255, 255, 255, 0.05);
-      pointer-events: none;
-      z-index: 0;
-    }
-
-
-    /* MAIN WRAPPER (solid, keeps palette) */
-    .main-container {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      width: 90%;
-      max-width: 1000px;
-      background: linear-gradient(135deg, var(--primary-red-dark) 0%, #4b0e0a 100%);
-      border-radius: 30px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
-      overflow: hidden;
-      animation: fadeUp 0.5s ease-out;
-    }
-
-    @keyframes fadeUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    /* LEFT IMAGE */
-    .illustration {
-      flex: 1.1;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .illustration::before {
-      content: '';
-      position: absolute;
-      width: 160%;
-      height: 160%;
+    .container {
+      width: 100%;
+      max-width: 1100px;
+      height: 85vh;
+      min-height: 650px;
       background: #ffffff;
-      border-radius: 55% 45% 55% 45%;
-      transform: translateX(-10%);
-      box-shadow: 0 15px 45px rgba(0, 0, 0, 0.25);
-    }
-
-    .illustration::after {
-      content: "";
-      position: absolute;
-      inset: 20%;
-      background: url("{{ url_for('static', filename='register.png') }}") no-repeat center;
-      background-size: contain;
-      z-index: 2;
-    }
-
-    /* FORM SIDE */
-    .form-container {
-      flex: 0.9;
+      border-radius: 20px;
       display: flex;
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+      animation: fadeInUp 0.5s ease;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* LEFT PANEL */
+    .left-panel {
+      flex: 1;
+      background: linear-gradient(135deg, #2b0b0b 0%, #000000 100%);
+      color: white;
+      padding: 60px 40px;
+      display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 40px;
+      text-align: center;
+      position: relative;
     }
 
-    /* FORM CARD – solid white, no glass */
-    .form-card {
-      width: 100%;
-      max-width: 420px;
-      background: #ffffff;
-      border-radius: 26px;
-      padding: 30px 26px;
-      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
-    }
-
-    .reg {
-      font-family: "Outfit", sans-serif;
+    .left-panel .icon {
+      width: 64px;
+      height: 64px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      margin-bottom: 30px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       font-size: 32px;
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .left-panel h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 28px;
+      font-weight: 500;
+      margin-bottom: 16px;
+      line-height: 1.3;
+      color: #f9fafb;
+    }
+
+    .left-panel h2 span {
+      color: #9ca3af;
+    }
+
+    .left-panel p {
+      color: #9ca3af;
+      font-size: 14px;
+      max-width: 340px;
+      line-height: 1.6;
+      margin-bottom: 40px;
+    }
+
+    .pagination {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .pagination .dot {
+      cursor: pointer;
+    }
+
+    .pagination .dot.active {
+      background: white;
+      opacity: 1;
+      width: 24px;
+    }
+
+    .carousel-content {
+      transition: opacity 0.4s ease-in-out;
+      opacity: 1;
+    }
+
+    .carousel-content.carousel-fade {
+      opacity: 0;
+    }
+
+    /* RIGHT PANEL */
+    .right-panel {
+      flex: 1.1;
+      display: flex;
+      flex-direction: column;
+      padding: 40px 50px;
+      position: relative;
+      overflow-y: auto; /* Register form is longer */
+    }
+
+    /* Hide scrollbar for clean look but keep scrollability */
+    .right-panel::-webkit-scrollbar {
+      width: 6px;
+    }
+    .right-panel::-webkit-scrollbar-thumb {
+      background-color: rgba(0,0,0,0.1);
+      border-radius: 10px;
+    }
+
+    .top-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: auto;
+    }
+
+    .logo-text {
+      font-family: 'Outfit', sans-serif;
+      font-size: 22px;
       font-weight: 700;
-      margin-bottom: 6px;
+      color: #111827;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo-text i {
+      color: var(--primary-red);
+    }
+
+    .signup-link {
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    .signup-link a {
+      color: #111827;
+      font-weight: 600;
+      text-decoration: underline;
+      margin-left: 4px;
+    }
+
+    /* FORM */
+    .form-wrapper {
+      width: 100%;
+      max-width: 380px;
+      margin: 30px auto;
+    }
+
+    .form-wrapper h1, .form-wrapper h2.form-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 26px;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 8px;
       color: #111827;
     }
 
-    .subtitle {
-      font-size: 14px;
-      color: var(--text-muted);
-      margin-bottom: 20px;
+    .form-wrapper .subtitle {
+      text-align: center;
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 30px;
     }
 
-    /* INPUTS */
     .form-group {
+      margin-bottom: 16px;
       position: relative;
-      margin-bottom: 18px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 6px;
     }
 
     .form-group input {
       width: 100%;
-      padding: 12px 15px 12px 45px;
-      border-radius: 999px;
-      border: 2px solid #e5e7eb;
-      font-size: 15px;
-      background: #f9fafb;
-      transition: 0.3s;
+      padding: 12px 14px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #111827;
+      transition: 0.2s;
+      font-family: 'Poppins', sans-serif;
     }
 
     .form-group input:focus {
       border-color: var(--primary-red);
-      background: #ffffff;
-      box-shadow: 0 0 0 4px rgba(178, 39, 27, 0.15);
       outline: none;
+      box-shadow: 0 0 0 3px rgba(178, 39, 27, 0.1);
     }
 
-    .input-icon {
-      position: absolute;
-      top: 50%;
-      left: 16px;
-      transform: translateY(-50%);
-      font-size: 18px;
-      color: #9ca3af;
+    .form-group input.error-input {
+      border-color: #ef4444 !important;
+      background-color: #fef2f2 !important;
     }
 
-    .form-group input:focus~.input-icon {
-      color: var(--primary-red);
+    .password-group {
+      margin-bottom: 36px;
     }
 
-    /* ERROR INPUT */
-    .form-group input.error {
-      border-color: #ef4444;
-      background: #fef2f2;
-      box-shadow: none !important;
-      animation: none;
-    }
-
-    @keyframes shake {
-
-      0%,
-      100% {
-        transform: translateX(0);
-      }
-
-      25% {
-        transform: translateX(-4px);
-      }
-
-      75% {
-        transform: translateX(4px);
-      }
-    }
-
-    /* ERROR MESSAGE UNDER INPUT */
-    .error-message {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      color: #dc2626;
-      font-size: 13px;
-      margin-top: 5px;
-      animation: reveal 0.25s ease-out;
-    }
-
-    @keyframes reveal {
-      from {
-        opacity: 0;
-        transform: translateY(-5px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .alert-box {
-      background: #fef2f2;
-      border: 1px solid #fca5a5;
-      padding: 10px 12px;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 16px;
-      color: #991b1b;
-    }
-
-    /* PASSWORD STRENGTH */
     .password-strength {
-      margin-top: 8px;
       display: none;
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 100%;
+      margin-top: 6px;
     }
 
     .password-strength.show {
@@ -254,7 +266,7 @@
 
     .strength-bars {
       display: flex;
-      gap: 5px;
+      gap: 6px;
     }
 
     .strength-bar {
@@ -262,135 +274,146 @@
       flex: 1;
       background: #e5e7eb;
       border-radius: 2px;
+      transition: background-color 0.3s ease;
     }
 
-    .strength-bar.active {
-      background: #ef4444;
-    }
-
-    .strength-bar.medium.active {
-      background: #f59e0b;
-    }
-
-    .strength-bar.strong.active {
-      background: #10b981;
-    }
+    .strength-bar.active { background: #ef4444; }
+    .strength-bar.medium.active { background: #f59e0b; }
+    .strength-bar.strong.active { background: #10b981; }
 
     .strength-text {
-      font-size: 12px;
+      font-size: 11px;
       color: #6b7280;
       margin-top: 4px;
+      font-weight: 500;
     }
 
-    /* RECAPTCHA SHOW ON PASSWORD FOCUS */
-    .g-recaptcha-wrapper {
-      display: none;
-      justify-content: center;
-      margin-top: 10px;
+    .error-message {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #dc2626;
+      font-size: 12px;
+      margin-top: 4px;
+      animation: reveal 0.3s ease-out;
     }
 
-    /* BUTTON */
+    @keyframes reveal {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .alert-box {
+      background: #fef2f2;
+      border-left: 4px solid #ef4444;
+      padding: 10px 14px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      color: #991b1b;
+      font-size: 13px;
+    }
+
+    .alert-box i {
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
     .btn-register {
       width: 100%;
-      padding: 12px;
+      padding: 14px;
       border: none;
-      border-radius: 999px;
-      background: linear-gradient(135deg, var(--primary-red), var(--primary-red-dark));
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--primary-red) 0%, var(--primary-red-dark) 100%);
       color: white;
-      font-weight: 600;
-      font-size: 15px;
-      margin-top: 12px;
+      font-size: 14px;
+      font-weight: 500;
       cursor: pointer;
-      box-shadow: 0 5px 18px rgba(146, 30, 21, 0.45);
-      transition: 0.2s ease;
+      margin-top: 10px;
+      box-shadow: 0 4px 12px rgba(178, 39, 27, 0.2);
+      transition: 0.2s;
+      font-family: 'Poppins', sans-serif;
     }
 
     .btn-register:hover {
       transform: translateY(-1px);
-      box-shadow: 0 8px 20px rgba(146, 30, 21, 0.5);
+      box-shadow: 0 6px 16px rgba(178, 39, 27, 0.3);
     }
 
-    /* FOOTER LINKS */
-    .register-link {
-      margin-top: 14px;
-      text-align: center;
-      font-size: 13px;
+    .bottom-nav {
+      display: flex;
+      justify-content: space-between;
+      margin-top: auto;
+      font-size: 12px;
+      color: #9ca3af;
+      padding-top: 20px;
     }
 
-    .register-link a {
-      color: var(--primary-red);
+    .bottom-nav .links a {
+      color: #9ca3af;
       text-decoration: none;
-      font-weight: 500;
+      margin-left: 16px;
+      transition: color 0.2s;
     }
 
-    /* FOOTER TERMS */
-    .form-footer {
-      margin-top: 16px;
-      padding-top: 14px;
-      border-top: 1px solid #e5e7eb;
-      text-align: center;
-      font-size: 13px;
+    .bottom-nav .links a:hover {
+      color: #6b7280;
+      text-decoration: underline;
     }
 
-    .form-footer a {
-      color: var(--primary-red);
-      margin: 0 5px;
-      text-decoration: none;
-      font-weight: 500;
-    }
-
-    /* Password group so icon centers on the input, not the meter */
-    .password-group {
-      position: relative;
-      margin-bottom: 32px;
-      /* extra space for the meter under the input */
-    }
-
-    /* Put the strength meter under the input, aligned with text (after icon) */
-    .password-group .password-strength {
-      position: absolute;
-      left: 45px;
-      right: 0;
-      top: 100%;
-      margin-top: 4px;
-    }
-
-    .password-strength {
+    .g-recaptcha-wrapper {
+      margin: 16px 0;
       display: none;
+      justify-content: center;
     }
 
-    .password-strength.show {
-      display: block;
-    }
-
-    @media (max-width: 900px) {
-      .main-container {
+    @media(max-width: 900px) {
+      .container {
         flex-direction: column;
+        height: auto;
       }
 
-      .illustration {
+      .left-panel {
         display: none;
       }
 
-      .form-container {
-        padding: 24px;
+      .right-panel {
+        padding: 30px 20px;
+      }
+
+      .form-wrapper {
+        margin-top: 40px;
+        margin-bottom: 40px;
       }
     }
   </style>
 </head>
 
 <body>
+  <div class="container">
+    <div class="left-panel">
+      <div id="carouselContent" class="carousel-content">
+        <div class="icon">
+          <i class="fas fa-chart-pie" id="carouselIcon"></i>
+        </div>
+        <h2 id="carouselTitle">One Platform to Streamline<br><span>All Hiring Processes</span></h2>
+        <p id="carouselText">Your hiring processes are set to grow efficiently. Your team can assess candidates smartly powered by AI.</p>
+      </div>
+      <div class="pagination">
+        <span class="dot active" data-index="0"></span>
+        <span class="dot" data-index="1"></span>
+        <span class="dot" data-index="2"></span>
+      </div>
+    </div>
+    <div class="right-panel">
+      <div class="top-nav">
+        <h2 class="logo-text"><i class="fas fa-robot"></i> H2</h2>
+      </div>
 
-  <div class="main-container">
-
-    <!-- LEFT IMAGE -->
-    <div class="illustration"></div>
-
-    <!-- FORM -->
-    <div class="form-container">
-      <div class="form-card">
-
-        <label class="reg">Register</label>
+      <div class="form-wrapper">
+        <h2 class="form-title">Register</h2>
         <p class="subtitle">Create your account to get started</p>
 
         {% if error %}
@@ -403,14 +426,14 @@
 
           <!-- Username -->
           <div class="form-group">
+            <label>Username</label>
             <input type="text" name="username" placeholder="Username" required />
-            <i class="bx bx-user input-icon"></i>
           </div>
 
           <!-- Email -->
           <div class="form-group">
+            <label>Email</label>
             <input type="email" name="email" placeholder="Email" required id="email" />
-            <i class="bx bx-envelope input-icon"></i>
             <span id="emailError" class="error-message" style="display:none;">
               <i class="bx bx-error-circle"></i>This email is already registered
             </span>
@@ -418,8 +441,8 @@
 
           <!-- Password -->
           <div class="form-group password-group">
+            <label>Password</label>
             <input type="password" name="password" placeholder="Password" required id="password" />
-            <i class="bx bx-lock-alt input-icon"></i>
 
             <div class="password-strength" id="passwordStrength">
               <div class="strength-bars">
@@ -430,18 +453,12 @@
               </div>
               <div class="strength-text" id="strengthText">Password strength</div>
             </div>
-
-            <span id="passError" class="error-message" style="display:none;">
-              <i class="bx bx-error-circle"></i>
-              Password must be at least 8 characters with uppercase, lowercase, and a number
-            </span>
           </div>
 
           <!-- Confirm Password -->
           <div class="form-group">
-            <input type="password" name="confirm_password" placeholder="Confirm Password" required
-              id="confirm_password" />
-            <i class="bx bx-lock input-icon"></i>
+            <label>Confirm Password</label>
+            <input type="password" name="confirm_password" placeholder="Confirm Password" required id="confirm_password" />
 
             <span id="confirmPasswordError" class="error-message" style="display:none;">
               <i class="bx bx-error-circle"></i>Passwords do not match
@@ -450,8 +467,8 @@
 
           <!-- Contact -->
           <div class="form-group">
+            <label>Contact Number</label>
             <input type="text" name="contact_number" placeholder="Contact Number" />
-            <i class="bx bx-phone input-icon"></i>
           </div>
 
           <!-- reCAPTCHA -->
@@ -459,47 +476,112 @@
             <div class="g-recaptcha" data-sitekey="6LfLvBEsAAAAAD3LBG4FWmxbsEPn1068Nv6IO3Fm"></div>
           </div>
 
-          <button class="btn-register">Register</button>
+          <button class="btn-register" style="margin-bottom: 20px;">Register &rarr;</button>
 
-          <div class="register-link">
-            Already have an account? <a href="{{ url_for('auth.login') }}">Log in now!</a>
-          </div>
-
-          <div class="form-footer">
-            <a href="#" id="footerPrivacyLink">Privacy</a> •
-            <a href="#" id="footerTermsLink">Terms</a> •
-            <a href="/support">Support</a>
+          <div class="signup-link" style="text-align: left;">
+            Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a>
           </div>
 
         </form>
       </div>
+
+      <div class="bottom-nav">
+        <div>&copy; 2025 H2</div>
+        <div class="links">
+          <a href="#" id="footerPrivacyLink">Privacy</a>
+          <a href="#" id="footerTermsLink">Terms</a>
+          <a href="/support">Support</a>
+        </div>
+      </div>
+
     </div>
   </div>
 
   <!-- JS VALIDATION / RECAPTCHA / MATCH CHECKING -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
+
+      /* CAROUSEL LOGIC */
+      const slides = [
+        {
+          icon: "fas fa-chart-pie",
+          title: "One Platform to Streamline<br><span>All Hiring Processes</span>",
+          text: "Your hiring processes are set to grow efficiently. Your team can assess candidates smartly powered by AI."
+        },
+        {
+          icon: "fas fa-users",
+          title: "Build Your Dream Team<br><span>With Precision</span>",
+          text: "Discover top talent faster than ever. Our AI-driven insights help you make informed hiring decisions."
+        },
+        {
+          icon: "fas fa-rocket",
+          title: "Accelerate Your Growth<br><span>Seamless Integration</span>",
+          text: "Manage candidates, schedule interviews, and onboard new hires all in one unified experience."
+        }
+      ];
+
+      let currentSlide = 0;
+      const carouselContent = document.getElementById("carouselContent");
+      const carouselIcon = document.getElementById("carouselIcon");
+      const carouselTitle = document.getElementById("carouselTitle");
+      const carouselText = document.getElementById("carouselText");
+      const dots = document.querySelectorAll(".pagination .dot");
+
+      function updateSlide(index) {
+        carouselContent.classList.add("carousel-fade");
+        
+        setTimeout(() => {
+          currentSlide = index;
+          carouselIcon.className = slides[index].icon;
+          carouselTitle.innerHTML = slides[index].title;
+          carouselText.innerHTML = slides[index].text;
+          
+          dots.forEach((dot, i) => {
+            dot.classList.toggle("active", i === index);
+          });
+          
+          carouselContent.classList.remove("carousel-fade");
+        }, 400);
+      }
+
+      dots.forEach((dot, index) => {
+        dot.addEventListener("click", () => {
+          if (currentSlide !== index) {
+            updateSlide(index);
+            resetCarouselTimer();
+          }
+        });
+      });
+
+      let carouselTimer = setInterval(() => {
+        updateSlide((currentSlide + 1) % slides.length);
+      }, 5000);
+
+      function resetCarouselTimer() {
+        clearInterval(carouselTimer);
+        carouselTimer = setInterval(() => {
+          updateSlide((currentSlide + 1) % slides.length);
+        }, 5000);
+      }
       document.querySelectorAll("input[required]").forEach(input => {
         const originalPlaceholder = input.placeholder;
 
-        // On blur → show red + error placeholder
+        // On blur → show error styling
         input.addEventListener("blur", () => {
           if (!input.value.trim()) {
-            input.classList.add("error");
-            input.placeholder = "Please enter " + originalPlaceholder.toLowerCase();
+            input.classList.add("error-input");
           }
         });
 
-        // On focus → clear temporary error placeholder
+        // On focus → clear error
         input.addEventListener("focus", () => {
-          input.placeholder = originalPlaceholder;
+          input.classList.remove("error-input");
         });
 
-        // On typing → remove error styling
+        // On typing → remove error
         input.addEventListener("input", () => {
           if (input.value.trim()) {
-            input.classList.remove("error");
-            input.placeholder = originalPlaceholder;
+            input.classList.remove("error-input");
           }
         });
       });
@@ -510,7 +592,6 @@
       const passwordInput = document.getElementById("password");
       const confirmPasswordInput = document.getElementById("confirm_password");
       const confirmPasswordError = document.getElementById("confirmPasswordError");
-      const passError = document.getElementById("passError");
       const recaptchaWrapper = document.getElementById("recaptchaWrapper");
 
       const passwordStrength = document.getElementById("passwordStrength");
@@ -524,75 +605,80 @@
 
       /* EMAIL CHECK (DEBOUNCE) */
       let emailCheckTimeout;
-      emailInput.addEventListener("input", () => {
-        clearTimeout(emailCheckTimeout);
-        emailCheckTimeout = setTimeout(() => {
-          const email = emailInput.value.trim();
-          if (!email.includes("@")) return;
+      if (emailInput) {
+        emailInput.addEventListener("input", () => {
+          clearTimeout(emailCheckTimeout);
+          emailCheckTimeout = setTimeout(() => {
+            const email = emailInput.value.trim();
+            if (!email.includes("@")) return;
 
-          fetch(`/check_email?email=${encodeURIComponent(email)}`)
-            .then(res => res.json())
-            .then(data => {
-              if (data.exists) {
-                emailError.style.display = "flex";
-                emailInput.classList.add("error");
-              } else {
-                emailError.style.display = "none";
-                emailInput.classList.remove("error");
-              }
-            });
-        }, 500);
-      });
+            fetch(`/check_email?email=${encodeURIComponent(email)}`)
+              .then(res => res.json())
+              .then(data => {
+                if (data.exists) {
+                  emailError.style.display = "flex";
+                  emailInput.classList.add("error-input");
+                } else {
+                  emailError.style.display = "none";
+                  emailInput.classList.remove("error-input");
+                }
+              });
+          }, 500);
+        });
+      }
 
       /* PASSWORD STRENGTH */
-      passwordInput.addEventListener("input", () => {
-        const val = passwordInput.value;
+      if (passwordInput && passwordStrength) {
+        passwordInput.addEventListener("input", () => {
+          const val = passwordInput.value;
 
-        if (val.length === 0) {
-          passwordStrength.classList.remove("show");
-          return;
-        }
-
-        passwordStrength.classList.add("show");
-
-        let score = 0;
-        if (val.length >= 8) score++;
-        if (/[A-Z]/.test(val) && /[a-z]/.test(val)) score++;
-        if (/\d/.test(val)) score++;
-        if (/[^A-Za-z0-9]/.test(val)) score++;
-
-        strengthBars.forEach((bar, i) => {
-          bar.classList.remove("active", "medium", "strong");
-          if (i < score) {
-            bar.classList.add("active");
-            if (score >= 3) bar.classList.add("medium");
-            if (score === 4) bar.classList.add("strong");
+          if (val.length === 0) {
+            passwordStrength.classList.remove("show");
+            return;
           }
+
+          passwordStrength.classList.add("show");
+
+          let score = 0;
+          if (val.length >= 8) score++;
+          if (/[A-Z]/.test(val) && /[a-z]/.test(val)) score++;
+          if (/\d/.test(val)) score++;
+          if (/[^A-Za-z0-9]/.test(val)) score++;
+
+          strengthBars.forEach((bar, i) => {
+            bar.classList.remove("active", "medium", "strong");
+            if (i < score) {
+              bar.classList.add("active");
+              if (score >= 3) bar.classList.add("medium");
+              if (score === 4) bar.classList.add("strong");
+            }
+          });
+
+          const names = ["Weak", "Fair", "Good", "Strong"];
+
+          if (score > 0) {
+            strengthText.textContent = names[score - 1] + " password";
+          } else {
+            strengthText.textContent = "Password strength";
+          }
+
         });
-
-        const names = ["Weak", "Fair", "Good", "Strong"];
-
-        if (score > 0) {
-          strengthText.textContent = names[score - 1] + " password";
-        } else {
-          strengthText.textContent = "Password strength";
-        }
-
-      });
+      }
 
       /* MATCH VALIDATION */
-      confirmPasswordInput.addEventListener("input", () => {
-        if (confirmPasswordInput.value !== passwordInput.value) {
-          confirmPasswordError.style.display = "flex";
-          confirmPasswordInput.classList.add("error");
-        } else {
-          confirmPasswordError.style.display = "none";
-          confirmPasswordInput.classList.remove("error");
-        }
-      });
+      if (confirmPasswordInput) {
+        confirmPasswordInput.addEventListener("input", () => {
+          if (confirmPasswordInput.value !== passwordInput.value) {
+            confirmPasswordError.style.display = "flex";
+            confirmPasswordInput.classList.add("error-input");
+          } else {
+            confirmPasswordError.style.display = "none";
+            confirmPasswordInput.classList.remove("error-input");
+          }
+        });
+      }
     });
   </script>
-
 </body>
 
 </html>
