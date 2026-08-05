@@ -1,6 +1,11 @@
 """Application configuration loaded from environment variables."""
 import os
 
+from dotenv import load_dotenv
+
+# Load local MySQL credentials from .env before Config is created.
+load_dotenv()
+
 
 def get_int_env(name: str, default: int) -> int:
     """Read an integer environment variable without crashing on bad input."""

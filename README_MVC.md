@@ -96,3 +96,34 @@ Use these Render settings:
 Required environment variables normally include `SECRET_KEY`, MySQL connection values, and mail credentials. `MAX_RESUME_SIZE` must be a plain integer in bytes, such as `10485760` for 10 MB.
 
 The SentenceTransformer and KeyBERT models are lazy-loaded. Render can therefore open its web port before the large NLP model is downloaded and initialized.
+
+## Connect to a local MySQL Server through MySQL Workbench
+
+MySQL Workbench is the interface used to manage the MySQL Server. The Flask application connects to the same MySQL Server using the credentials in `.env`.
+
+1. In MySQL Workbench, connect to your local server, normally `127.0.0.1:3306`.
+2. Create the schema `auth_db` if it does not exist.
+3. Open **Server > Data Import**, select `database/auth_db.sql`, choose `auth_db`, and start the import.
+4. Copy `.env.example` to a new file named `.env`.
+5. Enter the same username and password used by your MySQL Workbench connection.
+6. Install dependencies and test the connection:
+
+```powershell
+pip install -r requirements.txt
+python test_database.py
+python run.py
+```
+
+Default local settings:
+
+```env
+MYSQL_HOST=127.0.0.1
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=
+MYSQL_DB=auth_db
+```
+
+If the MySQL `root` account has a password, place it after `MYSQL_PASSWORD=`. Do not commit `.env` to GitHub.
+
+A local Workbench/MySQL connection works only while running the Flask app on the same computer. A Render deployment still requires a publicly reachable hosted MySQL server; Render cannot connect to your laptop's `127.0.0.1` database.

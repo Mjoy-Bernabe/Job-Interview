@@ -10,6 +10,7 @@ from flask import (
     session,
 )
 from werkzeug.security import generate_password_hash, check_password_hash
+from MySQLdb import Error as MySQLError
 
 from app.extensions import mysql, logger
 from app.services.otp_service import generate_otp, verify_otp
@@ -103,28 +104,44 @@ def login():
         email = request.form["email"]
         password = request.form["password"]
 
-        cur = mysql.connection.cursor()
-        cur.execute(
-            "SELECT user_id, password_hash, user_type FROM users WHERE email = %s",
-            (email,),
-        )
-        result = cur.fetchone()
-        cur.close()
+        cur = None
+        try:
+            cur = mysql.connection.cursor()
+            cur.execute(
+                "SELECT user_id, password_hash, user_type FROM users WHERE email = %s",
+                (email,),
+            )
+            result = cur.fetchone()
 
-        if result:
-            if check_password_hash(result[1], password):
-                # STRICT ROLE CHECK: Deny HR/Admin here
-                if result[2] in ('HR', 'Admin'):
-                    error = "Staff members must use the Staff Login portal (/staff-login)."
+            if result:
+                stored_hash = result[1].decode() if isinstance(result[1], bytes) else str(result[1])
+                role = (result[2] or "").strip().lower()
+
+                if check_password_hash(stored_hash, password):
+                    if role in {"hr", "admin"}:
+                        error = "Staff members must use the Staff Login portal (/staff-login)."
+                    elif role == "applicant":
+                        session.clear()
+                        session["user_id"] = result[0]
+                        session["email"] = email
+                        session["user_type"] = "Applicant"
+                        flash("Login successful! Welcome, Applicant.", "success")
+                        return redirect(url_for("applicants.dashboard"))
+                    else:
+                        error = "Your account role is not configured correctly."
                 else:
-                    session["user_id"] = result[0]
-                    session["email"] = email
-                    flash("Login successful! Welcome, Applicant.", "success")
-                    return redirect(url_for("applicants.dashboard"))
+                    error = "Incorrect password."
             else:
-                error = "Incorrect password."
-        else:
-            error = "Email not found."
+                error = "Email not found."
+        except MySQLError:
+            logger.exception("Database error during applicant login for %s", email)
+            error = "The database is temporarily unavailable. Please check the Render database environment variables."
+        except (TypeError, ValueError):
+            logger.exception("Invalid stored password data for %s", email)
+            error = "This account has invalid password data. Please reset its password."
+        finally:
+            if cur is not None:
+                cur.close()
 
     return render_template("login.html", error=error)
 
@@ -146,46 +163,54 @@ def staff_login():
         email = request.form["email"]
         password = request.form["password"]
 
-        cur = mysql.connection.cursor()
-        cur.execute("SELECT user_id, password_hash, user_type FROM users WHERE email = %s", (email,))
-        result = cur.fetchone()
-        cur.close()
+        cur = None
+        try:
+            cur = mysql.connection.cursor()
+            cur.execute(
+                "SELECT user_id, password_hash, user_type FROM users WHERE email = %s",
+                (email,),
+            )
+            result = cur.fetchone()
 
-        if result:
-            if check_password_hash(result[1], password):
-                # STRICT ROLE CHECK: Deny Applicants here
-                if result[2] == 'Applicant':
-                    error = "Applicants must use the standard login page (/login)."
-                else:
-                    target = _role_target(result[2])
+            if result:
+                stored_hash = result[1].decode() if isinstance(result[1], bytes) else str(result[1])
+                role = (result[2] or "").strip().lower()
 
-                    # Point this login at the correct portal cookie BEFORE
-                    # writing to `session`, so HR and Admin logins land in
-                    # their own cookie (admin_session / hr_session) instead
-                    # of overwriting each other. This is what lets someone
-                    # stay logged in as HR in one tab and Admin in another.
-                    if target == "hr.hr_dashboard":
-                        use_portal_cookie(HR_COOKIE)
-                    elif target == "admin.dashboard":
-                        use_portal_cookie(ADMIN_COOKIE)
-
-                    session.clear()
-                    session["user_id"] = result[0]
-                    session["email"] = email
-
-                    # Direct them to their specific dashboards
-                    if target == "hr.hr_dashboard":
-                        flash("Login successful! Welcome to the HR Portal.", "success")
-                        return redirect(url_for("hr.hr_dashboard"))
-                    elif target == "admin.dashboard":
-                        flash("Login successful! Welcome, Admin.", "success")
-                        return redirect(url_for("admin.dashboard"))
+                if check_password_hash(stored_hash, password):
+                    if role == "applicant":
+                        error = "Applicants must use the standard login page (/login)."
                     else:
+                        target = _role_target(role)
+                        if target == "hr.hr_dashboard":
+                            use_portal_cookie(HR_COOKIE)
+                        elif target == "admin.dashboard":
+                            use_portal_cookie(ADMIN_COOKIE)
+
+                        session.clear()
+                        session["user_id"] = result[0]
+                        session["email"] = email
+                        session["user_type"] = role.title()
+
+                        if target == "hr.hr_dashboard":
+                            flash("Login successful! Welcome to the HR Portal.", "success")
+                            return redirect(url_for("hr.hr_dashboard"))
+                        if target == "admin.dashboard":
+                            flash("Login successful! Welcome, Admin.", "success")
+                            return redirect(url_for("admin.dashboard"))
                         error = "Role recognized, but dashboard not found."
+                else:
+                    error = "Incorrect password."
             else:
-                error = "Incorrect password."
-        else:
-            error = "Email not found."
+                error = "Email not found."
+        except MySQLError:
+            logger.exception("Database error during staff login for %s", email)
+            error = "The database is temporarily unavailable. Please check the Render database environment variables."
+        except (TypeError, ValueError):
+            logger.exception("Invalid stored password data for %s", email)
+            error = "This account has invalid password data. Please reset its password."
+        finally:
+            if cur is not None:
+                cur.close()
 
     return render_template("staff_log.html", error=error)
 
