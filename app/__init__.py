@@ -22,6 +22,10 @@ def create_app(config_class=Config):
     limiter.init_app(app)
     register_controllers(app)
 
+    @app.get("/health")
+    def health():
+        return {"status": "ok"}, 200
+
     @app.get("/debug-routes")
     def debug_routes():
         return "<br>".join(

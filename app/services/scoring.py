@@ -2,7 +2,7 @@
 import re
 from typing import List, Dict, Any
 
-from app.extensions import sentence_model, kw_model, logger
+from app.extensions import get_keyword_model, get_sentence_model, logger
 from sklearn.metrics.pairwise import cosine_similarity
 
 from app.services import simpleneuralnetwork as ann
@@ -13,9 +13,8 @@ FULL_LENGTH_WORDS = 40
 
 
 def _encode(text: str):
-    if not sentence_model:
-        raise RuntimeError("SentenceTransformer model not loaded.")
-    return sentence_model.encode([text])[0]
+    model = get_sentence_model()
+    return model.encode([text])[0]
 
 
 def _normalize(text: str) -> str:
@@ -105,13 +104,11 @@ def score_answer_combined(question: str, answer: str) -> Dict[str, Any]:
         cosine_score = cosine_similarity([q_emb], [a_emb])[0][0]
         cosine_score = max(0.0, min(1.0, float(cosine_score)))
 
-        if kw_model:
-            kw_pairs = kw_model.extract_keywords(
-                question, keyphrase_ngram_range=(1, 2), top_n=5
-            )
-            keywords = [k[0] for k in kw_pairs]
-        else:
-            keywords = []
+        keyword_model = get_keyword_model()
+        kw_pairs = keyword_model.extract_keywords(
+            question, keyphrase_ngram_range=(1, 2), top_n=5
+        )
+        keywords = [item[0] for item in kw_pairs]
 
         answer_norm = _normalize(answer)
         answer_tokens = answer_norm.split()

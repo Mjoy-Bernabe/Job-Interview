@@ -83,3 +83,16 @@ View template or JSON response
 New database queries should be placed in repository classes under `app/models/`.
 Controllers should primarily validate requests, call models/services, and select the
 view or response.
+
+## Render deployment
+
+Use these Render settings:
+
+- Build command: `pip install -r requirements.txt`
+- Start command: `gunicorn run:app --bind 0.0.0.0:$PORT --workers 1 --threads 2 --timeout 180`
+- Health check path: `/health`
+- Recommended Python version: `3.12.7`
+
+Required environment variables normally include `SECRET_KEY`, MySQL connection values, and mail credentials. `MAX_RESUME_SIZE` must be a plain integer in bytes, such as `10485760` for 10 MB.
+
+The SentenceTransformer and KeyBERT models are lazy-loaded. Render can therefore open its web port before the large NLP model is downloaded and initialized.
