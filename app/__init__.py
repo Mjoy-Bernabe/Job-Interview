@@ -1,5 +1,5 @@
 """Flask application factory for the MVC application."""
-from flask import Flask
+from flask import Flask, current_app
 
 from app.config import Config
 from app.controllers import register_controllers
@@ -25,6 +25,35 @@ def create_app(config_class=Config):
     @app.get("/health")
     def health():
         return {"status": "ok"}, 200
+
+    @app.get("/health/db")
+    def database_health():
+        """Verify that the configured MySQL server and schema are reachable."""
+        try:
+            cursor = mysql.connection.cursor()
+            cursor.execute("SELECT DATABASE(), 1")
+            database_name, result = cursor.fetchone()
+            cursor.close()
+            return {
+                "status": "ok",
+                "database": database_name,
+                "connection_source": current_app.config.get(
+                    "MYSQL_CONNECTION_SOURCE"
+                ),
+                "query_result": result,
+            }, 200
+        except Exception as exc:
+            logger.exception("Database health check failed")
+            return {
+                "status": "error",
+                "message": str(exc),
+                "host": current_app.config.get("MYSQL_HOST"),
+                "port": current_app.config.get("MYSQL_PORT"),
+                "database": current_app.config.get("MYSQL_DB"),
+                "connection_source": current_app.config.get(
+                    "MYSQL_CONNECTION_SOURCE"
+                ),
+            }, 503
 
     @app.get("/debug-routes")
     def debug_routes():

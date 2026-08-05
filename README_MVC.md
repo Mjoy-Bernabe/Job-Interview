@@ -127,3 +127,16 @@ MYSQL_DB=auth_db
 If the MySQL `root` account has a password, place it after `MYSQL_PASSWORD=`. Do not commit `.env` to GitHub.
 
 A local Workbench/MySQL connection works only while running the Flask app on the same computer. A Render deployment still requires a publicly reachable hosted MySQL server; Render cannot connect to your laptop's `127.0.0.1` database.
+
+## Railway MySQL from Render
+
+The application now accepts Railway's public connection in any of these forms, in priority order:
+
+1. `MYSQL_PUBLIC_URL=mysql://user:password@public-host:public-port/database`
+2. `DATABASE_URL=mysql://user:password@public-host:public-port/database`
+3. Railway public proxy variables: `RAILWAY_TCP_PROXY_DOMAIN`, `RAILWAY_TCP_PROXY_PORT`, `MYSQLUSER`, `MYSQLPASSWORD`, and `MYSQLDATABASE`
+4. Standard variables: `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD`, and `MYSQL_DB`
+
+For Render, the simplest setup is to create one environment variable named `MYSQL_PUBLIC_URL` and paste Railway's fully resolved public URL. Do not paste a value that still contains `${...}` placeholders, and do not use `mysql.railway.internal` from Render.
+
+After deployment, open `/health/db`. A successful response reports `status: ok` and the connected database name. The response never exposes the database password.
